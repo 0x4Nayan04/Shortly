@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 import express, { urlencoded } from "express";
 import connectDB from "./src/config/monogo.config.js";
-import shortUrl from "./src/routes/shortUrl.routes.js";
+import shortUrlCreate from "./src/routes/shortUrl.routes.js";
 import short_urlModel from "./src/schema/shortUrl.model.js";
 
 dotenv.config("./.env");
@@ -11,10 +11,9 @@ app.use(express.json());
 app.use(urlencoded()); // for url encode (payload)
 
 /* Create */
-app.use("/api/create", shortUrl);
+app.use("/api/create", shortUrlCreate);
 
 /* Redirect */
-
 app.get("/api/:short_url", async (req, res) => {
   const { short_url } = req.params;
   const url = await short_urlModel.findOne({ short_url: short_url });
