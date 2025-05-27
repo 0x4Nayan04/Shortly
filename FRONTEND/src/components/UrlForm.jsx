@@ -1,0 +1,91 @@
+import { useState } from "react";
+import axios from "axios";
+
+const UrlForm = () => {
+  const [url, setUrl] = useState("");
+  const [shortUrl, setShortUrl] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const API_URL = "http://localhost:3000";
+
+  const handleSubmit = async (e) => {
+    e.preventDefault(); // Prevent form submission
+
+    if (!url) return;
+
+    setLoading(true);
+    setError("");
+    setShortUrl("");
+
+    try {
+      const response = await axios.post(`${API_URL}/api/create`, {
+        full_url: url,
+      });
+
+      setShortUrl(`${API_URL}/${response.data.short_url}`);
+    } catch (err) {
+      if (err.response) {
+        setError(err.response.data.message || "Failed to create short URL");
+      } else if (err.request) {
+        setError("Network error. Please try again.");
+      } else {
+        setError("An error occurred. Please try again.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(shortUrl);
+  };
+
+  return (
+    <div>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <input
+          type="url"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          placeholder="Enter your long URL here..."
+          className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-base focus:outline-none focus:border-blue-500 transition-colors"
+          required
+        />
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full py-3 bg-blue-600 hover:bg-blue-700 hover:cursor-pointer disabled:bg-blue-400 disabled:cursor-not-allowed text-white font-medium rounded-lg text-base transition-colors">
+          {loading ? "Shortening..." : "Shorten URL"}
+        </button>
+      </form>
+
+      {error && (
+        <div className="mt-4 p-3 bg-red-100 border border-red-300 text-red-700 rounded-lg">
+          {error}
+        </div>
+      )}
+
+      {shortUrl && (
+        <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+          <p className="font-semibold text-gray-700 mb-3">Short URL:</p>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={shortUrl}
+              readOnly
+              className="flex-1 px-3 py-2 border border-gray-300 rounded bg-gray-50 text-sm"
+            />
+            <button
+              onClick={copyToClipboard}
+              className="px-4 py-2 bg-green-600 hover:bg-green-700 hover:cursor-pointer text-white rounded font-medium transition-colors">
+              Copy
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default UrlForm;
