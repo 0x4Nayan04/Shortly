@@ -1,34 +1,40 @@
-import { useState } from "react";
-import axios from "axios";
+import { useState, useEffect } from "react"; // Import useEffect
+import { createShortUrl } from "../api/shortUrl.api";
 
 const UrlForm = () => {
   const [url, setUrl] = useState("");
   const [shortUrl, setShortUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [isCopied, setIsCopied] = useState(false); // New state for copy status
   const API_URL = "http://localhost:3000";
 
   const handleSubmit = async (e) => {
-    e.preventDefault(); // Prevent form submission
+    e.preventDefault();
 
     if (!url) return;
 
     setLoading(true);
     setError("");
     setShortUrl("");
+    setIsCopied(false); // Reset copied status on new submission
 
     try {
-      const response = await axios.post(`${API_URL}/api/create`, {
-        full_url: url,
-      });
+      const response = await createShortUrl(url);
 
-      setShortUrl(`${API_URL}/${response.data.short_url}`);
+      if (response && response.data && response.data.short_url) {
+        setShortUrl(`${API_URL}/${response.data.short_url}`);
+      } else {
+        console.error("Unexpected response structure:", response);
+        setError("Failed to process the server response.");
+      }
     } catch (err) {
       if (err.response) {
         setError(err.response.data.message || "Failed to create short URL");
       } else if (err.request) {
         setError("Network error. Please try again.");
       } else {
+        console.error("An unexpected error occurred:", err);
         setError("An error occurred. Please try again.");
       }
     } finally {
@@ -38,7 +44,18 @@ const UrlForm = () => {
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(shortUrl);
+    setIsCopied(true);
   };
+
+  // Reset the "Copied!" status after a few seconds
+  useEffect(() => {
+    if (isCopied) {
+      const timer = setTimeout(() => {
+        setIsCopied(false);
+      }, 2000); // Reset after 2 seconds
+      return () => clearTimeout(timer); // Cleanup timer on component unmount or if isCopied changes
+    }
+  }, [isCopied]);
 
   return (
     <div>
@@ -78,8 +95,14 @@ const UrlForm = () => {
             />
             <button
               onClick={copyToClipboard}
-              className="px-4 py-2 bg-green-600 hover:bg-green-700 hover:cursor-pointer text-white rounded font-medium transition-colors">
-              Copy
+              disabled={isCopied} // Optionally disable button while in "Copied!" state
+              className={`px-4 py-2 font-medium text-white rounded transition-colors
+                ${
+                  isCopied
+                    ? "bg-green-400 cursor-default" // Lighter green and default cursor when copied
+                    : "bg-green-600 hover:bg-green-700 hover:cursor-pointer"
+                }`}>
+              {isCopied ? "Copied!" : "Copy"}
             </button>
           </div>
         </div>
