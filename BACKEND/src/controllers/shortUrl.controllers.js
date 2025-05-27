@@ -1,3 +1,4 @@
+import short_urlModel from "../schema/shortUrl.model.js";
 import {
   createShortUrlWithoutUser,
   getShortUrl,
@@ -10,11 +11,19 @@ export const createShortUrl = async (req, res) => {
     return res.status(400).send("Full URL is required");
   }
 
-  const short_Url = await createShortUrlWithoutUser(full_url);
+  const checkIfFullUrlExists = await short_urlModel.findOne({ full_url });
 
-  res.send({
-    short_url: `${process.env.APP_URL}api/${short_Url}`,
-  });
+  if (!checkIfFullUrlExists) {
+    const short_Url = await createShortUrlWithoutUser(full_url);
+
+    res.send({
+      short_url: `${process.env.APP_URL}${short_Url}`,
+    });
+  } else {
+    res.send({
+      short_url: `${process.env.APP_URL}${checkIfFullUrlExists.short_url}`,
+    });
+  }
 };
 
 export const redirectFromShortUrl = async (req, res) => {
