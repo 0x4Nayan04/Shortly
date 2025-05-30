@@ -1,7 +1,7 @@
 import UrlForm from "../components/UrlForm";
 import { useNavigate } from "react-router-dom";
 
-const LandingPage = ({ onShowAuth }) => {
+const LandingPage = ({ onShowAuth, user }) => {
   const navigate = useNavigate();
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -20,23 +20,42 @@ const LandingPage = ({ onShowAuth }) => {
         {/* URL Shortener Card */}
         <div className="max-w-2xl mx-auto">
           <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
-            <UrlForm user={null} onShowAuth={() => navigate("/login")} />
+            <UrlForm user={user} onShowAuth={() => navigate("/login")} />
 
-            {/* Call to Action */}
-            <div className="mt-8 p-6 bg-blue-50 rounded-xl border border-blue-100">
-              <h3 className="text-lg font-semibold text-blue-900 mb-2">
-                Want to track and manage your links?
-              </h3>
-              <p className="text-blue-700 mb-4">
-                Create an account to save your URLs, view analytics, and create
-                custom short links.
-              </p>
-              <button
-                onClick={onShowAuth}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
-                Get Started Free
-              </button>
-            </div>
+            {/* Call to Action - Only show if user is not logged in */}
+            {!user && (
+              <div className="mt-8 p-6 bg-blue-50 rounded-xl border border-blue-100">
+                <h3 className="text-lg font-semibold text-blue-900 mb-2">
+                  Want to track and manage your links?
+                </h3>
+                <p className="text-blue-700 mb-4">
+                  Create an account to save your URLs, view analytics, and create
+                  custom short links.
+                </p>
+                <button
+                  onClick={onShowAuth}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                  Get Started Free
+                </button>
+              </div>
+            )}
+
+            {/* Logged in user message */}
+            {user && (
+              <div className="mt-8 p-6 bg-green-50 rounded-xl border border-green-100">
+                <h3 className="text-lg font-semibold text-green-900 mb-2">
+                  Welcome back, {user.name}! 👋
+                </h3>
+                <p className="text-green-700 mb-4">
+                  You're logged in and ready to create short URLs. Visit your dashboard to manage all your links.
+                </p>
+                <button
+                  onClick={() => navigate("/dashboard")}
+                  className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                  Go to Dashboard
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

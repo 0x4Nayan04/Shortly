@@ -203,7 +203,7 @@ const App = () => {
         onShowProfile={handleShowProfile}
       />
       <Routes>
-        <Route path="/" element={<LandingPage onShowAuth={showAuth} />} />
+        <Route path="/" element={<LandingPage onShowAuth={showAuth} user={user} />} />
         <Route
           path="/login"
           element={

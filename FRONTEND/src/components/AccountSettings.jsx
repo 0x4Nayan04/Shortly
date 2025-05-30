@@ -227,56 +227,6 @@ const AccountSettings = ({ user }) => {
                 </div>
               )}
             </div>
-
-            {/* Quick Actions */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                Quick Actions
-              </h3>
-
-              <div className="space-y-3">
-                <button
-                  onClick={() => (window.location.href = "/dashboard")}
-                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors">
-                  📊 View Dashboard
-                </button>
-                <button
-                  disabled
-                  className="w-full text-left px-4 py-2 text-sm text-gray-400 bg-gray-50 rounded-lg cursor-not-allowed">
-                  📁 Export Data
-                </button>
-                <button
-                  disabled
-                  className="w-full text-left px-4 py-2 text-sm text-gray-400 bg-gray-50 rounded-lg cursor-not-allowed">
-                  🗑️ Delete Account
-                </button>
-              </div>
-            </div>
-
-            {/* Support */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                Need Help?
-              </h3>
-
-              <div className="space-y-3">
-                <a
-                  href="mailto:support@shortly.com"
-                  className="block text-sm text-blue-600 hover:text-blue-700">
-                  📧 Contact Support
-                </a>
-                <a
-                  href="#"
-                  className="block text-sm text-blue-600 hover:text-blue-700">
-                  📖 View Documentation
-                </a>
-                <a
-                  href="#"
-                  className="block text-sm text-blue-600 hover:text-blue-700">
-                  💬 Community Forum
-                </a>
-              </div>
-            </div>
           </div>
         </div>
       </div>
