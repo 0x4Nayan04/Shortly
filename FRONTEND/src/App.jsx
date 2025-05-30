@@ -11,7 +11,10 @@ import LandingPage from "./components/LandingPage";
 import Dashboard from "./components/Dashboard";
 import LoginForm from "./components/LoginForm";
 import RegisterForm from "./components/RegisterForm";
+import AccountSettings from "./components/AccountSettings";
+import UserProfileModal from "./components/UserProfileModal";
 import { logoutUser, getCurrentUser } from "./api/user.api";
+import { getMyUrls } from "./api/shortUrl.api";
 
 // Helper components for proper routing
 const LoginPage = ({ user, navigate, onLoginSuccess }) => {
@@ -92,8 +95,33 @@ const ProtectedRoute = ({ user, component, navigate }) => {
 const App = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [userStats, setUserStats] = useState({
+    totalUrls: 0,
+    totalClicks: 0,
+  });
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Fetch user stats for profile modal
+  const fetchUserStats = async () => {
+    try {
+      const response = await getMyUrls();
+      if (response && response.data && response.data.urls) {
+        const urls = response.data.urls;
+        const totalClicks = urls.reduce(
+          (sum, url) => sum + (url.click || 0),
+          0
+        );
+        setUserStats({
+          totalUrls: urls.length,
+          totalClicks: totalClicks,
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching user stats:", error);
+    }
+  };
 
   // Check for existing user session on component mount
   useEffect(() => {
@@ -150,6 +178,11 @@ const App = () => {
 
   const showAuth = () => navigate("/login");
 
+  const handleShowProfile = () => {
+    fetchUserStats();
+    setShowProfileModal(true);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -163,7 +196,12 @@ const App = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar user={user} onLogout={handleLogout} onShowAuth={showAuth} />
+      <Navbar
+        user={user}
+        onLogout={handleLogout}
+        onShowAuth={showAuth}
+        onShowProfile={handleShowProfile}
+      />
       <Routes>
         <Route path="/" element={<LandingPage onShowAuth={showAuth} />} />
         <Route
@@ -196,7 +234,27 @@ const App = () => {
             />
           }
         />
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute
+              user={user}
+              component={<AccountSettings user={user} />}
+              navigate={navigate}
+            />
+          }
+        />
       </Routes>
+
+      {/* Profile Modal */}
+      {user && (
+        <UserProfileModal
+          isOpen={showProfileModal}
+          onClose={() => setShowProfileModal(false)}
+          user={user}
+          userStats={userStats}
+        />
+      )}
     </div>
   );
 };

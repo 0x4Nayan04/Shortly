@@ -8,6 +8,11 @@ const Dashboard = ({ user }) => {
   const [error, setError] = useState("");
   const [copiedUrl, setCopiedUrl] = useState(null);
   const [deletingUrl, setDeletingUrl] = useState(null);
+  const [userStats, setUserStats] = useState({
+    totalUrls: 0,
+    totalClicks: 0,
+    recentActivity: 0,
+  });
 
   const fetchMyUrls = async () => {
     setLoading(true);
@@ -15,7 +20,26 @@ const Dashboard = ({ user }) => {
     try {
       const response = await getMyUrls();
       if (response && response.data && response.data.urls) {
-        setMyUrls(response.data.urls);
+        const urls = response.data.urls;
+        setMyUrls(urls);
+
+        // Calculate stats
+        const totalClicks = urls.reduce(
+          (sum, url) => sum + (url.click || 0),
+          0
+        );
+        const recentUrls = urls.filter((url) => {
+          const createdDate = new Date(url.createdAt);
+          const sevenDaysAgo = new Date();
+          sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+          return createdDate > sevenDaysAgo;
+        });
+
+        setUserStats({
+          totalUrls: urls.length,
+          totalClicks: totalClicks,
+          recentActivity: recentUrls.length,
+        });
       }
     } catch (err) {
       setError("Failed to fetch your URLs");
@@ -57,12 +81,134 @@ const Dashboard = ({ user }) => {
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-gray-50">
       <div className="max-w-6xl mx-auto px-4 py-8">
-        {/* Welcome Section */}
+        {/* Enhanced Welcome Section */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Welcome back, {user.name || user.email}!
-          </h1>
-          <p className="text-gray-600">Create and manage your short URLs</p>
+          <div className="flex items-center space-x-6 mb-6">
+            <div className="relative">
+              <img
+                src={user.avatar}
+                alt={user.name}
+                className="w-16 h-16 rounded-full shadow-lg"
+                onError={(e) => {
+                  e.target.style.display = "none";
+                  e.target.nextSibling.style.display = "flex";
+                }}
+              />
+              <div className="w-16 h-16 bg-blue-100 rounded-full items-center justify-center shadow-lg hidden">
+                <span className="text-2xl font-bold text-blue-600">
+                  {(user.name || user.email || "U").charAt(0).toUpperCase()}
+                </span>
+              </div>
+              <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 border-2 border-white rounded-full"></div>
+            </div>
+            <div className="flex-1">
+              <h1 className="text-3xl font-bold text-gray-900 mb-1">
+                Welcome back, {user.name || user.email}!
+              </h1>
+              <p className="text-gray-600 mb-3">
+                Create and manage your short URLs
+              </p>
+              <div className="flex items-center space-x-4 text-sm text-gray-500">
+                <span>📧 {user.email}</span>
+                <span>•</span>
+                <span>
+                  🗓️ Member since{" "}
+                  {new Date(user.createdAt || Date.now()).toLocaleDateString(
+                    "en-US",
+                    { month: "short", year: "numeric" }
+                  )}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <svg
+                      className="w-6 h-6 text-blue-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
+                      />
+                    </svg>
+                  </div>
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-500">
+                    Total URLs
+                  </p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {userStats.totalUrls}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                    <svg
+                      className="w-6 h-6 text-green-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"
+                      />
+                    </svg>
+                  </div>
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-500">
+                    Total Clicks
+                  </p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {userStats.totalClicks}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                    <svg
+                      className="w-6 h-6 text-purple-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
+                      />
+                    </svg>
+                  </div>
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-500">This Week</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {userStats.recentActivity}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Create URL Section */}
@@ -185,7 +331,7 @@ const Dashboard = ({ user }) => {
                           </svg>
                         )}
                       </button>
-                      
+
                       <button
                         onClick={() => handleDeleteUrl(url._id)}
                         disabled={deletingUrl === url._id}

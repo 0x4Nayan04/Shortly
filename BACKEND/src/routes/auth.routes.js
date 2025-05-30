@@ -32,7 +32,6 @@ router.get("/login", (req, res) => {
 
 // Protected routes (require authentication)
 router.post("/logout", isAuthenticated, logout_user);
-router.get("/profile", isAuthenticated, get_user_profile);
 router.get("/me", isAuthenticated, get_user_profile); // Alternative endpoint for getting user profile
 
 export default router;
