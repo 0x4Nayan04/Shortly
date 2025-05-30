@@ -5,6 +5,7 @@ import {
   createCustomShortUrl as createCustomShortUrlService,
   getShortUrl,
 } from "../services/shortUrl.services.js";
+import { recordClick } from "./analytics.controller.js";
 
 export const createShortUrl = async (req, res) => {
   try {
@@ -68,6 +69,9 @@ export const redirectFromShortUrl = async (req, res) => {
 
     const shortUrlData = await getShortUrl(short_url);
 
+    // Record click analytics
+    await recordClick(shortUrlData._id, req);
+
     // Increment the click count
     shortUrlData.click += 1;
     await shortUrlData.save();
@@ -91,7 +95,7 @@ export const getUserUrls = async (req, res) => {
     const userUrls = await short_urlModel
       .find({ user: userId })
       .sort({ createdAt: -1 }) // Sort by newest first
-      .select("full_url short_url click createdAt"); // Only select necessary fields
+      .select("full_url short_url click createdAt title description");
 
     console.log("Found user URLs:", userUrls);
 
@@ -111,7 +115,7 @@ export const getUserUrls = async (req, res) => {
 
 export const createCustomShortUrl = async (req, res) => {
   try {
-    const { full_url, custom_url } = req.body;
+    const { full_url, custom_url, expiresAt } = req.body;
 
     if (!full_url) {
       return res.status(400).json({ message: "Full URL is required" });
@@ -119,6 +123,17 @@ export const createCustomShortUrl = async (req, res) => {
 
     if (!custom_url) {
       return res.status(400).json({ message: "Custom short URL is required" });
+    }
+
+    // Validate expiration date if provided
+    if (expiresAt) {
+      const expirationDate = new Date(expiresAt);
+      const now = new Date();
+      if (expirationDate <= now) {
+        return res.status(400).json({
+          message: "Expiration date must be in the future",
+        });
+      }
     }
 
     // This endpoint requires authentication
@@ -142,7 +157,8 @@ export const createCustomShortUrl = async (req, res) => {
     const short_url = await createCustomShortUrlService(
       full_url,
       custom_url,
-      userId
+      userId,
+      expiresAt
     );
 
     res.json({
@@ -152,6 +168,7 @@ export const createCustomShortUrl = async (req, res) => {
       full_url: full_url,
       custom_url: custom_url,
       user_authenticated: true,
+      expiresAt: expiresAt || null,
     });
   } catch (error) {
     console.error("Error creating custom short URL:", error);

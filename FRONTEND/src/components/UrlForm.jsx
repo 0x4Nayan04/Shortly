@@ -9,6 +9,8 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth }) => {
   const [error, setError] = useState("");
   const [isCopied, setIsCopied] = useState(false);
   const [useCustomAlias, setUseCustomAlias] = useState(false);
+  const [expirationDate, setExpirationDate] = useState("");
+  const [useExpiration, setUseExpiration] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -31,6 +33,16 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth }) => {
       }
     }
 
+    // Validate expiration date if provided
+    if (useExpiration && expirationDate) {
+      const selectedDate = new Date(expirationDate);
+      const now = new Date();
+      if (selectedDate <= now) {
+        setError("Expiration date must be in the future.");
+        return;
+      }
+    }
+
     setLoading(true);
     setError("");
     setShortUrl("");
@@ -39,14 +51,24 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth }) => {
     try {
       let response;
 
+      // Prepare URL data with expiration if needed
+      const urlData = {
+        url,
+        ...(useExpiration && expirationDate && { expiresAt: expirationDate }),
+      };
+
       if (useCustomAlias && customAlias) {
         if (!user) {
           setError("Please sign in to use custom aliases");
           return;
         }
-        response = await createCustomShortUrl(url, customAlias);
+        response = await createCustomShortUrl(
+          urlData.url,
+          customAlias,
+          urlData.expiresAt
+        );
       } else {
-        response = await createShortUrl(url);
+        response = await createShortUrl(urlData.url, urlData.expiresAt);
       }
 
       if (response && response.data && response.data.short_url) {
@@ -59,6 +81,8 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth }) => {
         setUrl("");
         setCustomAlias("");
         setUseCustomAlias(false);
+        setExpirationDate("");
+        setUseExpiration(false);
       } else {
         console.error("Unexpected response structure:", response);
         setError("Failed to process the server response.");
@@ -157,6 +181,55 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth }) => {
                 minLength="3"
                 maxLength="20"
               />
+            </div>
+          )}
+
+          {/* Expiration Date Option */}
+          <div className="flex items-center space-x-3">
+            <label className="flex items-center space-x-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={useExpiration}
+                onChange={(e) => {
+                  setUseExpiration(e.target.checked);
+                  if (!e.target.checked) {
+                    setExpirationDate("");
+                  }
+                  setError(""); // Clear any existing errors
+                }}
+                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              />
+              <span className="text-sm text-gray-700">
+                Set expiration date
+                <span className="text-gray-500 ml-1">(optional)</span>
+              </span>
+            </label>
+          </div>
+
+          {useExpiration && (
+            <div className="flex gap-3 items-center">
+              <svg
+                className="w-5 h-5 text-gray-400 flex-shrink-0"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                />
+              </svg>
+              <input
+                type="datetime-local"
+                value={expirationDate}
+                onChange={(e) => setExpirationDate(e.target.value)}
+                min={new Date(Date.now() + 60000).toISOString().slice(0, 16)} // At least 1 minute from now
+                className="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              />
+              <span className="text-xs text-gray-500 whitespace-nowrap">
+                URL will expire on this date
+              </span>
             </div>
           )}
         </div>

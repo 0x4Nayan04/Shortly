@@ -6,6 +6,7 @@ import { redirectFromShortUrl } from "./src/controllers/shortUrl.controllers.js"
 import shortUrlCreate from "./src/routes/shortUrl.routes.js";
 import { errorHandler } from "../BACKEND/src/utlis/errorHandler.js";
 import authRoutes from "./src/routes/auth.routes.js";
+import analyticsRoutes from "./src/routes/analytics.routes.js";
 import { attachUser } from "./src/utlis/attachUser.js";
 dotenv.config("./.env");
 
@@ -13,25 +14,24 @@ const app = express();
 
 // Add CORS middleware
 app.use((req, res, next) => {
-  const allowedOrigins = ["http://localhost:5173"];
-  const origin = req.headers.origin;
-
-  if (allowedOrigins.includes(origin)) {
-    res.header("Access-Control-Allow-Origin", origin);
-  }
-
-  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  // Allow all origins for development
+  res.header("Access-Control-Allow-Origin", "http://localhost:5173");
+  res.header(
+    "Access-Control-Allow-Methods",
+    "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+  );
   res.header(
     "Access-Control-Allow-Headers",
-    "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+    "Origin, X-Requested-With, Content-Type, Accept, Authorization, Cookie"
   );
   res.header("Access-Control-Allow-Credentials", "true");
 
+  // Handle preflight requests
   if (req.method === "OPTIONS") {
-    res.sendStatus(200);
-  } else {
-    next();
+    return res.status(200).end();
   }
+
+  next();
 });
 
 app.use(express.json());
@@ -46,8 +46,10 @@ app.use("/api/create", shortUrlCreate);
 app.get("/:short_url", redirectFromShortUrl);
 
 /* auth */
-
 app.use("/api/auth", authRoutes);
+
+/* analytics */
+app.use("/api/analytics", analyticsRoutes);
 
 app.use(errorHandler); // Error handler middleware should be last
 

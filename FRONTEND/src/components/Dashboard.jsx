@@ -281,9 +281,30 @@ const Dashboard = ({ user }) => {
                       <p className="text-gray-600 text-sm truncate">
                         {url.full_url}
                       </p>
-                      <p className="text-gray-400 text-xs mt-1">
-                        Created {new Date(url.createdAt).toLocaleDateString()}
-                      </p>
+                      <div className="flex items-center space-x-4 mt-1">
+                        <p className="text-gray-400 text-xs">
+                          Created {new Date(url.createdAt).toLocaleDateString()}
+                        </p>
+                        {url.expiresAt && (
+                          <p
+                            className={`text-xs ${
+                              new Date(url.expiresAt) < new Date() ||
+                              url.isExpired
+                                ? "text-red-500"
+                                : new Date(url.expiresAt) <
+                                  new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+                                ? "text-orange-500"
+                                : "text-green-500"
+                            }`}>
+                            {new Date(url.expiresAt) < new Date() ||
+                            url.isExpired
+                              ? "⏰ Expired"
+                              : `⏰ Expires ${new Date(
+                                  url.expiresAt
+                                ).toLocaleDateString()}`}
+                          </p>
+                        )}
+                      </div>
                     </div>
                     <div className="flex items-center space-x-2">
                       <button
