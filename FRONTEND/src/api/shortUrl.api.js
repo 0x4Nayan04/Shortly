@@ -1,31 +1,19 @@
 import axiosinstance from "../utils/axiosInstance";
 
-export const createShortUrl = async (fullUrl, expiresAt = null) => {
+export const createShortUrl = async (fullUrl) => {
   const payload = {
     full_url: fullUrl,
   };
-
-  if (expiresAt) {
-    payload.expiresAt = expiresAt;
-  }
 
   const response = await axiosinstance.post(`api/create`, payload);
   return response;
 };
 
-export const createCustomShortUrl = async (
-  fullUrl,
-  customAlias,
-  expiresAt = null
-) => {
+export const createCustomShortUrl = async (fullUrl, customAlias) => {
   const payload = {
     full_url: fullUrl,
     custom_url: customAlias,
   };
-
-  if (expiresAt) {
-    payload.expiresAt = expiresAt;
-  }
 
   const response = await axiosinstance.post(`api/create/custom`, payload);
   return response;

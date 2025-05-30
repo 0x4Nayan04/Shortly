@@ -9,7 +9,6 @@ import {
 import Navbar from "./components/Navbar";
 import LandingPage from "./components/LandingPage";
 import Dashboard from "./components/Dashboard";
-import AnalyticsDashboard from "./components/AnalyticsDashboard";
 import LoginForm from "./components/LoginForm";
 import RegisterForm from "./components/RegisterForm";
 import AccountSettings from "./components/AccountSettings";
@@ -244,16 +243,6 @@ const App = () => {
             <ProtectedRoute
               user={user}
               component={<AccountSettings user={user} />}
-              navigate={navigate}
-            />
-          }
-        />
-        <Route
-          path="/analytics"
-          element={
-            <ProtectedRoute
-              user={user}
-              component={<AnalyticsDashboard user={user} />}
               navigate={navigate}
             />
           }

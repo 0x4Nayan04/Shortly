@@ -45,12 +45,7 @@ export const createShortUrlWithUser = async (full_url, userId) => {
   return short_url;
 };
 
-export const createCustomShortUrl = async (
-  full_url,
-  custom_url,
-  userId,
-  expiresAt = null
-) => {
+export const createCustomShortUrl = async (full_url, custom_url, userId) => {
   // Check if the custom URL already exists
   const existingShortUrl = await short_urlModel.findOne({
     short_url: custom_url,
@@ -75,7 +70,7 @@ export const createCustomShortUrl = async (
     );
   }
 
-  await saveShortUrl(custom_url, full_url, userId, expiresAt);
+  await saveShortUrl(custom_url, full_url, userId);
   return custom_url;
 };
 

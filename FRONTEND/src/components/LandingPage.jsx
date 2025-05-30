@@ -29,8 +29,8 @@ const LandingPage = ({ onShowAuth, user }) => {
                   Want to track and manage your links?
                 </h3>
                 <p className="text-blue-700 mb-4">
-                  Create an account to save your URLs, view analytics, and
-                  create custom short links.
+                  Create an account to save your URLs and create custom short
+                  links.
                 </p>
                 <button
                   onClick={onShowAuth}

@@ -50,7 +50,9 @@ const Navbar = ({ user, onLogout, onShowAuth, onShowProfile }) => {
                         e.target.nextSibling.style.display = "flex";
                       }}
                     />
-                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center hidden">
+                    <div
+                      className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center"
+                      style={{ display: "none" }}>
                       <span className="text-sm font-medium text-blue-600">
                         {(user.name || user.email || "U")
                           .charAt(0)
@@ -95,7 +97,9 @@ const Navbar = ({ user, onLogout, onShowAuth, onShowProfile }) => {
                             e.target.nextSibling.style.display = "flex";
                           }}
                         />
-                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center hidden">
+                        <div
+                          className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center"
+                          style={{ display: "none" }}>
                           <span className="text-sm font-medium text-blue-600">
                             {(user.name || user.email || "U")
                               .charAt(0)

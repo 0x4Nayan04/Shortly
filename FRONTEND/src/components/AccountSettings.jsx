@@ -212,18 +212,6 @@ const AccountSettings = ({ user }) => {
                       {userStats.totalClicks}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">
-                      Avg Clicks/URL
-                    </span>
-                    <span className="text-lg font-semibold text-gray-900">
-                      {userStats.totalUrls > 0
-                        ? Math.round(
-                            userStats.totalClicks / userStats.totalUrls
-                          )
-                        : 0}
-                    </span>
-                  </div>
                 </div>
               )}
             </div>

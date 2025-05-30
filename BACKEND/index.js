@@ -6,7 +6,6 @@ import { redirectFromShortUrl } from "./src/controllers/shortUrl.controllers.js"
 import shortUrlCreate from "./src/routes/shortUrl.routes.js";
 import { errorHandler } from "../BACKEND/src/utlis/errorHandler.js";
 import authRoutes from "./src/routes/auth.routes.js";
-import analyticsRoutes from "./src/routes/analytics.routes.js";
 import { attachUser } from "./src/utlis/attachUser.js";
 dotenv.config("./.env");
 
@@ -47,9 +46,6 @@ app.get("/:short_url", redirectFromShortUrl);
 
 /* auth */
 app.use("/api/auth", authRoutes);
-
-/* analytics */
-app.use("/api/analytics", analyticsRoutes);
 
 app.use(errorHandler); // Error handler middleware should be last
 
