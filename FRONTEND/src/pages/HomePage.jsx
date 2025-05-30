@@ -41,12 +41,16 @@ const HomePage = () => {
       await logoutUser();
       setUser(null);
       setCurrentView("home");
-      console.log("User logged out");
+      console.log("User logged out successfully");
     } catch (error) {
       console.error("Logout error:", error);
       // Force logout even if API call fails
+      // Clear any local storage or session storage if you're using it
+      localStorage.clear();
+      sessionStorage.clear();
       setUser(null);
       setCurrentView("home");
+      console.log("Forced local logout due to API error");
     }
   };
 

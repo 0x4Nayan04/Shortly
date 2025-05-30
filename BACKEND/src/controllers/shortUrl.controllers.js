@@ -173,3 +173,49 @@ export const createCustomShortUrl = async (req, res) => {
     });
   }
 };
+
+export const deleteShortUrl = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user._id;
+
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        message: "URL ID is required",
+      });
+    }
+
+    // Find the URL and verify ownership
+    const urlToDelete = await short_urlModel.findById(id);
+
+    if (!urlToDelete) {
+      return res.status(404).json({
+        success: false,
+        message: "URL not found",
+      });
+    }
+
+    // Check if the user owns this URL
+    if (urlToDelete.user.toString() !== userId.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "You can only delete your own URLs",
+      });
+    }
+
+    // Delete the URL
+    await short_urlModel.findByIdAndDelete(id);
+
+    res.json({
+      success: true,
+      message: "URL deleted successfully",
+    });
+  } catch (error) {
+    console.error("Error deleting short URL:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};

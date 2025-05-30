@@ -1,17 +1,35 @@
 import { useState, useEffect } from "react";
-import { createShortUrl } from "../api/shortUrl.api";
+import { createShortUrl, createCustomShortUrl } from "../api/shortUrl.api";
 
-const UrlForm = ({ onUrlCreated }) => {
+const UrlForm = ({ onUrlCreated, user, onShowAuth }) => {
   const [url, setUrl] = useState("");
+  const [customAlias, setCustomAlias] = useState("");
   const [shortUrl, setShortUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [isCopied, setIsCopied] = useState(false);
+  const [useCustomAlias, setUseCustomAlias] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!url) return;
+
+    // Validate custom alias if provided
+    if (useCustomAlias && customAlias) {
+      if (customAlias.length < 3 || customAlias.length > 20) {
+        setError("Custom alias must be between 3 and 20 characters long.");
+        return;
+      }
+
+      const validPattern = /^[a-zA-Z0-9_-]+$/;
+      if (!validPattern.test(customAlias)) {
+        setError(
+          "Custom alias can only contain letters, numbers, hyphens, and underscores."
+        );
+        return;
+      }
+    }
 
     setLoading(true);
     setError("");
@@ -19,7 +37,17 @@ const UrlForm = ({ onUrlCreated }) => {
     setIsCopied(false);
 
     try {
-      const response = await createShortUrl(url);
+      let response;
+
+      if (useCustomAlias && customAlias) {
+        if (!user) {
+          setError("Please sign in to use custom aliases");
+          return;
+        }
+        response = await createCustomShortUrl(url, customAlias);
+      } else {
+        response = await createShortUrl(url);
+      }
 
       if (response && response.data && response.data.short_url) {
         setShortUrl(response.data.short_url);
@@ -27,8 +55,10 @@ const UrlForm = ({ onUrlCreated }) => {
         if (onUrlCreated) {
           onUrlCreated();
         }
-        // Clear the input
+        // Clear the inputs
         setUrl("");
+        setCustomAlias("");
+        setUseCustomAlias(false);
       } else {
         console.error("Unexpected response structure:", response);
         setError("Failed to process the server response.");
@@ -65,21 +95,70 @@ const UrlForm = ({ onUrlCreated }) => {
   return (
     <div className="space-y-6">
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="flex gap-3">
-          <input
-            type="url"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            placeholder="Enter your long URL here..."
-            className="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-            required
-          />
-          <button
-            type="submit"
-            disabled={loading}
-            className="px-8 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white font-medium rounded-lg text-base transition-colors whitespace-nowrap">
-            {loading ? "Shortening..." : "Shorten"}
-          </button>
+        <div className="space-y-3">
+          <div className="flex gap-3">
+            <input
+              type="url"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder="Enter your long URL here..."
+              className="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              required
+            />
+            <button
+              type="submit"
+              disabled={loading}
+              className="px-8 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white font-medium rounded-lg text-base transition-colors whitespace-nowrap">
+              {loading ? "Shortening..." : "Shorten"}
+            </button>
+          </div>
+
+          {/* Custom Alias Option */}
+          <div className="flex items-center space-x-3">
+            <label className="flex items-center space-x-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={useCustomAlias}
+                onChange={(e) => {
+                  if (!user && e.target.checked) {
+                    // User is not logged in, show login prompt
+                    setError("Please sign in to use custom aliases");
+                    if (onShowAuth) {
+                      onShowAuth();
+                    }
+                    return;
+                  }
+                  setUseCustomAlias(e.target.checked);
+                  setError(""); // Clear any existing errors
+                }}
+                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              />
+              <span className="text-sm text-gray-700">
+                Use custom alias
+                {!user && (
+                  <span className="text-blue-600 ml-1">(requires login)</span>
+                )}
+              </span>
+            </label>
+          </div>
+
+          {useCustomAlias && (
+            <div className="flex gap-3 items-center">
+              <span className="text-sm text-gray-500 whitespace-nowrap">
+                localhost:3000/
+              </span>
+              <input
+                type="text"
+                value={customAlias}
+                onChange={(e) => setCustomAlias(e.target.value)}
+                placeholder="your-custom-alias"
+                className="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                pattern="[a-zA-Z0-9_-]+"
+                minLength="3"
+                maxLength="20"
+              />
+            </div>
+          )}
         </div>
       </form>
 

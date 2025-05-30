@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import UrlForm from "../components/UrlForm";
-import { getMyUrls } from "../api/shortUrl.api";
+import { getMyUrls, deleteShortUrl } from "../api/shortUrl.api";
 
 const Dashboard = ({ user }) => {
   const [myUrls, setMyUrls] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [copiedUrl, setCopiedUrl] = useState(null);
+  const [deletingUrl, setDeletingUrl] = useState(null);
 
   const fetchMyUrls = async () => {
     setLoading(true);
@@ -35,6 +36,24 @@ const Dashboard = ({ user }) => {
     });
   };
 
+  const handleDeleteUrl = async (urlId) => {
+    if (!confirm("Are you sure you want to delete this URL?")) {
+      return;
+    }
+
+    setDeletingUrl(urlId);
+    try {
+      await deleteShortUrl(urlId);
+      // Refresh the list after successful deletion
+      await fetchMyUrls();
+    } catch (err) {
+      setError("Failed to delete URL");
+      console.error("Error deleting URL:", err);
+    } finally {
+      setDeletingUrl(null);
+    }
+  };
+
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-gray-50">
       <div className="max-w-6xl mx-auto px-4 py-8">
@@ -51,7 +70,7 @@ const Dashboard = ({ user }) => {
           <h2 className="text-xl font-semibold text-gray-900 mb-6">
             Create New Short URL
           </h2>
-          <UrlForm onUrlCreated={fetchMyUrls} />
+          <UrlForm onUrlCreated={fetchMyUrls} user={user} />
         </div>
 
         {/* My URLs Section */}
@@ -120,51 +139,76 @@ const Dashboard = ({ user }) => {
                         Created {new Date(url.createdAt).toLocaleDateString()}
                       </p>
                     </div>
-                    <button
-                      onClick={() =>
-                        copyToClipboard(
-                          `http://localhost:3000/${url.short_url}`
-                        )
-                      }
-                      className={`ml-4 p-2 transition-colors ${
-                        copiedUrl === `http://localhost:3000/${url.short_url}`
-                          ? "text-green-600"
-                          : "text-gray-400 hover:text-gray-600"
-                      }`}
-                      title={
-                        copiedUrl === `http://localhost:3000/${url.short_url}`
-                          ? "Copied!"
-                          : "Copy to clipboard"
-                      }>
-                      {copiedUrl ===
-                      `http://localhost:3000/${url.short_url}` ? (
-                        <svg
-                          className="w-5 h-5"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24">
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M5 13l4 4L19 7"
-                          />
-                        </svg>
-                      ) : (
-                        <svg
-                          className="w-5 h-5"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24">
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                          />
-                        </svg>
-                      )}
-                    </button>
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() =>
+                          copyToClipboard(
+                            `http://localhost:3000/${url.short_url}`
+                          )
+                        }
+                        className={`p-2 transition-colors ${
+                          copiedUrl === `http://localhost:3000/${url.short_url}`
+                            ? "text-green-600"
+                            : "text-gray-400 hover:text-gray-600"
+                        }`}
+                        title={
+                          copiedUrl === `http://localhost:3000/${url.short_url}`
+                            ? "Copied!"
+                            : "Copy to clipboard"
+                        }>
+                        {copiedUrl ===
+                        `http://localhost:3000/${url.short_url}` ? (
+                          <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M5 13l4 4L19 7"
+                            />
+                          </svg>
+                        ) : (
+                          <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                            />
+                          </svg>
+                        )}
+                      </button>
+                      
+                      <button
+                        onClick={() => handleDeleteUrl(url._id)}
+                        disabled={deletingUrl === url._id}
+                        className="p-2 text-gray-400 hover:text-red-600 transition-colors disabled:opacity-50"
+                        title="Delete URL">
+                        {deletingUrl === url._id ? (
+                          <div className="w-5 h-5 animate-spin rounded-full border-2 border-gray-300 border-t-red-600"></div>
+                        ) : (
+                          <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                            />
+                          </svg>
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
