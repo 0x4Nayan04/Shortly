@@ -12,4 +12,5 @@ export const saveShortUrl = async (short_url, long_url, user_Id) => {
   }
   // Save the new short URL to the database
   await newShortUrl.save();
+  return newShortUrl;
 };

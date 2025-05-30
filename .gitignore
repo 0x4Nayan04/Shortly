@@ -142,3 +142,4 @@ dist
 .svelte-kit
 
 # End of https://www.toptal.com/developers/gitignore/api/node
+BACKEND/src/services/Invalid email or password.code-search
