@@ -33,6 +33,19 @@ const Navbar = ({ user, onLogout, onShowAuth, onShowProfile }) => {
             </h1>
           </div>
 
+          {/* Navigation Links (Desktop) */}
+          <div className="hidden md:flex items-center space-x-8">
+            <a href="#features" className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors duration-200">
+              Features
+            </a>
+            <a href="#pricing" className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors duration-200">
+              Pricing
+            </a>
+            <a href="#docs" className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors duration-200">
+              Docs
+            </a>
+          </div>
+
           {/* User Menu */}
           <div className="flex items-center space-x-6">
             {user ? (
@@ -65,15 +78,11 @@ const Navbar = ({ user, onLogout, onShowAuth, onShowProfile }) => {
                       <div className="text-sm font-semibold text-gray-900 leading-tight">
                         {user.name}
                       </div>
-                      <div className="text-xs text-gray-500 mt-0.5">
-                        {user.email}
-                      </div>
+                      <div className="text-xs text-gray-500 mt-0.5">{user.email}</div>
                     </div>
                     <svg
                       className={`w-4 h-4 text-gray-400 transition-all duration-200 ${
-                        isDropdownOpen
-                          ? "rotate-180 text-indigo-500"
-                          : "group-hover:text-gray-600"
+                        isDropdownOpen ? "rotate-180 text-indigo-500" : "group-hover:text-gray-600"
                       }`}
                       fill="none"
                       stroke="currentColor"
@@ -134,22 +143,9 @@ const Navbar = ({ user, onLogout, onShowAuth, onShowProfile }) => {
                         }}
                         className="flex items-center w-full px-5 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50/80 hover:text-gray-900 transition-all duration-200 group">
                         <div className="w-5 h-5 mr-3 text-gray-400 group-hover:text-indigo-500 transition-colors duration-200">
-                          <svg
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24">
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z"
-                            />
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M8 5a2 2 0 012-2h4a2 2 0 012 2v6H8V5z"
-                            />
+                          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5a2 2 0 012-2h4a2 2 0 012 2v6H8V5z" />
                           </svg>
                         </div>
                         Dashboard
@@ -162,16 +158,8 @@ const Navbar = ({ user, onLogout, onShowAuth, onShowProfile }) => {
                         }}
                         className="flex items-center w-full px-5 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50/80 hover:text-gray-900 transition-all duration-200 group">
                         <div className="w-5 h-5 mr-3 text-gray-400 group-hover:text-indigo-500 transition-colors duration-200">
-                          <svg
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24">
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                            />
+                          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                           </svg>
                         </div>
                         View Profile
@@ -184,22 +172,9 @@ const Navbar = ({ user, onLogout, onShowAuth, onShowProfile }) => {
                         }}
                         className="flex items-center w-full px-5 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50/80 hover:text-gray-900 transition-all duration-200 group">
                         <div className="w-5 h-5 mr-3 text-gray-400 group-hover:text-indigo-500 transition-colors duration-200">
-                          <svg
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24">
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-                            />
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                            />
+                          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                           </svg>
                         </div>
                         Settings
@@ -215,16 +190,8 @@ const Navbar = ({ user, onLogout, onShowAuth, onShowProfile }) => {
                         }}
                         className="flex items-center w-full px-5 py-3 text-sm font-medium text-red-600 hover:bg-red-50/80 hover:text-red-700 transition-all duration-200 group">
                         <div className="w-5 h-5 mr-3 text-red-500 group-hover:text-red-600 transition-colors duration-200">
-                          <svg
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24">
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                            />
+                          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                           </svg>
                         </div>
                         Sign out

@@ -33,6 +33,25 @@ const Navbar = ({ user, onLogout, onShowAuth, onShowProfile }) => {
             </h1>
           </div>
 
+          {/* Navigation Links (Desktop) */}
+          <div className="hidden md:flex items-center space-x-8">
+            <a
+              href="#features"
+              className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors duration-200">
+              Features
+            </a>
+            <a
+              href="#pricing"
+              className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors duration-200">
+              Pricing
+            </a>
+            <a
+              href="#docs"
+              className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors duration-200">
+              Docs
+            </a>
+          </div>
+
           {/* User Menu */}
           <div className="flex items-center space-x-6">
             {user ? (
