@@ -6,6 +6,7 @@ import { redirectFromShortUrl } from "./src/controllers/shortUrl.controllers.js"
 import shortUrlCreate from "./src/routes/shortUrl.routes.js";
 import { errorHandler } from "../BACKEND/src/utlis/errorHandler.js";
 import authRoutes from "./src/routes/auth.routes.js";
+import { attachUser } from "./src/utlis/attachUser.js";
 dotenv.config("./.env");
 
 const app = express();
@@ -18,6 +19,7 @@ app.use((req, res, next) => {
     "Access-Control-Allow-Headers",
     "Origin, X-Requested-With, Content-Type, Accept, Authorization"
   );
+  res.header("Access-Control-Allow-Credentials", "true");
 
   if (req.method === "OPTIONS") {
     res.sendStatus(200);
@@ -29,6 +31,7 @@ app.use((req, res, next) => {
 app.use(express.json());
 app.use(urlencoded({ extended: true })); // for url encode (payload)
 app.use(cookieParser()); // for parsing cookies
+app.use(attachUser);
 
 /* Create */
 app.use("/api/create", shortUrlCreate);

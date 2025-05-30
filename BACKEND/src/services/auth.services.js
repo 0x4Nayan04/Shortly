@@ -14,7 +14,6 @@ export const registerUser = async (name, email, password) => {
 
     // User doesn't exist, create new user
     const newUser = await createUser(name, email, password);
-    console.log("New user created:", newUser);
 
     const token = await signToken({ id: newUser._id });
     return token;

@@ -1,6 +1,7 @@
 import express from "express";
 import {
   createShortUrl,
+  createCustomShortUrl,
   getUserUrls,
 } from "../controllers/shortUrl.controllers.js";
 import {
@@ -14,6 +15,7 @@ const router = express.Router();
 router.post("/", optionalAuth, createShortUrl);
 
 // Protected routes - require authentication
+router.post("/custom", isAuthenticated, createCustomShortUrl); // Create custom short URL (requires auth)
 router.get("/my-urls", isAuthenticated, getUserUrls); // Get all URLs created by authenticated user
 
 export default router;
