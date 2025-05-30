@@ -6,3 +6,8 @@ export const createShortUrl = async (fullUrl) => {
   });
   return response;
 };
+
+export const getMyUrls = async () => {
+  const response = await axiosinstance.get(`api/create/my-urls`);
+  return response;
+};

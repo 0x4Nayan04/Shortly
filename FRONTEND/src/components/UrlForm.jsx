@@ -1,13 +1,12 @@
-import { useState, useEffect } from "react"; // Import useEffect
+import { useState, useEffect } from "react";
 import { createShortUrl } from "../api/shortUrl.api";
 
-const UrlForm = () => {
+const UrlForm = ({ onUrlCreated }) => {
   const [url, setUrl] = useState("");
   const [shortUrl, setShortUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [isCopied, setIsCopied] = useState(false); // New state for copy status
-  const API_URL = "http://localhost:3000";
+  const [isCopied, setIsCopied] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -17,13 +16,19 @@ const UrlForm = () => {
     setLoading(true);
     setError("");
     setShortUrl("");
-    setIsCopied(false); // Reset copied status on new submission
+    setIsCopied(false);
 
     try {
       const response = await createShortUrl(url);
 
       if (response && response.data && response.data.short_url) {
-        setShortUrl(`${API_URL}/${response.data.short_url}`);
+        setShortUrl(response.data.short_url);
+        // Call the callback if provided (for dashboard refresh)
+        if (onUrlCreated) {
+          onUrlCreated();
+        }
+        // Clear the input
+        setUrl("");
       } else {
         console.error("Unexpected response structure:", response);
         setError("Failed to process the server response.");
@@ -58,50 +63,79 @@ const UrlForm = () => {
   }, [isCopied]);
 
   return (
-    <div>
+    <div className="space-y-6">
       <form onSubmit={handleSubmit} className="space-y-4">
-        <input
-          type="url"
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
-          placeholder="Enter your long URL here..."
-          className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-base focus:outline-none focus:border-blue-500 transition-colors"
-          required
-        />
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full py-3 bg-blue-600 hover:bg-blue-700 hover:cursor-pointer disabled:bg-blue-400 disabled:cursor-not-allowed text-white font-medium rounded-lg text-base transition-colors">
-          {loading ? "Shortening..." : "Shorten URL"}
-        </button>
+        <div className="flex gap-3">
+          <input
+            type="url"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            placeholder="Enter your long URL here..."
+            className="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+            required
+          />
+          <button
+            type="submit"
+            disabled={loading}
+            className="px-8 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white font-medium rounded-lg text-base transition-colors whitespace-nowrap">
+            {loading ? "Shortening..." : "Shorten"}
+          </button>
+        </div>
       </form>
 
       {error && (
-        <div className="mt-4 p-3 bg-red-100 border border-red-300 text-red-700 rounded-lg">
-          {error}
+        <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
+          <div className="flex items-center">
+            <svg
+              className="w-5 h-5 mr-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            {error}
+          </div>
         </div>
       )}
 
       {shortUrl && (
-        <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
-          <p className="font-semibold text-gray-700 mb-3">Short URL:</p>
-          <div className="flex gap-2">
+        <div className="p-6 bg-green-50 border border-green-200 rounded-lg">
+          <div className="flex items-center mb-3">
+            <svg
+              className="w-5 h-5 text-green-600 mr-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M5 13l4 4L19 7"
+              />
+            </svg>
+            <span className="font-medium text-green-800">
+              URL shortened successfully!
+            </span>
+          </div>
+          <div className="flex items-center gap-3">
             <input
               type="text"
               value={shortUrl}
               readOnly
-              className="flex-1 px-3 py-2 border border-gray-300 rounded bg-gray-50 text-sm"
+              className="flex-1 px-3 py-2 border border-green-300 rounded-lg bg-white text-sm font-mono"
             />
             <button
               onClick={copyToClipboard}
-              disabled={isCopied} // Optionally disable button while in "Copied!" state
-              className={`px-4 py-2 font-medium text-white rounded transition-colors
-                ${
-                  isCopied
-                    ? "bg-green-400 cursor-default" // Lighter green and default cursor when copied
-                    : "bg-green-600 hover:bg-green-700 hover:cursor-pointer"
-                }`}>
+              className={`px-4 py-2 font-medium rounded-lg transition-colors ${
+                isCopied
+                  ? "bg-green-600 text-white"
+                  : "bg-green-100 text-green-700 hover:bg-green-200"
+              }`}>
               {isCopied ? "Copied!" : "Copy"}
             </button>
           </div>
