@@ -14,7 +14,6 @@ export const createShortUrl = async (req, res) => {
       return res.status(400).json({ message: "Full URL is required" });
     }
 
-    // Check if user is authenticated (from optionalAuth middleware)
     const userId = req.user ? req.user._id : null;
 
     // Check if this URL already exists for this user or globally
@@ -84,14 +83,11 @@ export const getUserUrls = async (req, res) => {
   try {
     const userId = req.user._id;
 
-    // Debug: Check what's in the database
-    const allUrls = await short_urlModel.find({});
-
     // Get all URLs created by the authenticated user
     const userUrls = await short_urlModel
       .find({ user: userId })
       .sort({ createdAt: -1 }) // Sort by newest first
-      .select("full_url short_url click createdAt title description");
+      .select("full_url short_url click createdAt ");
 
     console.log("Found user URLs:", userUrls);
 
