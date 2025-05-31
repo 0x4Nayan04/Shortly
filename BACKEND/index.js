@@ -49,7 +49,9 @@ app.use("/api/auth", authRoutes);
 
 app.use(errorHandler); // Error handler middleware should be last
 
-app.listen(3000, () => {
+const PORT = process.env.PORT || 3001;
+
+app.listen(PORT, () => {
   connectDB();
-  console.log(`Server is running on 3000`);
+  console.log(`Server is running on port ${PORT}`);
 });

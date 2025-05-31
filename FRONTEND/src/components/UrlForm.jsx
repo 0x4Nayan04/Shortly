@@ -145,7 +145,7 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth }) => {
           {useCustomAlias && (
             <div className="flex gap-3 items-center">
               <span className="text-sm text-gray-500 whitespace-nowrap">
-                localhost:3000/
+                localhost:3001/
               </span>
               <input
                 type="text"

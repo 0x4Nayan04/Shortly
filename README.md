@@ -85,7 +85,7 @@ MONGODB_URI=mongodb://localhost:27017/url_shortener
 JWT_SECRET=your_super_secret_jwt_key_here
 
 # Server Configuration
-PORT=3000
+PORT=3001
 NODE_ENV=development
 
 # Frontend URL (for CORS)
@@ -102,7 +102,7 @@ npm run dev
 npm start
 ```
 
-The backend server will start on `http://localhost:3000`
+The backend server will start on `http://localhost:3001`
 
 ### 3. Frontend Setup
 
@@ -118,7 +118,7 @@ npm install
 Create a `.env` file in the `FRONTEND` directory if you need custom API URLs:
 
 ```env
-VITE_API_BASE_URL=http://localhost:3000
+VITE_API_BASE_URL=http://localhost:3001
 ```
 
 #### Start the Frontend Development Server
@@ -138,7 +138,7 @@ Open your browser and navigate to `http://localhost:5173` to start using Shortly
 ### Base URL
 
 ```
-http://localhost:3000
+http://localhost:3001
 ```
 
 ### Authentication Endpoints
