@@ -21,14 +21,6 @@ const shortUrlSchema = mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
-    title: {
-      type: String,
-      default: "",
-    },
-    description: {
-      type: String,
-      default: "",
-    },
   },
   {
     timestamps: true, // This adds createdAt and updatedAt fields automatically
