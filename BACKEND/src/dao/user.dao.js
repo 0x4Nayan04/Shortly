@@ -3,6 +3,9 @@ import User from "../schema/user.model.js";
 export const findUserByEmail = async (email) => {
   try {
     const user = await User.findOne({ email: email });
+    if (!user) {
+      throw new Error("User not found");
+    }
     return user; // Return user or null if not found
   } catch (error) {
     throw new Error(`Error finding user: ${error.message}`);
