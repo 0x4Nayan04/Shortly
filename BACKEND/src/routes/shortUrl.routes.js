@@ -5,15 +5,12 @@ import {
   getUserUrls,
   deleteShortUrl,
 } from "../controllers/shortUrl.controllers.js";
-import {
-  optionalAuth,
-  isAuthenticated,
-} from "../middleware/auth.middleware.js";
+import { isAuthenticated } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
-// Public route - creates short URL, optionally associates with user if authenticated
-router.post("/", optionalAuth, createShortUrl);
+// Public route - creates short URL, no authentication required
+router.post("/", createShortUrl);
 
 // Protected routes - require authentication
 router.post("/custom", isAuthenticated, createCustomShortUrl); // Create custom short URL (requires auth)
