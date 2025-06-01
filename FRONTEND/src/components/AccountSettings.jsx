@@ -1,5 +1,4 @@
-import { useState, useEffect } from "react";
-import { getCurrentUser } from "../api/user.api";
+import { useEffect, useState } from "react";
 import { getMyUrls } from "../api/shortUrl.api";
 
 const AccountSettings = ({ user }) => {
@@ -190,11 +189,9 @@ const AccountSettings = ({ user }) => {
               {loading ? (
                 <div className="space-y-4">
                   <div className="animate-pulse">
-                    <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
                     <div className="h-8 bg-gray-200 rounded"></div>
                   </div>
                   <div className="animate-pulse">
-                    <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
                     <div className="h-8 bg-gray-200 rounded"></div>
                   </div>
                 </div>
