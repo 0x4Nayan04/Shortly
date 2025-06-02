@@ -1,11 +1,11 @@
+import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
 import express, { urlencoded } from "express";
-import cookieParser from "cookie-parser";
+import { errorHandler } from "../BACKEND/src/utlis/errorHandler.js";
 import connectDB from "./src/config/monogo.config.js";
 import { redirectFromShortUrl } from "./src/controllers/shortUrl.controllers.js";
-import shortUrlCreate from "./src/routes/shortUrl.routes.js";
-import { errorHandler } from "../BACKEND/src/utlis/errorHandler.js";
 import authRoutes from "./src/routes/auth.routes.js";
+import shortUrlCreate from "./src/routes/shortUrl.routes.js";
 import { attachUser } from "./src/utlis/attachUser.js";
 dotenv.config("./.env");
 
