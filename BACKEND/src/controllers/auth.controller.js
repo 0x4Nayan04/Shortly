@@ -15,7 +15,7 @@ export const register_user = async (req, res, next) => {
     }
 
     const token = await registerUser(name, email, password);
-    res.cookie("accessToken", token, cookieOptions); // Set cookie with token
+    res.cookie("token", token, cookieOptions); // Set cookie with token
     res.status(201).json({ success: true, token });
   } catch (error) {
     next(error); // Pass errors to the centralized error handler

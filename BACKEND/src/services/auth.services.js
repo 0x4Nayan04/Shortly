@@ -33,14 +33,14 @@ export const loginUser = async (email, password) => {
     const user = await findUserByEmail(email);
 
     if (!user) {
-      throw new AppError("Invalid Credentitals", 401);
+      throw new AppError("Invalid Credentials", 401);
     }
 
     // Assuming you have a comparePassword method on your user model
     const isMatch = await user.comparePassword(password);
 
     if (!isMatch) {
-      throw new AppError("Invalid Credentitals", 401);
+      throw new AppError("Invalid Credentials", 401);
     }
 
     const token = await signToken({ id: user._id, email: user.email });

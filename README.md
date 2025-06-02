@@ -86,10 +86,11 @@ JWT_SECRET=your_super_secret_jwt_key_here
 
 # Server Configuration
 PORT=3001
-NODE_ENV=development
+NODE_ENV=production
 
-# Frontend URL (for CORS)
-FRONTEND_URL=http://localhost:5173
+# URLs for CORS and cookie settings
+VITE_APP_URL=https://shortly-ky6a.onrender.com
+FRONT_END_URL=https://shortly-livid.vercel.app
 ```
 
 #### Start the Backend Server
@@ -113,12 +114,12 @@ cd FRONTEND
 npm install
 ```
 
-#### Environment Configuration (Optional)
+#### Environment Configuration
 
-Create a `.env` file in the `FRONTEND` directory if you need custom API URLs:
+Create a `.env` file in the `FRONTEND` directory:
 
 ```env
-VITE_API_BASE_URL=http://localhost:3001
+VITE_APP_URL=https://shortly-ky6a.onrender.com
 ```
 
 #### Start the Frontend Development Server
@@ -133,20 +134,79 @@ The frontend will start on `http://localhost:5173`
 
 Open your browser and navigate to `http://localhost:5173` to start using Shortly!
 
+## 🔧 Production Deployment
+
+### Backend Deployment (Render.com)
+
+1. **Environment Variables**: Set the following in your Render dashboard:
+   ```env
+   MONGODB_URI=your_mongodb_atlas_connection_string
+   JWT_SECRET=your_jwt_secret
+   NODE_ENV=production
+   PORT=10000
+   VITE_APP_URL=https://shortly-ky6a.onrender.com
+   FRONT_END_URL=https://shortly-livid.vercel.app
+   ```
+
+2. **Build Command**: `npm install`
+3. **Start Command**: `npm start`
+
+### Frontend Deployment (Vercel)
+
+1. **Environment Variables**: Set in your Vercel dashboard:
+   ```env
+   VITE_APP_URL=https://shortly-ky6a.onrender.com
+   ```
+
+2. **Build Settings**: 
+   - Build Command: `npm run build`
+   - Output Directory: `dist`
+
+### Common Deployment Issues & Solutions
+
+#### Authentication Issues (401 Errors)
+- **Problem**: "Access denied. No token provided" or cookies not being sent
+- **Root Causes**: 
+  - Cookie configuration not set for production
+  - `sameSite` and `secure` flags incorrect
+  - Cookie name mismatch between login and authentication middleware
+- **Solutions**: 
+  - Ensure `NODE_ENV=production` is set
+  - Use `sameSite: 'none'` and `secure: true` for cross-origin production
+  - Verify cookie names match between login (`token`) and middleware (`token`)
+
+#### Database Connection Issues (500 Errors)
+- **Problem**: "User not found", MongoDB connection failures
+- **Root Causes**:
+  - Incorrect MongoDB Atlas connection string
+  - IP whitelist restrictions
+  - Missing database name in connection string
+- **Solutions**:
+  - Verify MongoDB Atlas connection string format: 
+    `mongodb+srv://username:password@cluster.mongodb.net/database_name`
+  - Add `0.0.0.0/0` to IP whitelist for production (or specific deployment IPs)
+  - Ensure database name is included in connection string
+
+#### CORS Issues
+- **Problem**: Cross-origin requests blocked
+- **Solutions**:
+  - Use `cors` package instead of manual headers
+  - Set `credentials: true` in CORS options
+  - Ensure `FRONT_END_URL` exactly matches your frontend domain
+
 ## 📡 API Documentation
 
 ### Base URL
 
-```
-http://localhost:3001
-```
+**Development:** `http://localhost:3001`
+**Production:** `https://shortly-ky6a.onrender.com`
 
 ### Authentication Endpoints
 
 #### Register User
 
 ```http
-POST /auth/register
+POST /api/auth/register
 Content-Type: application/json
 
 {
@@ -159,7 +219,7 @@ Content-Type: application/json
 #### Login User
 
 ```http
-POST /auth/login
+POST /api/auth/login
 Content-Type: application/json
 
 {
@@ -171,14 +231,14 @@ Content-Type: application/json
 #### Get User Profile
 
 ```http
-GET /auth/profile
+GET /api/auth/me
 Authorization: Bearer <jwt_token>
 ```
 
 #### Logout User
 
 ```http
-POST /auth/logout
+POST /api/auth/logout
 Authorization: Bearer <jwt_token>
 ```
 
@@ -187,7 +247,7 @@ Authorization: Bearer <jwt_token>
 #### Create Short URL (Public)
 
 ```http
-POST /api/short-url
+POST /api/create
 Content-Type: application/json
 
 {
@@ -198,27 +258,27 @@ Content-Type: application/json
 #### Create Custom Short URL (Authenticated)
 
 ```http
-POST /api/short-url/custom
+POST /api/create/custom
 Authorization: Bearer <jwt_token>
 Content-Type: application/json
 
 {
   "full_url": "https://www.example.com/very/long/url/path",
-  "custom_alias": "my-custom-link"
+  "custom_url": "my-custom-link"
 }
 ```
 
 #### Get User's URLs
 
 ```http
-GET /api/short-url/my-urls
+GET /api/create/my-urls
 Authorization: Bearer <jwt_token>
 ```
 
 #### Delete URL
 
 ```http
-DELETE /api/short-url/:id
+DELETE /api/create/:id
 Authorization: Bearer <jwt_token>
 ```
 
@@ -283,10 +343,39 @@ GET /:short_code
 ## 🔒 Security Features
 
 - **Password Hashing** - bcrypt with salt rounds for secure password storage
-- **JWT Authentication** - Secure token-based authentication
+- **JWT Authentication** - Secure token-based authentication with HTTP-only cookies
 - **Input Validation** - Server-side validation for all user inputs
 - **CORS Protection** - Configured cross-origin resource sharing
 - **SQL Injection Prevention** - MongoDB and Mongoose protection
+- **Secure Cookies** - Production-ready cookie configuration with secure flags
+
+## 🐛 Troubleshooting
+
+### Common Issues
+
+#### Authentication Problems
+- **Symptoms**: 401 errors, "Access denied. No token provided"
+- **Causes**: Cookie not being sent cross-origin, incorrect environment variables
+- **Solutions**: 
+  - Verify `FRONT_END_URL` matches your frontend domain exactly
+  - Ensure cookies are configured with `sameSite: 'none'` and `secure: true` for production
+
+#### Database Connection Issues
+- **Symptoms**: 500 errors, "User not found", connection timeouts
+- **Causes**: MongoDB connection string issues, network restrictions
+- **Solutions**:
+  - Verify MongoDB Atlas connection string format
+  - Check IP whitelist settings in MongoDB Atlas
+  - Ensure database name is correct in connection string
+
+#### CORS Errors
+- **Symptoms**: Cross-origin request blocked, preflight failures
+- **Causes**: Incorrect CORS configuration
+- **Solutions**:
+  - Verify `Access-Control-Allow-Origin` header matches frontend URL
+  - Ensure credentials are allowed with `Access-Control-Allow-Credentials: true`
+
+## 🤝 Contributing
 
 We welcome contributions! Please follow these steps:
 
