@@ -49,7 +49,7 @@ app.use("/api/auth", authRoutes);
 
 app.use(errorHandler); // Error handler middleware should be last
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT ;
 
 app.listen(PORT, () => {
   connectDB();

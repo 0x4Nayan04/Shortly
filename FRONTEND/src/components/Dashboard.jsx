@@ -270,11 +270,11 @@ const Dashboard = ({ user }) => {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center space-x-3 mb-2">
                         <a
-                          href={`http://localhost:3001/${url.short_url}`}
+                          href={`${import.meta.env.VITE_APP_URL}/${url.short_url}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-blue-600 hover:text-blue-800 font-medium">
-                          localhost:3001/{url.short_url}
+                          {import.meta.env.VITE_APP_URL }/{url.short_url}
                         </a>
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                           {url.click} clicks
@@ -293,21 +293,21 @@ const Dashboard = ({ user }) => {
                       <button
                         onClick={() =>
                           copyToClipboard(
-                            `http://localhost:3001/${url.short_url}`
+                            `${import.meta.env.VITE_APP_URL}/${url.short_url}`
                           )
                         }
                         className={`p-2 transition-colors ${
-                          copiedUrl === `http://localhost:3001/${url.short_url}`
+                          copiedUrl === `${import.meta.env.VITE_APP_URL }/${url.short_url}`
                             ? "text-green-600"
                             : "text-gray-400 hover:text-gray-600"
                         }`}
                         title={
-                          copiedUrl === `http://localhost:3001/${url.short_url}`
+                          copiedUrl === `${import.meta.env.VITE_APP_URL }/${url.short_url}`
                             ? "Copied!"
                             : "Copy to clipboard"
                         }>
                         {copiedUrl ===
-                        `http://localhost:3001/${url.short_url}` ? (
+                        `${import.meta.env.VITE_APP_URL }/${url.short_url}` ? (
                           <svg
                             className="w-5 h-5"
                             fill="none"
