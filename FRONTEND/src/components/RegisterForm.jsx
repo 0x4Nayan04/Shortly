@@ -228,7 +228,7 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-3 bg-green-600 hover:bg-green-700 disabled:bg-green-400 disabled:cursor-not-allowed text-white font-medium rounded-lg text-base transition-colors">
+          className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white font-medium rounded-lg text-base transition-colors">
           {loading ? "Creating Account..." : "Create Account"}
         </button>
       </form>
