@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 import express, { urlencoded } from "express";
 import helmet from "helmet";
 import compression from "compression";
-import { errorHandler, ForbiddenError } from "../BACKEND/src/utils/errorHandler.js";
+import { errorHandler, ForbiddenError } from "./src/utils/errorHandler.js";
 import connectDB from "./src/config/monogo.config.js";
 import { redirectFromShortUrl } from "./src/controllers/shortUrl.controllers.js";
 import authRoutes from "./src/routes/auth.routes.js";
