@@ -64,7 +64,7 @@ const corsOptions = {
     "Cookie",
     "Cache-Control"
   ],
-  exposedHeaders: ["X-Total-Count", "X-Rate-Limit-Remaining"],
+  exposedHeaders: ["X-Total-Count"],
   maxAge: 86400 // Cache preflight response for 24 hours
 };
 
