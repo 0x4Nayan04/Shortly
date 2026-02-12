@@ -1,6 +1,6 @@
 import { saveShortUrl } from "../dao/shortUrl.dao.js";
 import short_urlModel from "../schema/shortUrl.model.js";
-import { generateNanoId } from "../utlis/helper.js";
+import { generateNanoId } from "../utils/helper.js";
 
 // Helper function to generate a unique short URL
 const generateUniqueShortUrl = async () => {

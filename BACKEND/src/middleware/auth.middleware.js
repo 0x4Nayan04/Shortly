@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import { AppError } from "../utlis/errorHandler.js";
+import { AppError } from "../utils/errorHandler.js";
 import { findUserById } from "../dao/user.dao.js";
 
 /**

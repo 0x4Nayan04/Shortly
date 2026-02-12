@@ -1,6 +1,6 @@
 import { createUser, findUserByEmail } from "../dao/user.dao.js";
-import { signToken } from "../utlis/helper.js";
-import { AppError } from "../utlis/errorHandler.js";
+import { signToken } from "../utils/helper.js";
+import { AppError } from "../utils/errorHandler.js";
 
 export const registerUser = async (name, email, password) => {
   try {

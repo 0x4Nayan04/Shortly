@@ -1,22 +1,21 @@
 import { registerUser, loginUser } from "../services/auth.services.js";
 import { findUserById } from "../dao/user.dao.js";
 import { cookieOptions } from "../config/config.js";
+import { ERROR_MESSAGES, SUCCESS_MESSAGES, successResponse, errorResponse } from "../utils/responseMessages.js";
 
 export const register_user = async (req, res, next) => {
   try {
     const { name, email, password } = req.body;
 
     if (!name || !email || !password) {
-      // It's good practice to validate input early
-      return res.status(400).json({
-        success: false,
-        message: "Name, email, and password are required.",
-      });
+      return res.status(400).json(
+        errorResponse(ERROR_MESSAGES.VALIDATION.REQUIRED_FIELDS)
+      );
     }
 
     const token = await registerUser(name, email, password);
-    res.cookie("token", token, cookieOptions); // Set cookie with token
-    res.status(201).json({ success: true, token });
+    res.cookie("token", token, cookieOptions);
+    res.status(201).json(successResponse(SUCCESS_MESSAGES.AUTH.REGISTER_SUCCESS, { token }));
   } catch (error) {
     next(error); // Pass errors to the centralized error handler
   }
@@ -29,7 +28,7 @@ export const login_user = async (req, res, next) => {
     if (!email || !password) {
       return res
         .status(400)
-        .json({ success: false, message: "Email and password are required." });
+        .json(errorResponse(ERROR_MESSAGES.VALIDATION.REQUIRED_FIELDS));
     }
 
     const { token, user } = await loginUser(email, password);
@@ -37,7 +36,7 @@ export const login_user = async (req, res, next) => {
     res
       .cookie("token", token, cookieOptions)
       .status(200)
-      .json({ success: true, user, token });
+      .json(successResponse(SUCCESS_MESSAGES.AUTH.LOGIN_SUCCESS, { user, token }));
   } catch (error) {
     next(error);
   }
