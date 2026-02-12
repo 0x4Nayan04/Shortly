@@ -91,6 +91,9 @@ NODE_ENV=production
 # URLs for CORS and cookie settings
 VITE_APP_URL=https://shortly-ky6a.onrender.com
 FRONT_END_URL=https://shortly-livid.vercel.app
+
+# Optional: Multiple allowed origins for CORS (comma-separated)
+# ALLOWED_ORIGINS=https://app1.example.com,https://app2.example.com
 ```
 
 #### Start the Backend Server
@@ -146,6 +149,8 @@ Open your browser and navigate to `http://localhost:5173` to start using Shortly
    PORT=10000
    VITE_APP_URL=https://shortly-ky6a.onrender.com
    FRONT_END_URL=https://shortly-livid.vercel.app
+   # Optional: Support multiple frontend origins (comma-separated)
+   # ALLOWED_ORIGINS=https://app1.example.com,https://app2.example.com
    ```
 
 2. **Build Command**: `npm install`
@@ -193,6 +198,7 @@ Open your browser and navigate to `http://localhost:5173` to start using Shortly
   - Use `cors` package instead of manual headers
   - Set `credentials: true` in CORS options
   - Ensure `FRONT_END_URL` exactly matches your frontend domain
+  - For multiple frontend origins, use `ALLOWED_ORIGINS` environment variable with comma-separated URLs (e.g., `https://app1.example.com,https://app2.example.com`)
 
 ## 📡 API Documentation
 
