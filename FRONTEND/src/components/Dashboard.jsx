@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import UrlForm from "../components/UrlForm";
 import { getMyUrls, deleteShortUrl } from "../api/shortUrl.api";
 
@@ -8,38 +8,33 @@ const Dashboard = ({ user }) => {
   const [error, setError] = useState("");
   const [copiedUrl, setCopiedUrl] = useState(null);
   const [deletingUrl, setDeletingUrl] = useState(null);
-  const [userStats, setUserStats] = useState({
-    totalUrls: 0,
-    totalClicks: 0,
-    recentActivity: 0,
-  });
+
+  // Memoize user stats calculation for better performance
+  const userStats = useMemo(() => {
+    const totalClicks = myUrls.reduce((sum, url) => sum + (url.click || 0), 0);
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const recentUrls = myUrls.filter((url) => {
+      const createdDate = new Date(url.createdAt);
+      return createdDate > sevenDaysAgo;
+    });
+
+    return {
+      totalUrls: myUrls.length,
+      totalClicks,
+      recentActivity: recentUrls.length,
+    };
+  }, [myUrls]);
 
   const fetchMyUrls = async () => {
     setLoading(true);
     setError("");
     try {
-      const response = await getMyUrls();
+      // Load first 50 URLs for better performance
+      const response = await getMyUrls(50, 0);
       if (response && response.data && response.data.urls) {
         const urls = response.data.urls;
         setMyUrls(urls);
-
-        // Calculate stats
-        const totalClicks = urls.reduce(
-          (sum, url) => sum + (url.click || 0),
-          0
-        );
-        const recentUrls = urls.filter((url) => {
-          const createdDate = new Date(url.createdAt);
-          const sevenDaysAgo = new Date();
-          sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-          return createdDate > sevenDaysAgo;
-        });
-
-        setUserStats({
-          totalUrls: urls.length,
-          totalClicks: totalClicks,
-          recentActivity: recentUrls.length,
-        });
       }
     } catch (err) {
       setError("Failed to fetch your URLs");

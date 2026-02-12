@@ -95,7 +95,19 @@ const RegisterPage = ({ user, navigate, onRegisterSuccess }) => {
 	);
 };
 
-const ProtectedRoute = ({ user, component, navigate }) => {
+const ProtectedRoute = ({ user, authChecked, component, navigate }) => {
+	// Show loading only for protected routes while auth is being checked
+	if (!authChecked) {
+		return (
+			<div className='min-h-[calc(100vh-4rem)] bg-gray-50 flex items-center justify-center'>
+				<div className='text-center'>
+					<div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2'></div>
+					<p className='text-gray-600 text-sm'>Checking authentication...</p>
+				</div>
+			</div>
+		);
+	}
+	
 	if (!user) {
 		return (
 			<Navigate
@@ -109,7 +121,7 @@ const ProtectedRoute = ({ user, component, navigate }) => {
 
 const App = () => {
 	const [user, setUser] = useState(null);
-	const [loading, setLoading] = useState(true);
+	const [authChecked, setAuthChecked] = useState(false);
 	const [showProfileModal, setShowProfileModal] = useState(false);
 	const [userStats, setUserStats] = useState({
 		totalUrls: 0,
@@ -121,7 +133,8 @@ const App = () => {
 	// Fetch user stats for profile modal
 	const fetchUserStats = async () => {
 		try {
-			const response = await getMyUrls();
+			// Get first 50 URLs for stats calculation
+			const response = await getMyUrls(50, 0);
 			if (response && response.data && response.data.urls) {
 				const urls = response.data.urls;
 				const totalClicks = urls.reduce(
@@ -129,7 +142,7 @@ const App = () => {
 					0
 				);
 				setUserStats({
-					totalUrls: urls.length,
+					totalUrls: response.data.totalCount || urls.length,
 					totalClicks: totalClicks
 				});
 			}
@@ -157,11 +170,11 @@ const App = () => {
 				// User is not authenticated or session expired
 				console.log('No active session');
 				// If user is not authenticated and trying to access protected route, redirect to home
-				if (location.pathname === '/dashboard') {
+				if (location.pathname === '/dashboard' || location.pathname === '/settings') {
 					navigate('/');
 				}
 			} finally {
-				setLoading(false);
+				setAuthChecked(true);
 			}
 		};
 
@@ -197,17 +210,6 @@ const App = () => {
 		fetchUserStats();
 		setShowProfileModal(true);
 	};
-
-	if (loading) {
-		return (
-			<div className='min-h-screen bg-gray-50 flex items-center justify-center'>
-				<div className='text-center'>
-					<div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4'></div>
-					<p className='text-gray-600'>Loading...</p>
-				</div>
-			</div>
-		);
-	}
 
 	return (
 		<div className='min-h-screen bg-gray-50'>
@@ -252,6 +254,7 @@ const App = () => {
 					element={
 						<ProtectedRoute
 							user={user}
+							authChecked={authChecked}
 							component={<Dashboard user={user} />}
 							navigate={navigate}
 						/>
@@ -262,6 +265,7 @@ const App = () => {
 					element={
 						<ProtectedRoute
 							user={user}
+							authChecked={authChecked}
 							component={<AccountSettings user={user} />}
 							navigate={navigate}
 						/>
