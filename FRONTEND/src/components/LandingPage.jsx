@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 const LandingPage = ({ onShowAuth, user }) => {
 	const navigate = useNavigate();
 	return (
-		<div className='min-h-[calc(100vh-4rem)] bg-gradient-to-br from-blue-50 to-indigo-100'>
+		<main id="main-content" className='min-h-[calc(100vh-4rem)] bg-gradient-to-br from-blue-50 to-indigo-100' role="main">
 			{/* Hero Section */}
 			<div className='max-w-4xl mx-auto px-4 pt-20 pb-16 text-center'>
 				<h1 className='text-5xl md:text-6xl font-bold text-gray-900 mb-6'>
@@ -18,7 +18,11 @@ const LandingPage = ({ onShowAuth, user }) => {
 				</p>
 
 				{/* URL Shortener Card */}
-				<div className='max-w-2xl mx-auto'>
+				<section 
+					className='max-w-2xl mx-auto'
+					aria-labelledby="url-shortener-heading"
+				>
+					<h2 id="url-shortener-heading" className="sr-only">URL Shortener</h2>
 					<div className='bg-white rounded-2xl shadow-xl p-8 border border-gray-100'>
 						<UrlForm
 							user={user}
@@ -37,7 +41,7 @@ const LandingPage = ({ onShowAuth, user }) => {
 								</p>
 								<button
 									onClick={onShowAuth}
-									className='bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors'>
+									className='bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2'>
 									Get Started Free
 								</button>
 							</div>
@@ -47,7 +51,7 @@ const LandingPage = ({ onShowAuth, user }) => {
 						{user && (
 							<div className='mt-8 p-6 bg-green-50 rounded-xl border border-green-100'>
 								<h3 className='text-lg font-semibold text-green-900 mb-2'>
-									Welcome back, {user.name}! 👋
+									Welcome back, {user.name}!
 								</h3>
 								<p className='text-green-700 mb-4'>
 									You're logged in and ready to create short URLs. Visit your
@@ -55,15 +59,15 @@ const LandingPage = ({ onShowAuth, user }) => {
 								</p>
 								<button
 									onClick={() => navigate('/dashboard')}
-									className='bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium transition-colors'>
+									className='bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2'>
 									Go to Dashboard
 								</button>
 							</div>
 						)}
 					</div>
-				</div>
+				</section>
 			</div>
-		</div>
+		</main>
 	);
 };
 
