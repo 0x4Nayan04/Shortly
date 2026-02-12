@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 import express, { urlencoded } from "express";
 import helmet from "helmet";
 import compression from "compression";
-import { errorHandler } from "../BACKEND/src/utils/errorHandler.js";
+import { errorHandler, ForbiddenError } from "./src/utils/errorHandler.js";
 import connectDB from "./src/config/monogo.config.js";
 import { redirectFromShortUrl } from "./src/controllers/shortUrl.controllers.js";
 import authRoutes from "./src/routes/auth.routes.js";
@@ -50,7 +50,7 @@ const corsOptions = {
       } else {
         console.warn(`CORS: Origin ${origin} not allowed by policy`);
       }
-      callback(new Error(`CORS: Origin ${origin} not allowed by policy`));
+      callback(new ForbiddenError(`CORS: Origin ${origin} not allowed by policy`));
     }
   },
   credentials: true,
