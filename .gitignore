@@ -144,3 +144,5 @@ dist
 # End of https://www.toptal.com/developers/gitignore/api/node
 BACKEND/src/services/Invalid email or password.code-search
 TECHNICAL_ANALYSIS.md
+Plan/Plan.md
+Agent.md
