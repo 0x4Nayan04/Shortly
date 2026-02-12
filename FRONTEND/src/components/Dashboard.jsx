@@ -1,10 +1,129 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback, memo } from "react";
 import UrlForm from "../components/UrlForm";
 import { getMyUrls, deleteShortUrl } from "../api/shortUrl.api";
+import { UrlItemSkeleton, StatsSkeleton } from "./LoadingSpinner";
+
+// Memoized URL Item component for better list performance
+const UrlItem = memo(({ url, copiedUrl, deletingUrl, onCopy, onDelete }) => {
+  const shortUrlFull = `${import.meta.env.VITE_APP_URL}/${url.short_url}`;
+  const isCopied = copiedUrl === shortUrlFull;
+  const isDeleting = deletingUrl === url._id;
+
+  return (
+    <div className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+      <div className="flex items-center justify-between">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center space-x-3 mb-2">
+            <a
+              href={shortUrlFull}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:text-blue-800 font-medium">
+              {shortUrlFull}
+            </a>
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+              {url.click} clicks
+            </span>
+          </div>
+          <p className="text-gray-600 text-sm truncate">
+            {url.full_url}
+          </p>
+          <div className="flex items-center space-x-4 mt-1">
+            <p className="text-gray-400 text-xs">
+              Created {new Date(url.createdAt).toLocaleDateString()}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={() => onCopy(shortUrlFull)}
+            className={`p-2 transition-colors ${
+              isCopied
+                ? "text-green-600"
+                : "text-gray-400 hover:text-gray-600"
+            }`}
+            title={isCopied ? "Copied!" : "Copy to clipboard"}>
+            {isCopied ? (
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+            ) : (
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                />
+              </svg>
+            )}
+          </button>
+
+          <button
+            onClick={() => onDelete(url._id)}
+            disabled={isDeleting}
+            className="p-2 text-gray-400 hover:text-red-600 transition-colors disabled:opacity-50"
+            title="Delete URL">
+            {isDeleting ? (
+              <div className="w-5 h-5 animate-spin rounded-full border-2 border-gray-300 border-t-red-600"></div>
+            ) : (
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                />
+              </svg>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+});
+
+UrlItem.displayName = 'UrlItem';
+
+// Memoized Stats Card component
+const StatsCard = memo(({ icon, iconBgColor, iconColor, label, value }) => (
+  <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+    <div className="flex items-center">
+      <div className="flex-shrink-0">
+        <div className={`w-12 h-12 ${iconBgColor} rounded-lg flex items-center justify-center`}>
+          {icon}
+        </div>
+      </div>
+      <div className="ml-4">
+        <p className="text-sm font-medium text-gray-500">{label}</p>
+        <p className="text-2xl font-bold text-gray-900">{value}</p>
+      </div>
+    </div>
+  </div>
+));
+
+StatsCard.displayName = 'StatsCard';
 
 const Dashboard = ({ user }) => {
   const [myUrls, setMyUrls] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [copiedUrl, setCopiedUrl] = useState(null);
   const [deletingUrl, setDeletingUrl] = useState(null);
@@ -26,7 +145,8 @@ const Dashboard = ({ user }) => {
     };
   }, [myUrls]);
 
-  const fetchMyUrls = async () => {
+  // Memoized fetch function
+  const fetchMyUrls = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
@@ -42,20 +162,22 @@ const Dashboard = ({ user }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     if (user?._id) fetchMyUrls();
-  }, [user?._id]);
+  }, [user?._id, fetchMyUrls]);
 
-  const copyToClipboard = (url) => {
+  // Memoized copy handler
+  const copyToClipboard = useCallback((url) => {
     navigator.clipboard.writeText(url).then(() => {
       setCopiedUrl(url);
       setTimeout(() => setCopiedUrl(null), 2000);
     });
-  };
+  }, []);
 
-  const handleDeleteUrl = async (urlId) => {
+  // Memoized delete handler
+  const handleDeleteUrl = useCallback(async (urlId) => {
     if (!confirm("Are you sure you want to delete this URL?")) {
       return;
     }
@@ -63,15 +185,72 @@ const Dashboard = ({ user }) => {
     setDeletingUrl(urlId);
     try {
       await deleteShortUrl(urlId);
-      // Refresh the list after successful deletion
-      await fetchMyUrls();
+      // Optimistic update - remove from local state immediately
+      setMyUrls(prev => prev.filter(url => url._id !== urlId));
     } catch (err) {
       setError("Failed to delete URL");
       console.error("Error deleting URL:", err);
+      // Refresh list on error to sync state
+      fetchMyUrls();
     } finally {
       setDeletingUrl(null);
     }
-  };
+  }, [fetchMyUrls]);
+
+  // Memoized URL list rendering
+  const urlList = useMemo(() => {
+    if (loading) {
+      return (
+        <div className="space-y-4">
+          {[1, 2, 3].map((i) => (
+            <UrlItemSkeleton key={i} />
+          ))}
+        </div>
+      );
+    }
+
+    if (myUrls.length === 0) {
+      return (
+        <div className="text-center py-16">
+          <div className="w-24 h-24 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-3xl mx-auto mb-6 flex items-center justify-center">
+            <svg
+              className="w-12 h-12 text-indigo-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.5}
+                d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
+              />
+            </svg>
+          </div>
+          <h3 className="text-xl font-bold text-gray-900 mb-3">
+            No URLs yet
+          </h3>
+          <p className="text-gray-600 text-lg">
+            Create your first short URL using the form above.
+          </p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-4">
+        {myUrls.map((url) => (
+          <UrlItem
+            key={url._id}
+            url={url}
+            copiedUrl={copiedUrl}
+            deletingUrl={deletingUrl}
+            onCopy={copyToClipboard}
+            onDelete={handleDeleteUrl}
+          />
+        ))}
+      </div>
+    );
+  }, [loading, myUrls, copiedUrl, deletingUrl, copyToClipboard, handleDeleteUrl]);
 
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-gray-50">
@@ -104,10 +283,10 @@ const Dashboard = ({ user }) => {
                 Create and manage your short URLs
               </p>
               <div className="flex items-center space-x-4 text-sm text-gray-500">
-                <span>📧 {user.email}</span>
+                <span>{user.email}</span>
                 <span>•</span>
                 <span>
-                  🗓️ Member since{" "}
+                  Member since{" "}
                   {new Date(user.createdAt || Date.now()).toLocaleDateString(
                     "en-US",
                     { month: "short", year: "numeric" }
@@ -118,92 +297,74 @@ const Dashboard = ({ user }) => {
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <svg
-                      className="w-6 h-6 text-blue-600"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
-                      />
-                    </svg>
-                  </div>
-                </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-500">
-                    Total URLs
-                  </p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {userStats.totalUrls}
-                  </p>
-                </div>
-              </div>
-            </div>
+          {loading ? (
+            <StatsSkeleton />
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <StatsCard
+                iconBgColor="bg-blue-100"
+                iconColor="text-blue-600"
+                icon={
+                  <svg
+                    className="w-6 h-6 text-blue-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
+                    />
+                  </svg>
+                }
+                label="Total URLs"
+                value={userStats.totalUrls}
+              />
 
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                    <svg
-                      className="w-6 h-6 text-green-600"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"
-                      />
-                    </svg>
-                  </div>
-                </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-500">
-                    Total Clicks
-                  </p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {userStats.totalClicks}
-                  </p>
-                </div>
-              </div>
-            </div>
+              <StatsCard
+                iconBgColor="bg-green-100"
+                iconColor="text-green-600"
+                icon={
+                  <svg
+                    className="w-6 h-6 text-green-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"
+                    />
+                  </svg>
+                }
+                label="Total Clicks"
+                value={userStats.totalClicks}
+              />
 
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                    <svg
-                      className="w-6 h-6 text-purple-600"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
-                      />
-                    </svg>
-                  </div>
-                </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-500">This Week</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {userStats.recentActivity}
-                  </p>
-                </div>
-              </div>
+              <StatsCard
+                iconBgColor="bg-purple-100"
+                iconColor="text-purple-600"
+                icon={
+                  <svg
+                    className="w-6 h-6 text-purple-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
+                    />
+                  </svg>
+                }
+                label="This Week"
+                value={userStats.recentActivity}
+              />
             </div>
-          </div>
+          )}
         </div>
 
         {/* Create URL Section */}
@@ -232,139 +393,11 @@ const Dashboard = ({ user }) => {
             </div>
           )}
 
-          {myUrls.length === 0 ? (
-            <div className="text-center py-16">
-              <div className="w-24 h-24 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-3xl mx-auto mb-6 flex items-center justify-center">
-                <svg
-                  className="w-12 h-12 text-indigo-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1.5}
-                    d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
-                  />
-                </svg>
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">
-                No URLs yet
-              </h3>
-              <p className="text-gray-600 text-lg">
-                Create your first short URL using the form above.
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {myUrls.map((url) => (
-                <div
-                  key={url._id}
-                  className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center space-x-3 mb-2">
-                        <a
-                          href={`${import.meta.env.VITE_APP_URL}/${url.short_url}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-600 hover:text-blue-800 font-medium">
-                          {import.meta.env.VITE_APP_URL}/{url.short_url}
-                        </a>
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                          {url.click} clicks
-                        </span>
-                      </div>
-                      <p className="text-gray-600 text-sm truncate">
-                        {url.full_url}
-                      </p>
-                      <div className="flex items-center space-x-4 mt-1">
-                        <p className="text-gray-400 text-xs">
-                          Created {new Date(url.createdAt).toLocaleDateString()}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <button
-                        onClick={() =>
-                          copyToClipboard(
-                            `${import.meta.env.VITE_APP_URL}/${url.short_url}`
-                          )
-                        }
-                        className={`p-2 transition-colors ${
-                          copiedUrl ===
-                          `${import.meta.env.VITE_APP_URL}/${url.short_url}`
-                            ? "text-green-600"
-                            : "text-gray-400 hover:text-gray-600"
-                        }`}
-                        title={
-                          copiedUrl ===
-                          `${import.meta.env.VITE_APP_URL}/${url.short_url}`
-                            ? "Copied!"
-                            : "Copy to clipboard"
-                        }>
-                        {copiedUrl ===
-                        `${import.meta.env.VITE_APP_URL}/${url.short_url}` ? (
-                          <svg
-                            className="w-5 h-5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24">
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M5 13l4 4L19 7"
-                            />
-                          </svg>
-                        ) : (
-                          <svg
-                            className="w-5 h-5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24">
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                            />
-                          </svg>
-                        )}
-                      </button>
-
-                      <button
-                        onClick={() => handleDeleteUrl(url._id)}
-                        disabled={deletingUrl === url._id}
-                        className="p-2 text-gray-400 hover:text-red-600 transition-colors disabled:opacity-50"
-                        title="Delete URL">
-                        {deletingUrl === url._id ? (
-                          <div className="w-5 h-5 animate-spin rounded-full border-2 border-gray-300 border-t-red-600"></div>
-                        ) : (
-                          <svg
-                            className="w-5 h-5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24">
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                            />
-                          </svg>
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          {urlList}
         </div>
       </div>
     </div>
   );
 };
 
-export default Dashboard;
+export default memo(Dashboard);

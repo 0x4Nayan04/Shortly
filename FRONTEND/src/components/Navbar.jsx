@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, memo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 
-const Navbar = ({ user, onLogout, onShowAuth, onShowProfile }) => {
+const Navbar = memo(({ user, onLogout, onShowAuth, onShowProfile }) => {
   const navigate = useNavigate();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -20,6 +20,39 @@ const Navbar = ({ user, onLogout, onShowAuth, onShowProfile }) => {
     };
   }, []);
 
+  // Memoized handlers
+  const toggleDropdown = useCallback(() => {
+    setIsDropdownOpen(prev => !prev);
+  }, []);
+
+  const handleNavigateHome = useCallback(() => {
+    navigate("/");
+  }, [navigate]);
+
+  const handleNavigateDashboard = useCallback(() => {
+    navigate("/dashboard");
+    setIsDropdownOpen(false);
+  }, [navigate]);
+
+  const handleShowProfileClick = useCallback(() => {
+    if (onShowProfile) onShowProfile();
+    setIsDropdownOpen(false);
+  }, [onShowProfile]);
+
+  const handleNavigateSettings = useCallback(() => {
+    navigate("/settings");
+    setIsDropdownOpen(false);
+  }, [navigate]);
+
+  const handleLogoutClick = useCallback(() => {
+    onLogout();
+    setIsDropdownOpen(false);
+  }, [onLogout]);
+
+  const handleNavigateLogin = useCallback(() => {
+    navigate("/login");
+  }, [navigate]);
+
   return (
     <nav className="bg-white/80 backdrop-blur-xl border-b border-gray-100/50 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
@@ -27,7 +60,7 @@ const Navbar = ({ user, onLogout, onShowAuth, onShowProfile }) => {
           {/* Logo */}
           <div
             className="flex items-center hover:cursor-pointer group transition-all duration-200"
-            onClick={() => navigate("/")}>
+            onClick={handleNavigateHome}>
             <h1 className="text-2xl font-bold text-gray-900 tracking-tight group-hover:text-indigo-600 transition-colors duration-200">
               Short<span className="text-indigo-600">ly</span>
             </h1>
@@ -38,7 +71,7 @@ const Navbar = ({ user, onLogout, onShowAuth, onShowProfile }) => {
             {user ? (
               <div className="relative" ref={dropdownRef}>
                 <button
-                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  onClick={toggleDropdown}
                   className="flex items-center space-x-3 hover:bg-gray-50/80 rounded-2xl px-4 py-3 transition-all duration-200 group">
                   <div className="flex items-center space-x-3">
                     <div className="relative">
@@ -128,10 +161,7 @@ const Navbar = ({ user, onLogout, onShowAuth, onShowProfile }) => {
                     {/* Menu Items */}
                     <div className="py-2">
                       <button
-                        onClick={() => {
-                          navigate("/dashboard");
-                          setIsDropdownOpen(false);
-                        }}
+                        onClick={handleNavigateDashboard}
                         className="flex items-center w-full px-5 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50/80 hover:text-gray-900 transition-all duration-200 group">
                         <div className="w-5 h-5 mr-3 text-gray-400 group-hover:text-indigo-500 transition-colors duration-200">
                           <svg
@@ -156,10 +186,7 @@ const Navbar = ({ user, onLogout, onShowAuth, onShowProfile }) => {
                       </button>
 
                       <button
-                        onClick={() => {
-                          if (onShowProfile) onShowProfile();
-                          setIsDropdownOpen(false);
-                        }}
+                        onClick={handleShowProfileClick}
                         className="flex items-center w-full px-5 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50/80 hover:text-gray-900 transition-all duration-200 group">
                         <div className="w-5 h-5 mr-3 text-gray-400 group-hover:text-indigo-500 transition-colors duration-200">
                           <svg
@@ -178,10 +205,7 @@ const Navbar = ({ user, onLogout, onShowAuth, onShowProfile }) => {
                       </button>
 
                       <button
-                        onClick={() => {
-                          navigate("/settings");
-                          setIsDropdownOpen(false);
-                        }}
+                        onClick={handleNavigateSettings}
                         className="flex items-center w-full px-5 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50/80 hover:text-gray-900 transition-all duration-200 group">
                         <div className="w-5 h-5 mr-3 text-gray-400 group-hover:text-indigo-500 transition-colors duration-200">
                           <svg
@@ -209,10 +233,7 @@ const Navbar = ({ user, onLogout, onShowAuth, onShowProfile }) => {
                     {/* Logout */}
                     <div className="border-t border-gray-100/60 py-2 mt-2">
                       <button
-                        onClick={() => {
-                          onLogout();
-                          setIsDropdownOpen(false);
-                        }}
+                        onClick={handleLogoutClick}
                         className="flex items-center w-full px-5 py-3 text-sm font-medium text-red-600 hover:bg-red-50/80 hover:text-red-700 transition-all duration-200 group">
                         <div className="w-5 h-5 mr-3 text-red-500 group-hover:text-red-600 transition-colors duration-200">
                           <svg
@@ -236,12 +257,12 @@ const Navbar = ({ user, onLogout, onShowAuth, onShowProfile }) => {
             ) : (
               <div className="flex items-center space-x-4">
                 <button
-                  onClick={() => navigate("/login")}
+                  onClick={handleNavigateLogin}
                   className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors duration-200">
                   Login
                 </button>
                 <button
-                  onClick={() => navigate("/login")}
+                  onClick={handleNavigateLogin}
                   className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-2xl text-sm font-semibold transition-all duration-200 hover:scale-105 shadow-sm hover:shadow-md">
                   Sign up
                 </button>
@@ -252,6 +273,8 @@ const Navbar = ({ user, onLogout, onShowAuth, onShowProfile }) => {
       </div>
     </nav>
   );
-};
+});
+
+Navbar.displayName = 'Navbar';
 
 export default Navbar;

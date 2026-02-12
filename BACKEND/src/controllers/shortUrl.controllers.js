@@ -17,19 +17,20 @@ export const createShortUrl = async (req, res) => {
     const userId = req.user ? req.user._id : null;
 
     // Check if this URL already exists for this user or globally
+    // Using lean() for better performance - returns plain JS object
     let checkIfFullUrlExists;
     if (userId) {
       // If user is authenticated, check if they already have this URL
       checkIfFullUrlExists = await short_urlModel.findOne({
         full_url,
         user: userId,
-      });
+      }).lean();
     } else {
       // If user is not authenticated, check for global URLs without user
       checkIfFullUrlExists = await short_urlModel.findOne({
         full_url,
         user: { $exists: false },
-      });
+      }).lean();
     }
 
     let short_url;
@@ -71,10 +72,11 @@ export const redirectFromShortUrl = async (req, res) => {
     res.redirect(shortUrlData.full_url);
 
     // Increment the click count asynchronously (don't wait for it)
+    // Using updateOne instead of findByIdAndUpdate for slightly better performance
     setImmediate(async () => {
       try {
-        await short_urlModel.findByIdAndUpdate(
-          shortUrlData._id,
+        await short_urlModel.updateOne(
+          { _id: shortUrlData._id },
           { $inc: { click: 1 } }
         );
       } catch (error) {
@@ -95,18 +97,19 @@ export const getUserUrls = async (req, res) => {
     const limit = parseInt(query.limit) || 20;
     const skip = parseInt(query.skip) || 0;
 
-    // Get paginated URLs created by the authenticated user
-    const userUrls = await short_urlModel
-      .find({ user: userId })
-      .sort({ createdAt: -1 }) // Sort by newest first
-      .skip(skip)
-      .limit(limit)
-      .select("full_url short_url click createdAt ");
-
-    // Get total count for pagination info
-    const totalCount = await short_urlModel.countDocuments({ user: userId });
-
-    console.log(`Found ${userUrls.length} URLs for user (page ${Math.floor(skip / limit) + 1})`);
+    // Run both queries in parallel for better performance
+    const [userUrls, totalCount] = await Promise.all([
+      // Get paginated URLs - using lean() for better performance
+      short_urlModel
+        .find({ user: userId })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .select("full_url short_url click createdAt")
+        .lean(),
+      // Get total count
+      short_urlModel.countDocuments({ user: userId })
+    ]);
 
     res.json({
       success: true,
@@ -138,12 +141,11 @@ export const createCustomShortUrl = async (req, res) => {
 
     // This endpoint requires authentication
     const userId = req.user._id;
-    console.log("Creating custom URL for user:", userId);
 
-    // Check if this custom URL already exists for this user
+    // Check if this custom URL already exists - using lean() for performance
     const checkIfCustomUrlExists = await short_urlModel.findOne({
       short_url: custom_url,
-    });
+    }).lean();
 
     if (checkIfCustomUrlExists) {
       return res.status(409).json({
@@ -202,8 +204,8 @@ export const deleteShortUrl = async (req, res) => {
       });
     }
 
-    // Find the URL and verify ownership
-    const urlToDelete = await short_urlModel.findById(id);
+    // Find the URL and verify ownership - using lean() for performance
+    const urlToDelete = await short_urlModel.findById(id).lean();
 
     if (!urlToDelete) {
       return res.status(404).json({
@@ -220,8 +222,8 @@ export const deleteShortUrl = async (req, res) => {
       });
     }
 
-    // Delete the URL
-    await short_urlModel.findByIdAndDelete(id);
+    // Delete the URL - using deleteOne for slightly better performance
+    await short_urlModel.deleteOne({ _id: id });
 
     res.json({
       success: true,

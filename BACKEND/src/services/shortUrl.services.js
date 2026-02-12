@@ -16,7 +16,8 @@ const generateUniqueShortUrl = async () => {
       throw new Error("Failed to generate short URL");
     }
 
-    const existingShortUrl = await short_urlModel.findOne({ short_url });
+    // Use lean() and only check for existence (faster than fetching full document)
+    const existingShortUrl = await short_urlModel.exists({ short_url });
 
     if (!existingShortUrl) {
       isUnique = true;
@@ -46,8 +47,8 @@ export const createShortUrlWithUser = async (full_url, userId) => {
 };
 
 export const createCustomShortUrl = async (full_url, custom_url, userId) => {
-  // Check if the custom URL already exists
-  const existingShortUrl = await short_urlModel.findOne({
+  // Check if the custom URL already exists - use exists() for faster check
+  const existingShortUrl = await short_urlModel.exists({
     short_url: custom_url,
   });
 
@@ -75,7 +76,12 @@ export const createCustomShortUrl = async (full_url, custom_url, userId) => {
 };
 
 export const getShortUrl = async (short_url) => {
-  const shortUrlData = await short_urlModel.findOne({ short_url });
+  // Use lean() for better performance - returns plain JS object
+  // Only select fields needed for redirect
+  const shortUrlData = await short_urlModel
+    .findOne({ short_url })
+    .select("_id full_url")
+    .lean();
 
   if (!shortUrlData) {
     throw new Error("Short URL not found");
@@ -84,10 +90,11 @@ export const getShortUrl = async (short_url) => {
 };
 
 export const getCustomShortUrl = async (short_url, userId) => {
+  // Use lean() for better performance
   const shortUrlData = await short_urlModel.findOne({
     short_url,
     user: userId,
-  });
+  }).lean();
 
   if (!shortUrlData) {
     throw new Error("Custom short URL not found for this user");
