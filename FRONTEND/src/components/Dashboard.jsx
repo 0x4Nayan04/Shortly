@@ -45,8 +45,8 @@ const Dashboard = ({ user }) => {
   };
 
   useEffect(() => {
-    fetchMyUrls();
-  }, []);
+    if (user?._id) fetchMyUrls();
+  }, [user?._id]);
 
   const copyToClipboard = (url) => {
     navigator.clipboard.writeText(url).then(() => {

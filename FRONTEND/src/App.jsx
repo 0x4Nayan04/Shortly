@@ -182,25 +182,18 @@ const App = () => {
 	}, [location.pathname, navigate]);
 
 	const handleAuthSuccess = (response) => {
-		setUser(response.user || { email: 'User' });
+		const userData = response.data?.user || response.user;
+		setUser(userData || { email: 'User' });
 		navigate('/dashboard');
-		console.log('User authenticated:', response);
 	};
 
 	const handleLogout = async () => {
 		try {
 			await logoutUser();
+		} catch {
+		} finally {
 			setUser(null);
 			navigate('/');
-			console.log('User logged out successfully');
-		} catch (error) {
-			console.error('Logout error:', error);
-			// Force logout even if API call fails
-			localStorage.clear();
-			sessionStorage.clear();
-			setUser(null);
-			navigate('/');
-			console.log('Forced local logout due to API error');
 		}
 	};
 

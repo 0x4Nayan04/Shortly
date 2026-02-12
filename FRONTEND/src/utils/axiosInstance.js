@@ -2,10 +2,9 @@ import axios from "axios";
 
 const axiosInstance = axios.create({
   baseURL: import.meta.env.VITE_APP_URL,
-  withCredentials: true, // Important for cookie-based authentication
+  withCredentials: true,
 });
 
-// Add a response interceptor
 axiosInstance.interceptors.response.use(
   (response) => {
     // Any status code that lie within the range of 2xx cause this function to trigger

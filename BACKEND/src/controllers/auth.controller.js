@@ -44,11 +44,7 @@ export const login_user = async (req, res, next) => {
 
 export const logout_user = (req, res, next) => {
   try {
-    res.clearCookie("token", {
-      ...cookieOptions,
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-    }); // Ensure secure for production
+    res.clearCookie("token", { ...cookieOptions }); // Ensure secure for production
     res
       .status(200)
       .json({ success: true, message: "User logged out successfully" });
