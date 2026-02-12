@@ -24,7 +24,7 @@ export const deleteShortUrl = async (urlId) => {
   return response;
 };
 
-export const getMyUrls = async () => {
-  const response = await axiosinstance.get(`api/create/my-urls`);
+export const getMyUrls = async (limit = 20, skip = 0) => {
+  const response = await axiosinstance.get(`api/create/my-urls?limit=${limit}&skip=${skip}`);
   return response;
 };

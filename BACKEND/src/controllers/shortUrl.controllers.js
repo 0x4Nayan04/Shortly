@@ -67,12 +67,21 @@ export const redirectFromShortUrl = async (req, res) => {
 
     const shortUrlData = await getShortUrl(short_url);
 
-    // Increment the click count
-    shortUrlData.click += 1;
-    await shortUrlData.save();
-
-    // Redirect to the full URL
+    // Redirect immediately to the full URL for better performance
     res.redirect(shortUrlData.full_url);
+
+    // Increment the click count asynchronously (don't wait for it)
+    setImmediate(async () => {
+      try {
+        await short_urlModel.findByIdAndUpdate(
+          shortUrlData._id,
+          { $inc: { click: 1 } }
+        );
+      } catch (error) {
+        console.error("Error updating click count:", error);
+        // Don't throw error as redirect already happened
+      }
+    });
   } catch (error) {
     console.error("Error redirecting:", error);
     res.status(404).send("Short URL not found");
@@ -82,18 +91,27 @@ export const redirectFromShortUrl = async (req, res) => {
 export const getUserUrls = async (req, res) => {
   try {
     const userId = req.user._id;
+    const limit = parseInt(req.query.limit) || 20; // Default 20 URLs per page
+    const skip = parseInt(req.query.skip) || 0;
 
-    // Get all URLs created by the authenticated user
+    // Get paginated URLs created by the authenticated user
     const userUrls = await short_urlModel
       .find({ user: userId })
       .sort({ createdAt: -1 }) // Sort by newest first
+      .skip(skip)
+      .limit(limit)
       .select("full_url short_url click createdAt ");
 
-    console.log("Found user URLs:", userUrls);
+    // Get total count for pagination info
+    const totalCount = await short_urlModel.countDocuments({ user: userId });
+
+    console.log(`Found ${userUrls.length} URLs for user (page ${Math.floor(skip / limit) + 1})`);
 
     res.json({
       success: true,
       count: userUrls.length,
+      totalCount,
+      hasMore: skip + limit < totalCount,
       urls: userUrls,
     });
   } catch (error) {
