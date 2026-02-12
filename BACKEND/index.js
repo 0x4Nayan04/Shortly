@@ -42,7 +42,7 @@ const corsOptions = {
       ? process.env.ALLOWED_ORIGINS.split(',').map(url => url.trim())
       : [process.env.FRONT_END_URL];
     
-    if (allowedOrigins.includes(origin)) {
+    if (allowedOrigins.filter(o => o.trim()).includes(origin)) {
       callback(null, true);
     } else {
       console.warn(`CORS: Origin ${origin} not allowed. Allowed origins:`, allowedOrigins);
