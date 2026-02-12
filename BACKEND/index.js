@@ -45,7 +45,11 @@ const corsOptions = {
     if (allowedOrigins.filter(o => o.trim()).includes(origin)) {
       callback(null, true);
     } else {
-      console.warn(`CORS: Origin ${origin} not allowed. Allowed origins:`, allowedOrigins);
+      if (process.env.NODE_ENV !== "production") {
+        console.warn(`CORS: Origin ${origin} not allowed. Allowed origins:`, allowedOrigins);
+      } else {
+        console.warn(`CORS: Origin ${origin} not allowed by policy`);
+      }
       callback(new Error(`CORS: Origin ${origin} not allowed by policy`));
     }
   },
