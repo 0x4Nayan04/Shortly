@@ -59,10 +59,13 @@ export const validateEnvFormats = () => {
       console.error('❌ Invalid ALLOWED_ORIGINS configuration: all origins must start with "http://" or "https://"');
       console.error('   Invalid origins:', invalidOrigins);
       throw new Error('Invalid ALLOWED_ORIGINS configuration. Please ensure all origins start with "http://" or "https://".');
-    } else {
-      console.log(`✅ CORS configured with ${origins.length} allowed origins:`, origins.map(o => o.trim()));
+    } else if (process.env.NODE_ENV !== 'production') {
+      console.log(
+        `✅ CORS configured with ${origins.length} allowed origins:`,
+        origins.map(o => o.trim())
+      );
     }
-  } else {
+  } else if (process.env.NODE_ENV !== 'production') {
     console.log('ℹ️ Using single origin from FRONT_END_URL for CORS');
   }
 };
