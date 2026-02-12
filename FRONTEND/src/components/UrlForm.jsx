@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { createShortUrl, createCustomShortUrl } from "../api/shortUrl.api";
+import { validators } from "../utils/validation";
 
 const UrlForm = ({ onUrlCreated, user, onShowAuth }) => {
   const [url, setUrl] = useState("");
@@ -10,25 +11,65 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth }) => {
   const [isCopied, setIsCopied] = useState(false);
   const [useCustomAlias, setUseCustomAlias] = useState(false);
 
+  // Field-level validation errors
+  const [fieldErrors, setFieldErrors] = useState({
+    url: null,
+    customAlias: null,
+  });
+  // Track which fields have been touched
+  const [touched, setTouched] = useState({
+    url: false,
+    customAlias: false,
+  });
+
+  // Validate a single field
+  const validateField = (field, value) => {
+    switch (field) {
+      case "url":
+        return validators.url(value);
+      case "customAlias":
+        return useCustomAlias ? validators.customAlias(value, { required: true }) : null;
+      default:
+        return null;
+    }
+  };
+
+  // Handle field blur - validate and mark as touched
+  const handleBlur = (field, value) => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+    setFieldErrors((prev) => ({ ...prev, [field]: validateField(field, value) }));
+  };
+
+  // Handle field change
+  const handleChange = (field, value, setter) => {
+    setter(value);
+    // Clear server error when user starts typing
+    if (error) setError("");
+
+    // If field was touched, validate on change for immediate feedback
+    if (touched[field]) {
+      setFieldErrors((prev) => ({ ...prev, [field]: validateField(field, value) }));
+    }
+  };
+
+  // Validate all fields before submit
+  const validateAllFields = () => {
+    const errors = {
+      url: validators.url(url),
+      customAlias: useCustomAlias ? validators.customAlias(customAlias, { required: true }) : null,
+    };
+    setFieldErrors(errors);
+    setTouched({ url: true, customAlias: useCustomAlias });
+
+    return !errors.url && !errors.customAlias;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!url) return;
-
-    // Validate custom alias if provided
-    if (useCustomAlias && customAlias) {
-      if (customAlias.length < 3 || customAlias.length > 20) {
-        setError("Custom alias must be between 3 and 20 characters long.");
-        return;
-      }
-
-      const validPattern = /^[a-zA-Z0-9_-]+$/;
-      if (!validPattern.test(customAlias)) {
-        setError(
-          "Custom alias can only contain letters, numbers, hyphens, and underscores."
-        );
-        return;
-      }
+    // Validate all fields
+    if (!validateAllFields()) {
+      return;
     }
 
     setLoading(true);
@@ -59,18 +100,25 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth }) => {
         setUrl("");
         setCustomAlias("");
         setUseCustomAlias(false);
+        setFieldErrors({ url: null, customAlias: null });
+        setTouched({ url: false, customAlias: false });
       } else {
         console.error("Unexpected response structure:", response);
         setError("Failed to process the server response.");
       }
     } catch (err) {
-      if (err.response) {
-        setError(err.response.data.message || "Failed to create short URL");
-      } else if (err.request) {
-        setError("Network error. Please try again.");
+      const data = err?.response ? err.response.data : err;
+      if (data && typeof data === "object" && Array.isArray(data.errors)) {
+        const backendErrors = {};
+        data.errors.forEach((e) => {
+          const fieldName = e.field === "full_url" ? "url" : e.field === "custom_url" ? "customAlias" : e.field;
+          backendErrors[fieldName] = e.message;
+        });
+        setFieldErrors((prev) => ({ ...prev, ...backendErrors }));
       } else {
-        console.error("An unexpected error occurred:", err);
-        setError("An error occurred. Please try again.");
+        setError(
+          typeof data === "string" ? data : (data?.message || "Failed to create short URL")
+        );
       }
     } finally {
       setLoading(false);
@@ -92,25 +140,45 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth }) => {
     }
   }, [isCopied]);
 
+  // Helper to get input class based on validation state
+  const getInputClass = (field) => {
+    const baseClass = "flex-1 px-4 py-3 border rounded-lg text-base focus:outline-none focus:ring-2 focus:border-transparent transition-all";
+    const hasError = touched[field] && fieldErrors[field];
+
+    if (hasError) {
+      return `${baseClass} border-red-300 focus:ring-red-500`;
+    }
+    return `${baseClass} border-gray-300 focus:ring-blue-500`;
+  };
+
   return (
     <div className="space-y-6">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-3">
-          <div className="flex gap-3">
-            <input
-              type="url"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              placeholder="Enter your long URL here..."
-              className="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-              required
-            />
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-8 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white font-medium rounded-lg text-base transition-colors whitespace-nowrap">
-              {loading ? "Shortening..." : "Shorten"}
-            </button>
+          <div className="space-y-1">
+            <div className="flex gap-3">
+              <input
+                type="url"
+                value={url}
+                onChange={(e) => handleChange("url", e.target.value, setUrl)}
+                onBlur={(e) => handleBlur("url", e.target.value)}
+                placeholder="Enter your long URL here..."
+                className={getInputClass("url")}
+                aria-invalid={touched.url && fieldErrors.url ? "true" : "false"}
+                aria-describedby={fieldErrors.url ? "url-error" : undefined}
+              />
+              <button
+                type="submit"
+                disabled={loading}
+                className="px-8 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white font-medium rounded-lg text-base transition-colors whitespace-nowrap">
+                {loading ? "Shortening..." : "Shorten"}
+              </button>
+            </div>
+            {touched.url && fieldErrors.url && (
+              <p id="url-error" className="text-sm text-red-600">
+                {fieldErrors.url}
+              </p>
+            )}
           </div>
 
           {/* Custom Alias Option */}
@@ -130,6 +198,11 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth }) => {
                   }
                   setUseCustomAlias(e.target.checked);
                   setError(""); // Clear any existing errors
+                  // Reset custom alias validation when toggling off
+                  if (!e.target.checked) {
+                    setFieldErrors((prev) => ({ ...prev, customAlias: null }));
+                    setTouched((prev) => ({ ...prev, customAlias: false }));
+                  }
                 }}
                 className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
               />
@@ -143,20 +216,31 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth }) => {
           </div>
 
           {useCustomAlias && (
-            <div className="flex gap-3 items-center">
-              <span className="text-sm text-gray-500 whitespace-nowrap">
-                {import.meta.env.VITE_APP_URL }/
-              </span>
-              <input
-                type="text"
-                value={customAlias}
-                onChange={(e) => setCustomAlias(e.target.value)}
-                placeholder="your-custom-alias"
-                className="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                pattern="[a-zA-Z0-9_-]+"
-                minLength="3"
-                maxLength="20"
-              />
+            <div className="space-y-1">
+              <div className="flex gap-3 items-center">
+                <span className="text-sm text-gray-500 whitespace-nowrap">
+                  {import.meta.env.VITE_APP_URL}/
+                </span>
+                <input
+                  type="text"
+                  value={customAlias}
+                  onChange={(e) => handleChange("customAlias", e.target.value, setCustomAlias)}
+                  onBlur={(e) => handleBlur("customAlias", e.target.value)}
+                  placeholder="your-custom-alias"
+                  className={getInputClass("customAlias")}
+                  aria-invalid={touched.customAlias && fieldErrors.customAlias ? "true" : "false"}
+                  aria-describedby={fieldErrors.customAlias ? "customAlias-error" : "customAlias-hint"}
+                />
+              </div>
+              {touched.customAlias && fieldErrors.customAlias ? (
+                <p id="customAlias-error" className="text-sm text-red-600">
+                  {fieldErrors.customAlias}
+                </p>
+              ) : (
+                <p id="customAlias-hint" className="text-sm text-gray-500">
+                  3-30 characters. Letters, numbers, hyphens, and underscores only.
+                </p>
+              )}
             </div>
           )}
         </div>

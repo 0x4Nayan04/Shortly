@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { registerUser } from "../api/user.api";
+import { validators } from "../utils/validation";
 
 const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
   const [name, setName] = useState("");
@@ -11,21 +12,82 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  // Field-level validation errors
+  const [fieldErrors, setFieldErrors] = useState({
+    name: null,
+    email: null,
+    password: null,
+    confirmPassword: null,
+  });
+  // Track which fields have been touched
+  const [touched, setTouched] = useState({
+    name: false,
+    email: false,
+    password: false,
+    confirmPassword: false,
+  });
+
+  // Validate a single field
+  const validateField = (field, value) => {
+    switch (field) {
+      case "name":
+        return validators.name(value);
+      case "email":
+        return validators.email(value);
+      case "password":
+        return validators.password(value);
+      case "confirmPassword":
+        return validators.confirmPassword(value, password);
+      default:
+        return null;
+    }
+  };
+
+  // Handle field blur - validate and mark as touched
+  const handleBlur = (field, value) => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+    setFieldErrors((prev) => ({ ...prev, [field]: validateField(field, value) }));
+  };
+
+  // Handle field change
+  const handleChange = (field, value, setter) => {
+    setter(value);
+    // Clear server error when user starts typing
+    if (error) setError("");
+
+    // If field was touched, validate on change for immediate feedback
+    if (touched[field]) {
+      setFieldErrors((prev) => ({ ...prev, [field]: validateField(field, value) }));
+    }
+
+    // Special case: if password changes and confirmPassword is touched, revalidate confirmPassword
+    if (field === "password" && touched.confirmPassword) {
+      setFieldErrors((prev) => ({
+        ...prev,
+        confirmPassword: validators.confirmPassword(confirmPassword, value),
+      }));
+    }
+  };
+
+  // Validate all fields before submit
+  const validateAllFields = () => {
+    const errors = {
+      name: validators.name(name),
+      email: validators.email(email),
+      password: validators.password(password),
+      confirmPassword: validators.confirmPassword(confirmPassword, password),
+    };
+    setFieldErrors(errors);
+    setTouched({ name: true, email: true, password: true, confirmPassword: true });
+
+    return !errors.name && !errors.email && !errors.password && !errors.confirmPassword;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!name || !email || !password || !confirmPassword) {
-      setError("Please fill in all fields");
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setError("Passwords do not match");
-      return;
-    }
-
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters long");
+    // Validate all fields
+    if (!validateAllFields()) {
       return;
     }
 
@@ -46,23 +108,39 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
         setEmail("");
         setPassword("");
         setConfirmPassword("");
+        setFieldErrors({ name: null, email: null, password: null, confirmPassword: null });
+        setTouched({ name: false, email: false, password: false, confirmPassword: false });
 
-        console.log("Registration successful:", response);
       } else {
         setError(response.message || "Registration failed");
       }
     } catch (err) {
-      if (err.response) {
-        setError(err.response.data.message || "Registration failed");
-      } else if (err.request) {
-        setError("Network error. Please try again.");
+      const data = err?.response ? err.response.data : err;
+      if (data && typeof data === "object" && Array.isArray(data.errors)) {
+        const backendErrors = {};
+        data.errors.forEach((e) => {
+          backendErrors[e.field] = e.message;
+        });
+        setFieldErrors((prev) => ({ ...prev, ...backendErrors }));
       } else {
-        console.error("An unexpected error occurred:", err);
-        setError("An error occurred. Please try again.");
+        setError(
+          typeof data === "string" ? data : (data?.message || "Registration failed")
+        );
       }
     } finally {
       setLoading(false);
     }
+  };
+
+  // Helper to get input class based on validation state
+  const getInputClass = (field) => {
+    const baseClass = "w-full px-4 py-3 border rounded-lg text-base focus:outline-none focus:ring-2 transition-colors";
+    const hasError = touched[field] && fieldErrors[field];
+
+    if (hasError) {
+      return `${baseClass} border-red-300 focus:ring-red-500 focus:border-red-500`;
+    }
+    return `${baseClass} border-gray-300 focus:ring-blue-500 focus:border-blue-500`;
   };
 
   return (
@@ -83,11 +161,18 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
             id="name"
             type="text"
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(e) => handleChange("name", e.target.value, setName)}
+            onBlur={(e) => handleBlur("name", e.target.value)}
             placeholder="Enter your full name"
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-            required
+            className={getInputClass("name")}
+            aria-invalid={touched.name && fieldErrors.name ? "true" : "false"}
+            aria-describedby={fieldErrors.name ? "name-error" : undefined}
           />
+          {touched.name && fieldErrors.name && (
+            <p id="name-error" className="mt-1 text-sm text-red-600">
+              {fieldErrors.name}
+            </p>
+          )}
         </div>
 
         <div>
@@ -100,11 +185,18 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
             id="email"
             type="email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => handleChange("email", e.target.value, setEmail)}
+            onBlur={(e) => handleBlur("email", e.target.value)}
             placeholder="Enter your email"
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-            required
+            className={getInputClass("email")}
+            aria-invalid={touched.email && fieldErrors.email ? "true" : "false"}
+            aria-describedby={fieldErrors.email ? "email-error" : undefined}
           />
+          {touched.email && fieldErrors.email && (
+            <p id="email-error" className="mt-1 text-sm text-red-600">
+              {fieldErrors.email}
+            </p>
+          )}
         </div>
 
         <div>
@@ -118,10 +210,12 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
               id="password"
               type={showPassword ? "text" : "password"}
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => handleChange("password", e.target.value, setPassword)}
+              onBlur={(e) => handleBlur("password", e.target.value)}
               placeholder="Enter your password"
-              className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-              required
+              className={`${getInputClass("password")} pr-12`}
+              aria-invalid={touched.password && fieldErrors.password ? "true" : "false"}
+              aria-describedby={fieldErrors.password ? "password-error" : undefined}
             />
             <button
               type="button"
@@ -164,6 +258,17 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
               )}
             </button>
           </div>
+          {touched.password && fieldErrors.password && (
+            <p id="password-error" className="mt-1 text-sm text-red-600">
+              {fieldErrors.password}
+            </p>
+          )}
+          {/* Password requirements hint */}
+          {!fieldErrors.password && password.length > 0 && password.length < 6 && (
+            <p className="mt-1 text-sm text-gray-500">
+              Password must be at least 6 characters
+            </p>
+          )}
         </div>
 
         <div>
@@ -177,10 +282,12 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
               id="confirmPassword"
               type={showConfirmPassword ? "text" : "password"}
               value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
+              onChange={(e) => handleChange("confirmPassword", e.target.value, setConfirmPassword)}
+              onBlur={(e) => handleBlur("confirmPassword", e.target.value)}
               placeholder="Confirm your password"
-              className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-              required
+              className={`${getInputClass("confirmPassword")} pr-12`}
+              aria-invalid={touched.confirmPassword && fieldErrors.confirmPassword ? "true" : "false"}
+              aria-describedby={fieldErrors.confirmPassword ? "confirmPassword-error" : undefined}
             />
             <button
               type="button"
@@ -223,6 +330,11 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
               )}
             </button>
           </div>
+          {touched.confirmPassword && fieldErrors.confirmPassword && (
+            <p id="confirmPassword-error" className="mt-1 text-sm text-red-600">
+              {fieldErrors.confirmPassword}
+            </p>
+          )}
         </div>
 
         <button

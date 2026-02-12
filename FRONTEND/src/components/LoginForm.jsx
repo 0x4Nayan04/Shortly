@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { loginUser } from "../api/user.api";
+import { validators } from "../utils/validation";
 
 const LoginForm = ({ onLoginSuccess, switchToRegister }) => {
   const [email, setEmail] = useState("");
@@ -7,12 +8,65 @@ const LoginForm = ({ onLoginSuccess, switchToRegister }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  
+  // Field-level validation errors (shown on blur or submit)
+  const [fieldErrors, setFieldErrors] = useState({
+    email: null,
+    password: null,
+  });
+  // Track which fields have been touched (blurred)
+  const [touched, setTouched] = useState({
+    email: false,
+    password: false,
+  });
+
+  // Validate a single field
+  const validateField = (field, value) => {
+    switch (field) {
+      case "email":
+        return validators.email(value);
+      case "password":
+        return validators.loginPassword(value);
+      default:
+        return null;
+    }
+  };
+
+  // Handle field blur - validate and mark as touched
+  const handleBlur = (field, value) => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+    setFieldErrors((prev) => ({ ...prev, [field]: validateField(field, value) }));
+  };
+
+  // Handle field change - clear error if field is touched and now valid
+  const handleChange = (field, value, setter) => {
+    setter(value);
+    // Clear server error when user starts typing
+    if (error) setError("");
+    
+    // If field was touched, validate on change for immediate feedback
+    if (touched[field]) {
+      setFieldErrors((prev) => ({ ...prev, [field]: validateField(field, value) }));
+    }
+  };
+
+  // Validate all fields before submit
+  const validateAllFields = () => {
+    const errors = {
+      email: validators.email(email),
+      password: validators.loginPassword(password),
+    };
+    setFieldErrors(errors);
+    setTouched({ email: true, password: true });
+    
+    return !errors.email && !errors.password;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!email || !password) {
-      setError("Please fill in all fields");
+    // Validate all fields
+    if (!validateAllFields()) {
       return;
     }
 
@@ -31,23 +85,39 @@ const LoginForm = ({ onLoginSuccess, switchToRegister }) => {
         // Clear form
         setEmail("");
         setPassword("");
+        setFieldErrors({ email: null, password: null });
+        setTouched({ email: false, password: false });
 
-        console.log("Login successful:", response);
       } else {
         setError(response.message || "Login failed");
       }
     } catch (err) {
-      if (err.response) {
-        setError(err.response.data.message || "Invalid email or password");
-      } else if (err.request) {
-        setError("Network error. Please try again.");
+      const data = err?.response ? err.response.data : err;
+      if (data && typeof data === "object" && Array.isArray(data.errors)) {
+        const backendErrors = {};
+        data.errors.forEach((e) => {
+          backendErrors[e.field] = e.message;
+        });
+        setFieldErrors((prev) => ({ ...prev, ...backendErrors }));
       } else {
-        console.error("An unexpected error occurred:", err);
-        setError("An error occurred. Please try again.");
+        setError(
+          typeof data === "string" ? data : (data?.message || "Invalid email or password")
+        );
       }
     } finally {
       setLoading(false);
     }
+  };
+
+  // Helper to get input class based on validation state
+  const getInputClass = (field) => {
+    const baseClass = "w-full px-4 py-3 border rounded-lg text-base focus:outline-none focus:ring-2 transition-colors";
+    const hasError = touched[field] && fieldErrors[field];
+    
+    if (hasError) {
+      return `${baseClass} border-red-300 focus:ring-red-500 focus:border-red-500`;
+    }
+    return `${baseClass} border-gray-300 focus:ring-blue-500 focus:border-blue-500`;
   };
 
   return (
@@ -68,11 +138,18 @@ const LoginForm = ({ onLoginSuccess, switchToRegister }) => {
             id="email"
             type="email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => handleChange("email", e.target.value, setEmail)}
+            onBlur={(e) => handleBlur("email", e.target.value)}
             placeholder="Enter your email"
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-            required
+            className={getInputClass("email")}
+            aria-invalid={touched.email && fieldErrors.email ? "true" : "false"}
+            aria-describedby={fieldErrors.email ? "email-error" : undefined}
           />
+          {touched.email && fieldErrors.email && (
+            <p id="email-error" className="mt-1 text-sm text-red-600">
+              {fieldErrors.email}
+            </p>
+          )}
         </div>
 
         <div>
@@ -86,10 +163,12 @@ const LoginForm = ({ onLoginSuccess, switchToRegister }) => {
               id="password"
               type={showPassword ? "text" : "password"}
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => handleChange("password", e.target.value, setPassword)}
+              onBlur={(e) => handleBlur("password", e.target.value)}
               placeholder="Enter your password"
-              className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-              required
+              className={`${getInputClass("password")} pr-12`}
+              aria-invalid={touched.password && fieldErrors.password ? "true" : "false"}
+              aria-describedby={fieldErrors.password ? "password-error" : undefined}
             />
             <button
               type="button"
@@ -132,6 +211,11 @@ const LoginForm = ({ onLoginSuccess, switchToRegister }) => {
               )}
             </button>
           </div>
+          {touched.password && fieldErrors.password && (
+            <p id="password-error" className="mt-1 text-sm text-red-600">
+              {fieldErrors.password}
+            </p>
+          )}
         </div>
 
         <button
