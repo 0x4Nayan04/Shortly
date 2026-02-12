@@ -1,4 +1,16 @@
 export const errorHandler = (err, req, res, next) => {
+  if (process.env.NODE_ENV !== "production") {
+    console.error("Error:", err.message);
+  }
+
+  if (err instanceof ValidationError) {
+    return res.status(err.statusCode).json({
+      success: false,
+      message: err.message,
+      errors: err.errors,
+    });
+  }
+
   if (err instanceof AppError) {
     return res.status(err.statusCode).json({
       success: false,
@@ -8,7 +20,9 @@ export const errorHandler = (err, req, res, next) => {
 
   res.status(500).json({
     success: false,
-    message: err.message || "Internal Server Error",
+    message: process.env.NODE_ENV === "production" 
+      ? "Internal Server Error" 
+      : err.message || "Internal Server Error",
   });
 };
 
@@ -21,6 +35,15 @@ export class AppError extends Error {
     this.statusCode = statusCode;
     this.isOperational = isOperational;
     Error.captureStackTrace(this, this.constructor);
+  }
+}
+
+export class ValidationError extends AppError {
+  errors;
+
+  constructor(message = "Validation failed", errors = []) {
+    super(message, 400);
+    this.errors = errors;
   }
 }
 

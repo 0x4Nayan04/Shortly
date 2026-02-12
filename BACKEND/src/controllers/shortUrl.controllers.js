@@ -91,8 +91,9 @@ export const redirectFromShortUrl = async (req, res) => {
 export const getUserUrls = async (req, res) => {
   try {
     const userId = req.user._id;
-    const limit = parseInt(req.query.limit) || 20; // Default 20 URLs per page
-    const skip = parseInt(req.query.skip) || 0;
+    const query = req.validatedQuery || req.query;
+    const limit = parseInt(query.limit) || 20;
+    const skip = parseInt(query.skip) || 0;
 
     // Get paginated URLs created by the authenticated user
     const userUrls = await short_urlModel
@@ -190,7 +191,8 @@ export const createCustomShortUrl = async (req, res) => {
 
 export const deleteShortUrl = async (req, res) => {
   try {
-    const { id } = req.params;
+    const params = req.validatedParams || req.params;
+    const { id } = params;
     const userId = req.user._id;
 
     if (!id) {
