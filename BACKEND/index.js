@@ -25,7 +25,7 @@ const app = express();
 app.use(helmet({
   // Disable CSP for this JSON API backend; CSP is mainly useful for HTML content.
   contentSecurityPolicy: false,
-  crossOriginEmbedderPolicy: false // Allow embedding for development
+  crossOriginEmbedderPolicy: process.env.NODE_ENV === "production" // Enable in production, allow embedding for development
 }));
 
 // Enable compression for better performance
