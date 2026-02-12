@@ -23,16 +23,8 @@ const app = express();
 
 // Security Headers - Apply first
 app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-      fontSrc: ["'self'", "https://fonts.gstatic.com"],
-      scriptSrc: ["'self'"],
-      imgSrc: ["'self'", "data:", "https:", "http:"],
-      connectSrc: ["'self'"]
-    }
-  },
+  // Disable CSP for this JSON API backend; CSP is mainly useful for HTML content.
+  contentSecurityPolicy: false,
   crossOriginEmbedderPolicy: false // Allow embedding for development
 }));
 
