@@ -66,7 +66,7 @@ const AccountSettings = ({ user }) => {
                       e.target.nextSibling.style.display = "flex";
                     }}
                   />
-                  <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center shadow-lg hidden">
+                  <div className="w-20 h-20 bg-blue-100 rounded-full items-center justify-center shadow-lg hidden">
                     <span className="text-2xl font-bold text-blue-600">
                       {(user.name || user.email || "U").charAt(0).toUpperCase()}
                     </span>
