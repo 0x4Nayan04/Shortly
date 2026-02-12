@@ -46,4 +46,22 @@ export const validateEnvFormats = () => {
   if (process.env.FRONT_END_URL && !process.env.FRONT_END_URL.startsWith('http')) {
     console.warn('⚠️ FRONT_END_URL should start with "http://" or "https://"');
   }
+  
+  // Validate ALLOWED_ORIGINS format if provided
+  if (process.env.ALLOWED_ORIGINS) {
+    const origins = process.env.ALLOWED_ORIGINS.split(',');
+    const invalidOrigins = origins.filter(origin => {
+      const trimmed = origin.trim();
+      return trimmed && !trimmed.startsWith('http');
+    });
+    
+    if (invalidOrigins.length > 0) {
+      console.warn('⚠️ All origins in ALLOWED_ORIGINS should start with "http://" or "https://"');
+      console.warn('   Invalid origins:', invalidOrigins);
+    }
+    
+    console.log(`✅ CORS configured with ${origins.length} allowed origins:`, origins.map(o => o.trim()));
+  } else {
+    console.log('ℹ️ Using single origin from FRONT_END_URL for CORS');
+  }
 };
