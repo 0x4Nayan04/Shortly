@@ -8,6 +8,7 @@ import {
 } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import { PageLoader } from './components/LoadingSpinner';
+import { SkipLink, LiveRegion, useAnnouncement } from './components/Accessibility';
 import { logoutUser, getCurrentUser } from './api/user.api';
 import { getMyUrls } from './api/shortUrl.api';
 
@@ -31,16 +32,23 @@ const LoginPage = ({ user, navigate, onLoginSuccess }) => {
 	}
 
 	return (
-		<div className='min-h-[calc(100vh-4rem)] bg-gray-50 flex items-center justify-center py-12 px-4'>
+		<main
+			id="main-content"
+			className='min-h-[calc(100vh-4rem)] bg-gray-50 flex items-center justify-center py-12 px-4'
+			role="main"
+			aria-labelledby="login-heading"
+		>
 			<div className='max-w-md w-full'>
 				<button
 					onClick={() => navigate('/')}
-					className='mb-6 flex items-center text-gray-600 hover:text-gray-800 transition-colors'>
+					className='mb-6 flex items-center text-gray-600 hover:text-gray-800 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 rounded-lg px-2 py-1'
+					aria-label="Go back to home page">
 					<svg
 						className='w-5 h-5 mr-2'
 						fill='none'
 						stroke='currentColor'
-						viewBox='0 0 24 24'>
+						viewBox='0 0 24 24'
+						aria-hidden="true">
 						<path
 							strokeLinecap='round'
 							strokeLinejoin='round'
@@ -57,7 +65,7 @@ const LoginPage = ({ user, navigate, onLoginSuccess }) => {
 					/>
 				</Suspense>
 			</div>
-		</div>
+		</main>
 	);
 };
 
@@ -72,16 +80,23 @@ const RegisterPage = ({ user, navigate, onRegisterSuccess }) => {
 	}
 
 	return (
-		<div className='min-h-[calc(100vh-4rem)] bg-gray-50 flex items-center justify-center py-12 px-4'>
+		<main
+			id="main-content"
+			className='min-h-[calc(100vh-4rem)] bg-gray-50 flex items-center justify-center py-12 px-4'
+			role="main"
+			aria-labelledby="register-heading"
+		>
 			<div className='max-w-md w-full'>
 				<button
 					onClick={() => navigate('/')}
-					className='mb-6 flex items-center text-gray-600 hover:text-gray-800 transition-colors'>
+					className='mb-6 flex items-center text-gray-600 hover:text-gray-800 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 rounded-lg px-2 py-1'
+					aria-label="Go back to home page">
 					<svg
 						className='w-5 h-5 mr-2'
 						fill='none'
 						stroke='currentColor'
-						viewBox='0 0 24 24'>
+						viewBox='0 0 24 24'
+						aria-hidden="true">
 						<path
 							strokeLinecap='round'
 							strokeLinejoin='round'
@@ -98,7 +113,7 @@ const RegisterPage = ({ user, navigate, onRegisterSuccess }) => {
 					/>
 				</Suspense>
 			</div>
-		</div>
+		</main>
 	);
 };
 
@@ -106,12 +121,18 @@ const ProtectedRoute = ({ user, authChecked, component, navigate }) => {
 	// Show loading only for protected routes while auth is being checked
 	if (!authChecked) {
 		return (
-			<div className='min-h-[calc(100vh-4rem)] bg-gray-50 flex items-center justify-center'>
-				<div className='text-center'>
-					<div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2'></div>
+			<main
+				id="main-content"
+				className='min-h-[calc(100vh-4rem)] bg-gray-50 flex items-center justify-center'
+				role="main"
+				aria-busy="true"
+				aria-label="Checking authentication status"
+			>
+				<div className='text-center' role="status">
+					<div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2' aria-hidden="true"></div>
 					<p className='text-gray-600 text-sm'>Checking authentication...</p>
 				</div>
-			</div>
+			</main>
 		);
 	}
 	
@@ -134,6 +155,7 @@ const App = () => {
 		totalUrls: 0,
 		totalClicks: 0
 	});
+	const [announcement, announce] = useAnnouncement();
 	const navigate = useNavigate();
 	const location = useLocation();
 
@@ -192,8 +214,9 @@ const App = () => {
 	const handleAuthSuccess = useCallback((response) => {
 		const userData = response.data?.user || response.user;
 		setUser(userData || { email: 'User' });
+		announce('Successfully signed in. Redirecting to dashboard.');
 		navigate('/dashboard');
-	}, [navigate]);
+	}, [navigate, announce]);
 
 	// Memoized logout handler
 	const handleLogout = useCallback(async () => {
@@ -202,9 +225,10 @@ const App = () => {
 		} catch {
 		} finally {
 			setUser(null);
+			announce('You have been signed out.');
 			navigate('/');
 		}
-	}, [navigate]);
+	}, [navigate, announce]);
 
 	// Memoized showAuth handler
 	const showAuth = useCallback(() => navigate('/login'), [navigate]);
@@ -220,6 +244,12 @@ const App = () => {
 
 	return (
 		<div className='min-h-screen bg-gray-50'>
+			{/* Skip Link for keyboard navigation */}
+			<SkipLink targetId="main-content" />
+			
+			{/* Live region for screen reader announcements */}
+			<LiveRegion message={announcement} politeness="polite" />
+			
 			<Navbar
 				user={user}
 				onLogout={handleLogout}

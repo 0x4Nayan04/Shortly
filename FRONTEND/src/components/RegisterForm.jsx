@@ -134,13 +134,13 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
 
   // Helper to get input class based on validation state
   const getInputClass = (field) => {
-    const baseClass = "w-full px-4 py-3 border rounded-lg text-base focus:outline-none focus:ring-2 transition-colors";
+    const baseClass = "w-full px-4 py-3 border rounded-lg text-base focus:outline-none focus-visible:ring-2 transition-colors";
     const hasError = touched[field] && fieldErrors[field];
 
     if (hasError) {
-      return `${baseClass} border-red-300 focus:ring-red-500 focus:border-red-500`;
+      return `${baseClass} border-red-300 focus-visible:ring-red-500 focus:border-red-500`;
     }
-    return `${baseClass} border-gray-300 focus:ring-blue-500 focus:border-blue-500`;
+    return `${baseClass} border-gray-300 focus-visible:ring-blue-500 focus:border-blue-500`;
   };
 
   return (

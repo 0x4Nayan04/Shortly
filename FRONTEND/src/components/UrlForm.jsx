@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { createShortUrl, createCustomShortUrl } from "../api/shortUrl.api";
 import { validators } from "../utils/validation";
+import { useAnnouncement, LiveRegion } from "./Accessibility";
 
 const UrlForm = ({ onUrlCreated, user, onShowAuth }) => {
   const [url, setUrl] = useState("");
@@ -10,6 +11,7 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth }) => {
   const [error, setError] = useState("");
   const [isCopied, setIsCopied] = useState(false);
   const [useCustomAlias, setUseCustomAlias] = useState(false);
+  const [announcement, announce] = useAnnouncement();
 
   // Field-level validation errors
   const [fieldErrors, setFieldErrors] = useState({
@@ -92,6 +94,7 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth }) => {
 
       if (response && response.data && response.data.short_url) {
         setShortUrl(response.data.short_url);
+        announce("URL shortened successfully! Your new short URL is ready.");
         // Call the callback if provided (for dashboard refresh)
         if (onUrlCreated) {
           onUrlCreated();
@@ -128,6 +131,7 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth }) => {
   const copyToClipboard = () => {
     navigator.clipboard.writeText(shortUrl);
     setIsCopied(true);
+    announce("Short URL copied to clipboard");
   };
 
   // Reset the "Copied!" status after a few seconds
@@ -142,22 +146,27 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth }) => {
 
   // Helper to get input class based on validation state
   const getInputClass = (field) => {
-    const baseClass = "flex-1 px-4 py-3 border rounded-lg text-base focus:outline-none focus:ring-2 focus:border-transparent transition-all";
+    const baseClass = "flex-1 px-4 py-3 border rounded-lg text-base focus:outline-none focus-visible:ring-2 focus:border-transparent transition-all";
     const hasError = touched[field] && fieldErrors[field];
 
     if (hasError) {
-      return `${baseClass} border-red-300 focus:ring-red-500`;
+      return `${baseClass} border-red-300 focus-visible:ring-red-500`;
     }
-    return `${baseClass} border-gray-300 focus:ring-blue-500`;
+    return `${baseClass} border-gray-300 focus-visible:ring-blue-500`;
   };
 
   return (
     <div className="space-y-6">
-      <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Live region for screen reader announcements */}
+      <LiveRegion message={announcement} politeness="polite" />
+      
+      <form onSubmit={handleSubmit} className="space-y-4" aria-label="URL shortener form">
         <div className="space-y-3">
           <div className="space-y-1">
+            <label htmlFor="url-input" className="sr-only">Enter your long URL</label>
             <div className="flex gap-3">
               <input
+                id="url-input"
                 type="url"
                 value={url}
                 onChange={(e) => handleChange("url", e.target.value, setUrl)}
@@ -166,30 +175,33 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth }) => {
                 className={getInputClass("url")}
                 aria-invalid={touched.url && fieldErrors.url ? "true" : "false"}
                 aria-describedby={fieldErrors.url ? "url-error" : undefined}
+                autoComplete="url"
               />
               <button
                 type="submit"
                 disabled={loading}
-                className="px-8 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white font-medium rounded-lg text-base transition-colors whitespace-nowrap">
+                aria-busy={loading}
+                className="px-8 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white font-medium rounded-lg text-base transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
                 {loading ? "Shortening..." : "Shorten"}
               </button>
             </div>
             {touched.url && fieldErrors.url && (
-              <p id="url-error" className="text-sm text-red-600">
+              <p id="url-error" className="text-sm text-red-600" role="alert">
                 {fieldErrors.url}
               </p>
             )}
           </div>
 
-          {/* Custom Alias Option */}
-          <div className="flex items-center space-x-3">
-            <label className="flex items-center space-x-2 cursor-pointer">
+          <div className="flex items-center gap-3">
+            <label
+              htmlFor="custom-alias-checkbox"
+              className="flex items-center gap-3 cursor-pointer">
               <input
+                id="custom-alias-checkbox"
                 type="checkbox"
                 checked={useCustomAlias}
                 onChange={(e) => {
                   if (!user && e.target.checked) {
-                    // User is not logged in, show login prompt
                     setError("Please sign in to use custom aliases");
                     if (onShowAuth) {
                       onShowAuth();
@@ -197,16 +209,18 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth }) => {
                     return;
                   }
                   setUseCustomAlias(e.target.checked);
-                  setError(""); // Clear any existing errors
-                  // Reset custom alias validation when toggling off
+                  setError("");
                   if (!e.target.checked) {
                     setFieldErrors((prev) => ({ ...prev, customAlias: null }));
                     setTouched((prev) => ({ ...prev, customAlias: false }));
                   }
                 }}
-                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                className="w-4 h-4 shrink-0 min-w-0 min-h-0 text-blue-600 border-gray-300 rounded focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                aria-describedby="custom-alias-description"
               />
-              <span className="text-sm text-gray-700">
+              <span
+                className="text-sm font-medium text-gray-700"
+                id="custom-alias-description">
                 Use custom alias
                 {!user && (
                   <span className="text-blue-600 ml-1">(requires login)</span>
@@ -217,11 +231,13 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth }) => {
 
           {useCustomAlias && (
             <div className="space-y-1">
+              <label htmlFor="custom-alias-input" className="sr-only">Custom alias</label>
               <div className="flex gap-3 items-center">
-                <span className="text-sm text-gray-500 whitespace-nowrap">
+                <span className="text-sm text-gray-500 whitespace-nowrap" aria-hidden="true">
                   {import.meta.env.VITE_APP_URL}/
                 </span>
                 <input
+                  id="custom-alias-input"
                   type="text"
                   value={customAlias}
                   onChange={(e) => handleChange("customAlias", e.target.value, setCustomAlias)}
@@ -230,10 +246,11 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth }) => {
                   className={getInputClass("customAlias")}
                   aria-invalid={touched.customAlias && fieldErrors.customAlias ? "true" : "false"}
                   aria-describedby={fieldErrors.customAlias ? "customAlias-error" : "customAlias-hint"}
+                  autoComplete="off"
                 />
               </div>
               {touched.customAlias && fieldErrors.customAlias ? (
-                <p id="customAlias-error" className="text-sm text-red-600">
+                <p id="customAlias-error" className="text-sm text-red-600" role="alert">
                   {fieldErrors.customAlias}
                 </p>
               ) : (
@@ -247,13 +264,18 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth }) => {
       </form>
 
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
+        <div 
+          className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg"
+          role="alert"
+          aria-live="assertive"
+        >
           <div className="flex items-center">
             <svg
               className="w-5 h-5 mr-2"
               fill="none"
               stroke="currentColor"
-              viewBox="0 0 24 24">
+              viewBox="0 0 24 24"
+              aria-hidden="true">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -267,13 +289,18 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth }) => {
       )}
 
       {shortUrl && (
-        <div className="p-6 bg-green-50 border border-green-200 rounded-lg">
+        <div 
+          className="p-6 bg-green-50 border border-green-200 rounded-lg"
+          role="status"
+          aria-live="polite"
+        >
           <div className="flex items-center mb-3">
             <svg
               className="w-5 h-5 text-green-600 mr-2"
               fill="none"
               stroke="currentColor"
-              viewBox="0 0 24 24">
+              viewBox="0 0 24 24"
+              aria-hidden="true">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -286,15 +313,20 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth }) => {
             </span>
           </div>
           <div className="flex items-center gap-3">
+            <label htmlFor="short-url-output" className="sr-only">Your shortened URL</label>
             <input
+              id="short-url-output"
               type="text"
               value={shortUrl}
               readOnly
-              className="flex-1 px-3 py-2 border border-green-300 rounded-lg bg-white text-sm font-mono"
+              className="flex-1 px-3 py-2 border border-green-300 rounded-lg bg-white text-sm font-mono focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500"
+              aria-describedby="short-url-description"
             />
+            <span id="short-url-description" className="sr-only">Your new shortened URL. Click copy to copy it to your clipboard.</span>
             <button
               onClick={copyToClipboard}
-              className={`px-4 py-2 font-medium rounded-lg transition-colors ${
+              aria-label={isCopied ? "URL copied to clipboard" : "Copy URL to clipboard"}
+              className={`px-4 py-2 font-medium rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 ${
                 isCopied
                   ? "bg-green-600 text-white"
                   : "bg-green-100 text-green-700 hover:bg-green-200"

@@ -1,10 +1,18 @@
 import { useEffect, useRef, useState, memo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { useFocusTrap } from "./Accessibility";
 
 const Navbar = memo(({ user, onLogout, onShowAuth, onShowProfile }) => {
   const navigate = useNavigate();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
+  const dropdownButtonRef = useRef(null);
+  
+  // Focus trap for dropdown menu
+  const focusTrapRef = useFocusTrap(isDropdownOpen, {
+    onEscape: () => setIsDropdownOpen(false),
+    restoreFocus: true,
+  });
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -53,31 +61,62 @@ const Navbar = memo(({ user, onLogout, onShowAuth, onShowProfile }) => {
     navigate("/login");
   }, [navigate]);
 
+  // Handle keyboard navigation in dropdown
+  const handleDropdownKeyDown = useCallback((e) => {
+    if (e.key === 'Escape') {
+      setIsDropdownOpen(false);
+      dropdownButtonRef.current?.focus();
+    }
+  }, []);
+
   return (
-    <nav className="bg-white/80 backdrop-blur-xl border-b border-gray-100/50 sticky top-0 z-50">
+    <nav 
+      className="bg-white/80 backdrop-blur-xl border-b border-gray-100/50 sticky top-0 z-50"
+      role="navigation"
+      aria-label="Main navigation"
+    >
       <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
         <div className="flex justify-between items-center h-20">
           {/* Logo */}
-          <div
-            className="flex items-center hover:cursor-pointer group transition-all duration-200"
-            onClick={handleNavigateHome}>
+          <a
+            href="/"
+            onClick={(e) => {
+              e.preventDefault();
+              handleNavigateHome();
+            }}
+            className="flex items-center group transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 rounded-lg"
+            aria-label="Shortly - Go to homepage"
+          >
             <h1 className="text-2xl font-bold text-gray-900 tracking-tight group-hover:text-indigo-600 transition-colors duration-200">
               Short<span className="text-indigo-600">ly</span>
             </h1>
-          </div>
+          </a>
 
           {/* User Menu */}
           <div className="flex items-center space-x-6">
             {user ? (
               <div className="relative" ref={dropdownRef}>
                 <button
+                  ref={dropdownButtonRef}
                   onClick={toggleDropdown}
-                  className="flex items-center space-x-3 hover:bg-gray-50/80 rounded-2xl px-4 py-3 transition-all duration-200 group">
+                  onKeyDown={(e) => {
+                    if (e.key === 'ArrowDown' && !isDropdownOpen) {
+                      e.preventDefault();
+                      setIsDropdownOpen(true);
+                    }
+                  }}
+                  className="flex items-center space-x-3 hover:bg-gray-50/80 rounded-2xl px-4 py-3 transition-all duration-200 group focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+                  aria-expanded={isDropdownOpen}
+                  aria-haspopup="true"
+                  aria-controls="user-menu"
+                  aria-label={`User menu for ${user.name || user.email}`}
+                >
                   <div className="flex items-center space-x-3">
                     <div className="relative">
                       <img
                         src={user.avatar}
-                        alt={user.name}
+                        alt=""
+                        aria-hidden="true"
                         className="w-10 h-10 rounded-full ring-2 ring-gray-100 group-hover:ring-indigo-200 transition-all duration-200"
                         onError={(e) => {
                           e.target.style.display = "none";
@@ -86,7 +125,9 @@ const Navbar = memo(({ user, onLogout, onShowAuth, onShowProfile }) => {
                       />
                       <div
                         className="w-10 h-10 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-full flex items-center justify-center ring-2 ring-gray-100 group-hover:ring-indigo-200 transition-all duration-200"
-                        style={{ display: "none" }}>
+                        style={{ display: "none" }}
+                        aria-hidden="true"
+                      >
                         <span className="text-sm font-semibold text-indigo-700">
                           {(user.name || user.email || "U")
                             .charAt(0)
@@ -110,7 +151,9 @@ const Navbar = memo(({ user, onLogout, onShowAuth, onShowProfile }) => {
                       }`}
                       fill="none"
                       stroke="currentColor"
-                      viewBox="0 0 24 24">
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                    >
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -123,14 +166,22 @@ const Navbar = memo(({ user, onLogout, onShowAuth, onShowProfile }) => {
 
                 {/* Dropdown Menu */}
                 {isDropdownOpen && (
-                  <div className="absolute right-0 mt-3 w-64 bg-white/95 backdrop-blur-xl rounded-2xl shadow-xl border border-gray-100/50 py-2 z-50 animate-slide-down">
+                  <div 
+                    ref={focusTrapRef}
+                    id="user-menu"
+                    role="group"
+                    aria-label="User menu"
+                    onKeyDown={handleDropdownKeyDown}
+                    className="absolute right-0 mt-3 w-64 bg-white/95 backdrop-blur-xl rounded-2xl shadow-xl border border-gray-100/50 py-2 z-50 animate-slide-down"
+                  >
                     {/* User Info */}
                     <div className="px-5 py-4 border-b border-gray-100/60">
                       <div className="flex items-center space-x-4">
                         <div className="relative">
                           <img
                             src={user.avatar}
-                            alt={user.name}
+                            alt=""
+                            aria-hidden="true"
                             className="w-12 h-12 rounded-full ring-2 ring-gray-100"
                             onError={(e) => {
                               e.target.style.display = "none";
@@ -139,7 +190,9 @@ const Navbar = memo(({ user, onLogout, onShowAuth, onShowProfile }) => {
                           />
                           <div
                             className="w-12 h-12 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-full flex items-center justify-center ring-2 ring-gray-100"
-                            style={{ display: "none" }}>
+                            style={{ display: "none" }}
+                            aria-hidden="true"
+                          >
                             <span className="text-sm font-semibold text-indigo-700">
                               {(user.name || user.email || "U")
                                 .charAt(0)
@@ -158,12 +211,13 @@ const Navbar = memo(({ user, onLogout, onShowAuth, onShowProfile }) => {
                       </div>
                     </div>
 
-                    {/* Menu Items */}
                     <div className="py-2">
                       <button
                         onClick={handleNavigateDashboard}
-                        className="flex items-center w-full px-5 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50/80 hover:text-gray-900 transition-all duration-200 group">
-                        <div className="w-5 h-5 mr-3 text-gray-400 group-hover:text-indigo-500 transition-colors duration-200">
+                        tabIndex={0}
+                        className="flex items-center w-full px-5 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50/80 hover:text-gray-900 transition-all duration-200 group focus:outline-none focus:bg-indigo-50 focus:text-indigo-700"
+                      >
+                        <div className="w-5 h-5 mr-3 text-gray-400 group-hover:text-indigo-500 group-focus:text-indigo-500 transition-colors duration-200" aria-hidden="true">
                           <svg
                             fill="none"
                             stroke="currentColor"
@@ -187,8 +241,10 @@ const Navbar = memo(({ user, onLogout, onShowAuth, onShowProfile }) => {
 
                       <button
                         onClick={handleShowProfileClick}
-                        className="flex items-center w-full px-5 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50/80 hover:text-gray-900 transition-all duration-200 group">
-                        <div className="w-5 h-5 mr-3 text-gray-400 group-hover:text-indigo-500 transition-colors duration-200">
+                        tabIndex={0}
+                        className="flex items-center w-full px-5 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50/80 hover:text-gray-900 transition-all duration-200 group focus:outline-none focus:bg-indigo-50 focus:text-indigo-700"
+                      >
+                        <div className="w-5 h-5 mr-3 text-gray-400 group-hover:text-indigo-500 group-focus:text-indigo-500 transition-colors duration-200" aria-hidden="true">
                           <svg
                             fill="none"
                             stroke="currentColor"
@@ -206,8 +262,10 @@ const Navbar = memo(({ user, onLogout, onShowAuth, onShowProfile }) => {
 
                       <button
                         onClick={handleNavigateSettings}
-                        className="flex items-center w-full px-5 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50/80 hover:text-gray-900 transition-all duration-200 group">
-                        <div className="w-5 h-5 mr-3 text-gray-400 group-hover:text-indigo-500 transition-colors duration-200">
+                        tabIndex={0}
+                        className="flex items-center w-full px-5 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50/80 hover:text-gray-900 transition-all duration-200 group focus:outline-none focus:bg-indigo-50 focus:text-indigo-700"
+                      >
+                        <div className="w-5 h-5 mr-3 text-gray-400 group-hover:text-indigo-500 group-focus:text-indigo-500 transition-colors duration-200" aria-hidden="true">
                           <svg
                             fill="none"
                             stroke="currentColor"
@@ -230,12 +288,13 @@ const Navbar = memo(({ user, onLogout, onShowAuth, onShowProfile }) => {
                       </button>
                     </div>
 
-                    {/* Logout */}
                     <div className="border-t border-gray-100/60 py-2 mt-2">
                       <button
                         onClick={handleLogoutClick}
-                        className="flex items-center w-full px-5 py-3 text-sm font-medium text-red-600 hover:bg-red-50/80 hover:text-red-700 transition-all duration-200 group">
-                        <div className="w-5 h-5 mr-3 text-red-500 group-hover:text-red-600 transition-colors duration-200">
+                        tabIndex={0}
+                        className="flex items-center w-full px-5 py-3 text-sm font-medium text-red-600 hover:bg-red-50/80 hover:text-red-700 transition-all duration-200 group focus:outline-none focus:bg-red-50 focus:text-red-700"
+                      >
+                        <div className="w-5 h-5 mr-3 text-red-500 group-hover:text-red-600 group-focus:text-red-600 transition-colors duration-200" aria-hidden="true">
                           <svg
                             fill="none"
                             stroke="currentColor"
@@ -258,12 +317,12 @@ const Navbar = memo(({ user, onLogout, onShowAuth, onShowProfile }) => {
               <div className="flex items-center space-x-4">
                 <button
                   onClick={handleNavigateLogin}
-                  className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors duration-200">
+                  className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 rounded-lg px-3 py-2">
                   Login
                 </button>
                 <button
                   onClick={handleNavigateLogin}
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-2xl text-sm font-semibold transition-all duration-200 hover:scale-105 shadow-sm hover:shadow-md">
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-2xl text-sm font-semibold transition-all duration-200 hover:scale-105 shadow-sm hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2">
                   Sign up
                 </button>
               </div>

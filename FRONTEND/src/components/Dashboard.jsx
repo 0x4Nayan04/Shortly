@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback, memo } from "react";
 import UrlForm from "../components/UrlForm";
 import { getMyUrls, deleteShortUrl } from "../api/shortUrl.api";
 import { UrlItemSkeleton, StatsSkeleton } from "./LoadingSpinner";
+import { LiveRegion, useAnnouncement } from "./Accessibility";
 
 // Memoized URL Item component for better list performance
 const UrlItem = memo(({ url, copiedUrl, deletingUrl, onCopy, onDelete }) => {
@@ -10,7 +11,10 @@ const UrlItem = memo(({ url, copiedUrl, deletingUrl, onCopy, onDelete }) => {
   const isDeleting = deletingUrl === url._id;
 
   return (
-    <div className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+    <article 
+      className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors"
+      aria-label={`Short URL: ${url.short_url}`}
+    >
       <div className="flex items-center justify-between">
         <div className="flex-1 min-w-0">
           <div className="flex items-center space-x-3 mb-2">
@@ -18,37 +22,50 @@ const UrlItem = memo(({ url, copiedUrl, deletingUrl, onCopy, onDelete }) => {
               href={shortUrlFull}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-blue-600 hover:text-blue-800 font-medium">
+              className="text-blue-600 hover:text-blue-800 font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 rounded"
+              aria-label={`Open short URL ${shortUrlFull} in new tab`}
+            >
               {shortUrlFull}
             </a>
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+            <span 
+              className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800"
+              aria-label={`${url.click} clicks`}
+            >
               {url.click} clicks
             </span>
           </div>
-          <p className="text-gray-600 text-sm truncate">
+          <p className="text-gray-600 text-sm truncate" title={url.full_url}>
+            <span className="sr-only">Original URL: </span>
             {url.full_url}
           </p>
           <div className="flex items-center space-x-4 mt-1">
             <p className="text-gray-400 text-xs">
-              Created {new Date(url.createdAt).toLocaleDateString()}
+              <span className="sr-only">Created on </span>
+              <time dateTime={url.createdAt}>
+                Created {new Date(url.createdAt).toLocaleDateString()}
+              </time>
             </p>
           </div>
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2" role="group" aria-label="URL actions">
           <button
             onClick={() => onCopy(shortUrlFull)}
-            className={`p-2 transition-colors ${
+            className={`p-2 transition-colors rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
               isCopied
                 ? "text-green-600"
                 : "text-gray-400 hover:text-gray-600"
             }`}
-            title={isCopied ? "Copied!" : "Copy to clipboard"}>
+            aria-label={isCopied ? "Copied to clipboard" : `Copy ${shortUrlFull} to clipboard`}
+            aria-live="polite"
+          >
             {isCopied ? (
               <svg
                 className="w-5 h-5"
                 fill="none"
                 stroke="currentColor"
-                viewBox="0 0 24 24">
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -61,7 +78,9 @@ const UrlItem = memo(({ url, copiedUrl, deletingUrl, onCopy, onDelete }) => {
                 className="w-5 h-5"
                 fill="none"
                 stroke="currentColor"
-                viewBox="0 0 24 24">
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -75,16 +94,20 @@ const UrlItem = memo(({ url, copiedUrl, deletingUrl, onCopy, onDelete }) => {
           <button
             onClick={() => onDelete(url._id)}
             disabled={isDeleting}
-            className="p-2 text-gray-400 hover:text-red-600 transition-colors disabled:opacity-50"
-            title="Delete URL">
+            className="p-2 text-gray-400 hover:text-red-600 transition-colors disabled:opacity-50 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
+            aria-label={isDeleting ? "Deleting URL..." : `Delete URL ${url.short_url}`}
+            aria-busy={isDeleting}
+          >
             {isDeleting ? (
-              <div className="w-5 h-5 animate-spin rounded-full border-2 border-gray-300 border-t-red-600"></div>
+              <div className="w-5 h-5 animate-spin rounded-full border-2 border-gray-300 border-t-red-600" aria-hidden="true"></div>
             ) : (
               <svg
                 className="w-5 h-5"
                 fill="none"
                 stroke="currentColor"
-                viewBox="0 0 24 24">
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -96,7 +119,7 @@ const UrlItem = memo(({ url, copiedUrl, deletingUrl, onCopy, onDelete }) => {
           </button>
         </div>
       </div>
-    </div>
+    </article>
   );
 });
 
@@ -106,14 +129,14 @@ UrlItem.displayName = 'UrlItem';
 const StatsCard = memo(({ icon, iconBgColor, iconColor, label, value }) => (
   <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
     <div className="flex items-center">
-      <div className="flex-shrink-0">
+      <div className="flex-shrink-0" aria-hidden="true">
         <div className={`w-12 h-12 ${iconBgColor} rounded-lg flex items-center justify-center`}>
           {icon}
         </div>
       </div>
       <div className="ml-4">
         <p className="text-sm font-medium text-gray-500">{label}</p>
-        <p className="text-2xl font-bold text-gray-900">{value}</p>
+        <p className="text-2xl font-bold text-gray-900" aria-label={`${label}: ${value}`}>{value}</p>
       </div>
     </div>
   </div>
@@ -127,6 +150,7 @@ const Dashboard = ({ user }) => {
   const [error, setError] = useState("");
   const [copiedUrl, setCopiedUrl] = useState(null);
   const [deletingUrl, setDeletingUrl] = useState(null);
+  const [announcement, announce] = useAnnouncement();
 
   // Memoize user stats calculation for better performance
   const userStats = useMemo(() => {
@@ -155,14 +179,16 @@ const Dashboard = ({ user }) => {
       if (response && response.data && response.data.urls) {
         const urls = response.data.urls;
         setMyUrls(urls);
+        announce(`Loaded ${urls.length} URLs`);
       }
     } catch (err) {
       setError("Failed to fetch your URLs");
+      announce("Error: Failed to fetch your URLs");
       console.error("Error fetching URLs:", err);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [announce]);
 
   useEffect(() => {
     if (user?._id) fetchMyUrls();
@@ -172,9 +198,10 @@ const Dashboard = ({ user }) => {
   const copyToClipboard = useCallback((url) => {
     navigator.clipboard.writeText(url).then(() => {
       setCopiedUrl(url);
+      announce("URL copied to clipboard");
       setTimeout(() => setCopiedUrl(null), 2000);
     });
-  }, []);
+  }, [announce]);
 
   // Memoized delete handler
   const handleDeleteUrl = useCallback(async (urlId) => {
@@ -187,21 +214,23 @@ const Dashboard = ({ user }) => {
       await deleteShortUrl(urlId);
       // Optimistic update - remove from local state immediately
       setMyUrls(prev => prev.filter(url => url._id !== urlId));
+      announce("URL deleted successfully");
     } catch (err) {
       setError("Failed to delete URL");
+      announce("Error: Failed to delete URL");
       console.error("Error deleting URL:", err);
       // Refresh list on error to sync state
       fetchMyUrls();
     } finally {
       setDeletingUrl(null);
     }
-  }, [fetchMyUrls]);
+  }, [fetchMyUrls, announce]);
 
   // Memoized URL list rendering
   const urlList = useMemo(() => {
     if (loading) {
       return (
-        <div className="space-y-4">
+        <div className="space-y-4" aria-busy="true" aria-label="Loading URLs">
           {[1, 2, 3].map((i) => (
             <UrlItemSkeleton key={i} />
           ))}
@@ -211,8 +240,8 @@ const Dashboard = ({ user }) => {
 
     if (myUrls.length === 0) {
       return (
-        <div className="text-center py-16">
-          <div className="w-24 h-24 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-3xl mx-auto mb-6 flex items-center justify-center">
+        <div className="text-center py-16" role="status">
+          <div className="w-24 h-24 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-3xl mx-auto mb-6 flex items-center justify-center" aria-hidden="true">
             <svg
               className="w-12 h-12 text-indigo-600"
               fill="none"
@@ -237,7 +266,7 @@ const Dashboard = ({ user }) => {
     }
 
     return (
-      <div className="space-y-4">
+      <div className="space-y-4" role="list" aria-label={`Your URLs, ${myUrls.length} items`}>
         {myUrls.map((url) => (
           <UrlItem
             key={url._id}
@@ -253,27 +282,31 @@ const Dashboard = ({ user }) => {
   }, [loading, myUrls, copiedUrl, deletingUrl, copyToClipboard, handleDeleteUrl]);
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-gray-50">
+    <main id="main-content" className="min-h-[calc(100vh-4rem)] bg-gray-50" role="main">
+      {/* Live region for screen reader announcements */}
+      <LiveRegion message={announcement} politeness="polite" />
+      
       <div className="max-w-6xl mx-auto px-4 py-8">
         {/* Enhanced Welcome Section */}
-        <div className="mb-8">
+        <header className="mb-8">
           <div className="flex items-center space-x-6 mb-6">
             <div className="relative">
               <img
                 src={user.avatar}
-                alt={user.name}
+                alt=""
+                aria-hidden="true"
                 className="w-16 h-16 rounded-full shadow-lg"
                 onError={(e) => {
                   e.target.style.display = "none";
                   e.target.nextSibling.style.display = "flex";
                 }}
               />
-              <div className="w-16 h-16 bg-blue-100 rounded-full items-center justify-center shadow-lg hidden">
+              <div className="w-16 h-16 bg-blue-100 rounded-full items-center justify-center shadow-lg hidden" aria-hidden="true">
                 <span className="text-2xl font-bold text-blue-600">
                   {(user.name || user.email || "U").charAt(0).toUpperCase()}
                 </span>
               </div>
-              <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 border-2 border-white rounded-full"></div>
+              <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 border-2 border-white rounded-full" aria-hidden="true"></div>
             </div>
             <div className="flex-1">
               <h1 className="text-3xl font-bold text-gray-900 mb-1">
@@ -284,13 +317,15 @@ const Dashboard = ({ user }) => {
               </p>
               <div className="flex items-center space-x-4 text-sm text-gray-500">
                 <span>{user.email}</span>
-                <span>•</span>
+                <span aria-hidden="true">•</span>
                 <span>
                   Member since{" "}
-                  {new Date(user.createdAt || Date.now()).toLocaleDateString(
-                    "en-US",
-                    { month: "short", year: "numeric" }
-                  )}
+                  <time dateTime={user.createdAt || new Date().toISOString()}>
+                    {new Date(user.createdAt || Date.now()).toLocaleDateString(
+                      "en-US",
+                      { month: "short", year: "numeric" }
+                    )}
+                  </time>
                 </span>
               </div>
             </div>
@@ -300,7 +335,7 @@ const Dashboard = ({ user }) => {
           {loading ? (
             <StatsSkeleton />
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <section aria-label="Your statistics" className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
               <StatsCard
                 iconBgColor="bg-blue-100"
                 iconColor="text-blue-600"
@@ -309,7 +344,8 @@ const Dashboard = ({ user }) => {
                     className="w-6 h-6 text-blue-600"
                     fill="none"
                     stroke="currentColor"
-                    viewBox="0 0 24 24">
+                    viewBox="0 0 24 24"
+                    aria-hidden="true">
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -330,7 +366,8 @@ const Dashboard = ({ user }) => {
                     className="w-6 h-6 text-green-600"
                     fill="none"
                     stroke="currentColor"
-                    viewBox="0 0 24 24">
+                    viewBox="0 0 24 24"
+                    aria-hidden="true">
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -351,7 +388,8 @@ const Dashboard = ({ user }) => {
                     className="w-6 h-6 text-purple-600"
                     fill="none"
                     stroke="currentColor"
-                    viewBox="0 0 24 24">
+                    viewBox="0 0 24 24"
+                    aria-hidden="true">
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -363,40 +401,46 @@ const Dashboard = ({ user }) => {
                 label="This Week"
                 value={userStats.recentActivity}
               />
-            </div>
+            </section>
           )}
-        </div>
+        </header>
 
         {/* Create URL Section */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">
+        <section aria-labelledby="create-url-heading" className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 mb-8">
+          <h2 id="create-url-heading" className="text-xl font-semibold text-gray-900 mb-6">
             Create New Short URL
           </h2>
           <UrlForm onUrlCreated={fetchMyUrls} user={user} />
-        </div>
+        </section>
 
         {/* My URLs Section */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+        <section aria-labelledby="my-urls-heading" className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold text-gray-900">My URLs</h2>
+            <h2 id="my-urls-heading" className="text-xl font-semibold text-gray-900">My URLs</h2>
             <button
               onClick={fetchMyUrls}
               disabled={loading}
-              className="text-blue-600 hover:text-blue-700 font-medium text-sm disabled:opacity-50">
+              className="text-blue-600 hover:text-blue-700 font-medium text-sm disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 rounded px-2 py-1"
+              aria-label={loading ? "Refreshing URL list" : "Refresh URL list"}
+            >
               {loading ? "Refreshing..." : "Refresh"}
             </button>
           </div>
 
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+            <div 
+              className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm"
+              role="alert"
+              aria-live="assertive"
+            >
               {error}
             </div>
           )}
 
           {urlList}
-        </div>
+        </section>
       </div>
-    </div>
+    </main>
   );
 };
 
