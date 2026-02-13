@@ -129,4 +129,44 @@ export const getUserUrlsQuerySchema = Joi.object({
       "number.min": "Skip cannot be negative",
       "number.base": "Skip must be a number",
     }),
+  search: Joi.string()
+    .trim()
+    .max(200)
+    .allow('')
+    .default('')
+    .messages({
+      "string.max": "Search query cannot exceed 200 characters",
+    }),
+  sortBy: Joi.string()
+    .valid('createdAt', 'click', 'short_url', 'full_url')
+    .default('createdAt')
+    .messages({
+      "any.only": "Sort by must be one of: createdAt, click, short_url, full_url",
+    }),
+  sortOrder: Joi.string()
+    .valid('asc', 'desc')
+    .default('desc')
+    .messages({
+      "any.only": "Sort order must be 'asc' or 'desc'",
+    }),
+});
+
+// Bulk delete validation schema
+export const bulkDeleteUrlsSchema = Joi.object({
+  ids: Joi.array()
+    .items(
+      Joi.string()
+        .pattern(/^[0-9a-fA-F]{24}$/)
+        .messages({
+          "string.pattern.base": "Invalid URL ID format",
+        })
+    )
+    .min(1)
+    .max(50)
+    .required()
+    .messages({
+      "array.min": "At least one URL ID is required",
+      "array.max": "Cannot delete more than 50 URLs at once",
+      "any.required": "URL IDs are required",
+    }),
 });
