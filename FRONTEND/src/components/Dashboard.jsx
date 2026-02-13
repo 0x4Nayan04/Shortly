@@ -49,7 +49,7 @@ const UrlItem = memo(({ url, onCopy, onDelete, isCopied, isDeleting, isSelected,
               className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700 shrink-0"
               aria-label={`${url.click} clicks`}
             >
-              {url.click}
+              {url.click} {url.click === 1 ? "click" : "clicks"}
             </span>
           </div>
           <p className="text-gray-500 text-xs truncate mt-0.5" title={url.full_url}>
