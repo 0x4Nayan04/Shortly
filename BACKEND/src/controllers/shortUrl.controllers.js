@@ -96,25 +96,46 @@ export const getUserUrls = async (req, res) => {
     const query = req.validatedQuery || req.query;
     const limit = parseInt(query.limit) || 20;
     const skip = parseInt(query.skip) || 0;
+    const search = query.search || "";
+    const sortBy = query.sortBy || "createdAt";
+    const sortOrder = query.sortOrder === "asc" ? 1 : -1;
+
+    // Build base query
+    const baseQuery = { user: userId };
+
+    // Add search filter if provided
+    if (search.trim()) {
+      const searchRegex = new RegExp(search.trim(), "i");
+      baseQuery.$or = [
+        { full_url: searchRegex },
+        { short_url: searchRegex },
+      ];
+    }
+
+    // Build sort object
+    const sortOptions = {};
+    sortOptions[sortBy] = sortOrder;
 
     // Run both queries in parallel for better performance
     const [userUrls, totalCount] = await Promise.all([
       // Get paginated URLs - using lean() for better performance
       short_urlModel
-        .find({ user: userId })
-        .sort({ createdAt: -1 })
+        .find(baseQuery)
+        .sort(sortOptions)
         .skip(skip)
         .limit(limit)
         .select("full_url short_url click createdAt")
         .lean(),
-      // Get total count
-      short_urlModel.countDocuments({ user: userId })
+      // Get total count for pagination
+      short_urlModel.countDocuments(baseQuery)
     ]);
 
     res.json({
       success: true,
       count: userUrls.length,
       totalCount,
+      totalPages: Math.ceil(totalCount / limit),
+      currentPage: Math.floor(skip / limit) + 1,
       hasMore: skip + limit < totalCount,
       urls: userUrls,
     });
@@ -231,6 +252,136 @@ export const deleteShortUrl = async (req, res) => {
     });
   } catch (error) {
     console.error("Error deleting short URL:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+export const bulkDeleteUrls = async (req, res) => {
+  try {
+    const body = req.validatedBody || req.body;
+    const { ids } = body;
+    const userId = req.user._id;
+
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "An array of URL IDs is required",
+      });
+    }
+
+    if (ids.length > 50) {
+      return res.status(400).json({
+        success: false,
+        message: "Cannot delete more than 50 URLs at once",
+      });
+    }
+
+    // Verify all URLs belong to the user before deleting
+    const urlsToDelete = await short_urlModel
+      .find({ _id: { $in: ids }, user: userId })
+      .select("_id")
+      .lean();
+
+    const foundIds = urlsToDelete.map((url) => url._id.toString());
+    const notFoundOrUnauthorized = ids.filter((id) => !foundIds.includes(id));
+
+    if (notFoundOrUnauthorized.length > 0) {
+      return res.status(403).json({
+        success: false,
+        message: `Some URLs were not found or you don't have permission to delete them`,
+        invalidIds: notFoundOrUnauthorized,
+      });
+    }
+
+    // Delete all URLs that belong to the user
+    const result = await short_urlModel.deleteMany({
+      _id: { $in: ids },
+      user: userId,
+    });
+
+    res.json({
+      success: true,
+      message: `Successfully deleted ${result.deletedCount} URL(s)`,
+      deletedCount: result.deletedCount,
+    });
+  } catch (error) {
+    console.error("Error bulk deleting URLs:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+export const getUrlStats = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    // Get aggregated statistics for the user's URLs
+    const [stats, recentActivity, topUrls] = await Promise.all([
+      // Overall stats
+      short_urlModel.aggregate([
+        { $match: { user: userId } },
+        {
+          $group: {
+            _id: null,
+            totalUrls: { $sum: 1 },
+            totalClicks: { $sum: "$click" },
+            avgClicks: { $avg: "$click" },
+          },
+        },
+      ]),
+      // Activity in the last 7 days (URLs created per day)
+      short_urlModel.aggregate([
+        {
+          $match: {
+            user: userId,
+            createdAt: {
+              $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+            },
+          },
+        },
+        {
+          $group: {
+            _id: {
+              $dateToString: { format: "%Y-%m-%d", date: "$createdAt" },
+            },
+            count: { $sum: 1 },
+            clicks: { $sum: "$click" },
+          },
+        },
+        { $sort: { _id: 1 } },
+      ]),
+      // Top 5 URLs by clicks
+      short_urlModel
+        .find({ user: userId })
+        .sort({ click: -1 })
+        .limit(5)
+        .select("full_url short_url click createdAt")
+        .lean(),
+    ]);
+
+    const overallStats = stats[0] || {
+      totalUrls: 0,
+      totalClicks: 0,
+      avgClicks: 0,
+    };
+
+    res.json({
+      success: true,
+      stats: {
+        totalUrls: overallStats.totalUrls,
+        totalClicks: overallStats.totalClicks,
+        avgClicksPerUrl: Math.round(overallStats.avgClicks * 100) / 100,
+      },
+      recentActivity,
+      topUrls,
+    });
+  } catch (error) {
+    console.error("Error fetching URL stats:", error);
     res.status(500).json({
       success: false,
       message: "Internal server error",
