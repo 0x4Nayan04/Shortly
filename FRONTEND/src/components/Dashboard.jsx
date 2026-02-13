@@ -3,12 +3,11 @@ import UrlForm from "../components/UrlForm";
 import { getMyUrls, deleteShortUrl } from "../api/shortUrl.api";
 import { UrlItemSkeleton, StatsSkeleton } from "./LoadingSpinner";
 import { LiveRegion, useAnnouncement } from "./Accessibility";
+import { showToast, EmptyState, ErrorRecovery, useConfirmDialog, ConfirmDialog, useCopyToClipboard, useOnlineStatus } from "./UxEnhancements";
 
 // Memoized URL Item component for better list performance
-const UrlItem = memo(({ url, copiedUrl, deletingUrl, onCopy, onDelete }) => {
+const UrlItem = memo(({ url, onCopy, onDelete, isCopied, isDeleting }) => {
   const shortUrlFull = `${import.meta.env.VITE_APP_URL}/${url.short_url}`;
-  const isCopied = copiedUrl === shortUrlFull;
-  const isDeleting = deletingUrl === url._id;
 
   return (
     <article 
@@ -92,7 +91,7 @@ const UrlItem = memo(({ url, copiedUrl, deletingUrl, onCopy, onDelete }) => {
           </button>
 
           <button
-            onClick={() => onDelete(url._id)}
+            onClick={() => onDelete(url._id, url.short_url)}
             disabled={isDeleting}
             className="p-2 text-gray-400 hover:text-red-600 transition-colors disabled:opacity-50 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
             aria-label={isDeleting ? "Deleting URL..." : `Delete URL ${url.short_url}`}
@@ -147,10 +146,12 @@ StatsCard.displayName = 'StatsCard';
 const Dashboard = ({ user }) => {
   const [myUrls, setMyUrls] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [copiedUrl, setCopiedUrl] = useState(null);
+  const [error, setError] = useState(null);
   const [deletingUrl, setDeletingUrl] = useState(null);
   const [announcement, announce] = useAnnouncement();
+  const { isOnline } = useOnlineStatus();
+  const { copiedText, copy, isCopied } = useCopyToClipboard();
+  const confirmDialog = useConfirmDialog();
 
   // Memoize user stats calculation for better performance
   const userStats = useMemo(() => {
@@ -171,8 +172,13 @@ const Dashboard = ({ user }) => {
 
   // Memoized fetch function
   const fetchMyUrls = useCallback(async () => {
+    if (!isOnline) {
+      showToast.error("You're offline. Cannot refresh URLs.");
+      return;
+    }
+    
     setLoading(true);
-    setError("");
+    setError(null);
     try {
       // Load first 50 URLs for better performance
       const response = await getMyUrls(50, 0);
@@ -182,41 +188,55 @@ const Dashboard = ({ user }) => {
         announce(`Loaded ${urls.length} URLs`);
       }
     } catch (err) {
-      setError("Failed to fetch your URLs");
+      setError(err);
+      showToast.error("Failed to fetch your URLs");
       announce("Error: Failed to fetch your URLs");
       console.error("Error fetching URLs:", err);
     } finally {
       setLoading(false);
     }
-  }, [announce]);
+  }, [announce, isOnline]);
 
   useEffect(() => {
     if (user?._id) fetchMyUrls();
   }, [user?._id, fetchMyUrls]);
 
-  // Memoized copy handler
+  // Memoized copy handler using the new hook
   const copyToClipboard = useCallback((url) => {
-    navigator.clipboard.writeText(url).then(() => {
-      setCopiedUrl(url);
-      announce("URL copied to clipboard");
-      setTimeout(() => setCopiedUrl(null), 2000);
-    });
-  }, [announce]);
+    copy(url, "URL copied to clipboard!");
+    announce("URL copied to clipboard");
+  }, [copy, announce]);
 
-  // Memoized delete handler
-  const handleDeleteUrl = useCallback(async (urlId) => {
-    if (!confirm("Are you sure you want to delete this URL?")) {
+  // Memoized delete handler with confirmation dialog
+  const handleDeleteUrl = useCallback(async (urlId, shortUrl) => {
+    const confirmed = await confirmDialog.confirm({
+      title: "Delete URL",
+      message: `Are you sure you want to delete "${shortUrl}"? This action cannot be undone.`,
+      confirmLabel: "Delete",
+      cancelLabel: "Cancel",
+      variant: "danger",
+    });
+
+    if (!confirmed) return;
+
+    if (!isOnline) {
+      showToast.error("You're offline. Cannot delete URL.");
       return;
     }
 
     setDeletingUrl(urlId);
+    const deleteToast = showToast.loading("Deleting URL...");
+    
     try {
       await deleteShortUrl(urlId);
       // Optimistic update - remove from local state immediately
       setMyUrls(prev => prev.filter(url => url._id !== urlId));
+      showToast.dismiss(deleteToast);
+      showToast.success("URL deleted successfully");
       announce("URL deleted successfully");
     } catch (err) {
-      setError("Failed to delete URL");
+      showToast.dismiss(deleteToast);
+      showToast.error("Failed to delete URL");
       announce("Error: Failed to delete URL");
       console.error("Error deleting URL:", err);
       // Refresh list on error to sync state
@@ -224,7 +244,7 @@ const Dashboard = ({ user }) => {
     } finally {
       setDeletingUrl(null);
     }
-  }, [fetchMyUrls, announce]);
+  }, [fetchMyUrls, announce, confirmDialog, isOnline]);
 
   // Memoized URL list rendering
   const urlList = useMemo(() => {
@@ -238,15 +258,27 @@ const Dashboard = ({ user }) => {
       );
     }
 
+    if (error) {
+      return (
+        <ErrorRecovery
+          error={error}
+          onRetry={fetchMyUrls}
+          title="Failed to load URLs"
+          description="We couldn't fetch your URLs. Please check your connection and try again."
+        />
+      );
+    }
+
     if (myUrls.length === 0) {
       return (
-        <div className="text-center py-16" role="status">
-          <div className="w-24 h-24 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-3xl mx-auto mb-6 flex items-center justify-center" aria-hidden="true">
+        <EmptyState
+          icon={
             <svg
               className="w-12 h-12 text-indigo-600"
               fill="none"
               stroke="currentColor"
-              viewBox="0 0 24 24">
+              viewBox="0 0 24 24"
+            >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -254,14 +286,11 @@ const Dashboard = ({ user }) => {
                 d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
               />
             </svg>
-          </div>
-          <h3 className="text-xl font-bold text-gray-900 mb-3">
-            No URLs yet
-          </h3>
-          <p className="text-gray-600 text-lg">
-            Create your first short URL using the form above.
-          </p>
-        </div>
+          }
+          title="No URLs yet"
+          description="Create your first short URL using the form above. It's quick and easy!"
+          variant="illustrated"
+        />
       );
     }
 
@@ -271,15 +300,15 @@ const Dashboard = ({ user }) => {
           <UrlItem
             key={url._id}
             url={url}
-            copiedUrl={copiedUrl}
-            deletingUrl={deletingUrl}
+            isCopied={isCopied(`${import.meta.env.VITE_APP_URL}/${url.short_url}`)}
+            isDeleting={deletingUrl === url._id}
             onCopy={copyToClipboard}
             onDelete={handleDeleteUrl}
           />
         ))}
       </div>
     );
-  }, [loading, myUrls, copiedUrl, deletingUrl, copyToClipboard, handleDeleteUrl]);
+  }, [loading, error, myUrls, isCopied, deletingUrl, copyToClipboard, handleDeleteUrl, fetchMyUrls]);
 
   return (
     <main id="main-content" className="min-h-[calc(100vh-4rem)] bg-gray-50" role="main">
@@ -427,19 +456,14 @@ const Dashboard = ({ user }) => {
             </button>
           </div>
 
-          {error && (
-            <div 
-              className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm"
-              role="alert"
-              aria-live="assertive"
-            >
-              {error}
-            </div>
-          )}
+          {error && !loading && null /* Error handled in urlList */}
 
           {urlList}
         </section>
       </div>
+
+      {/* Confirmation Dialog */}
+      <ConfirmDialog {...confirmDialog} />
     </main>
   );
 };

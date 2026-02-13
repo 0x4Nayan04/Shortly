@@ -61,6 +61,10 @@ const Navbar = memo(({ user, onLogout, onShowAuth, onShowProfile }) => {
     navigate("/login");
   }, [navigate]);
 
+  const handleNavigateRegister = useCallback(() => {
+    navigate("/register");
+  }, [navigate]);
+
   // Handle keyboard navigation in dropdown
   const handleDropdownKeyDown = useCallback((e) => {
     if (e.key === 'Escape') {
@@ -105,7 +109,9 @@ const Navbar = memo(({ user, onLogout, onShowAuth, onShowProfile }) => {
                       setIsDropdownOpen(true);
                     }
                   }}
-                  className="flex items-center space-x-3 hover:bg-gray-50/80 rounded-2xl px-4 py-3 transition-all duration-200 group focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+                  className={`flex items-center space-x-3 rounded-2xl px-4 py-3 transition-all duration-200 group focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 ${
+                    isDropdownOpen ? 'bg-indigo-50/80' : 'hover:bg-indigo-50/60'
+                  }`}
                   aria-expanded={isDropdownOpen}
                   aria-haspopup="true"
                   aria-controls="user-menu"
@@ -314,15 +320,15 @@ const Navbar = memo(({ user, onLogout, onShowAuth, onShowProfile }) => {
                 )}
               </div>
             ) : (
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center gap-3">
                 <button
                   onClick={handleNavigateLogin}
-                  className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 rounded-lg px-3 py-2">
+                  className="px-5 py-2.5 rounded-xl text-sm font-medium text-gray-700 hover:text-gray-900 border border-gray-200 hover:border-gray-300 hover:bg-gray-50/80 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2">
                   Login
                 </button>
                 <button
-                  onClick={handleNavigateLogin}
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-2xl text-sm font-semibold transition-all duration-200 hover:scale-105 shadow-sm hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2">
+                  onClick={handleNavigateRegister}
+                  className="px-5 py-2.5 rounded-xl text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 text-white transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2">
                   Sign up
                 </button>
               </div>

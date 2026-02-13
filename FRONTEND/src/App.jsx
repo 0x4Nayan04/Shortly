@@ -9,6 +9,7 @@ import {
 import Navbar from './components/Navbar';
 import { PageLoader } from './components/LoadingSpinner';
 import { SkipLink, LiveRegion, useAnnouncement } from './components/Accessibility';
+import { showToast } from './components/UxEnhancements';
 import { logoutUser, getCurrentUser } from './api/user.api';
 import { getMyUrls } from './api/shortUrl.api';
 
@@ -215,6 +216,7 @@ const App = () => {
 		const userData = response.data?.user || response.user;
 		setUser(userData || { email: 'User' });
 		announce('Successfully signed in. Redirecting to dashboard.');
+		showToast.success('Welcome back! You have been signed in.');
 		navigate('/dashboard');
 	}, [navigate, announce]);
 
@@ -222,7 +224,9 @@ const App = () => {
 	const handleLogout = useCallback(async () => {
 		try {
 			await logoutUser();
+			showToast.success('You have been signed out.');
 		} catch {
+			// Still logout locally even if API fails
 		} finally {
 			setUser(null);
 			announce('You have been signed out.');

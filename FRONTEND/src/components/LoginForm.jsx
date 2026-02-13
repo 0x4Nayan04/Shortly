@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { loginUser } from "../api/user.api";
 import { validators } from "../utils/validation";
+import { showToast, useOnlineStatus } from "./UxEnhancements";
 
 const LoginForm = ({ onLoginSuccess, switchToRegister }) => {
   const [email, setEmail] = useState("");
@@ -8,6 +9,7 @@ const LoginForm = ({ onLoginSuccess, switchToRegister }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const { isOnline } = useOnlineStatus();
   
   // Field-level validation errors (shown on blur or submit)
   const [fieldErrors, setFieldErrors] = useState({
@@ -65,6 +67,12 @@ const LoginForm = ({ onLoginSuccess, switchToRegister }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Check online status
+    if (!isOnline) {
+      showToast.error("You're offline. Cannot sign in.");
+      return;
+    }
+
     // Validate all fields
     if (!validateAllFields()) {
       return;
@@ -90,6 +98,7 @@ const LoginForm = ({ onLoginSuccess, switchToRegister }) => {
 
       } else {
         setError(response.message || "Login failed");
+        showToast.error(response.message || "Login failed");
       }
     } catch (err) {
       const data = err?.response ? err.response.data : err;
@@ -99,10 +108,11 @@ const LoginForm = ({ onLoginSuccess, switchToRegister }) => {
           backendErrors[e.field] = e.message;
         });
         setFieldErrors((prev) => ({ ...prev, ...backendErrors }));
+        showToast.error("Please check your credentials.");
       } else {
-        setError(
-          typeof data === "string" ? data : (data?.message || "Invalid email or password")
-        );
+        const errorMsg = typeof data === "string" ? data : (data?.message || "Invalid email or password");
+        setError(errorMsg);
+        showToast.error(errorMsg);
       }
     } finally {
       setLoading(false);
