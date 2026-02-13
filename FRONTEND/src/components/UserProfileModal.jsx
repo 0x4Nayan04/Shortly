@@ -143,12 +143,12 @@ const UserProfileModal = ({ isOpen, onClose, user, userStats }) => {
 							>
 								<time dateTime={user.createdAt}>
 									{user.createdAt
-										? new Date(user.createdAt).toLocaleDateString('en-US', {
-												year: 'numeric',
-												month: 'long',
-												day: 'numeric'
+										? new Date(user.createdAt).toLocaleDateString("en-GB", {
+												day: "2-digit",
+												month: "2-digit",
+												year: "numeric"
 										  })
-										: 'Recently joined'}
+										: "Recently joined"}
 								</time>
 							</div>
 						</div>

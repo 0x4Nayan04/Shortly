@@ -57,7 +57,7 @@ const UrlItem = memo(({ url, onCopy, onDelete, isCopied, isDeleting, isSelected,
             {url.full_url}
             <span className="hidden sm:inline"> · </span>
             <span className="hidden sm:inline">
-              <time dateTime={url.createdAt}>{new Date(url.createdAt).toLocaleDateString()}</time>
+              <time dateTime={url.createdAt}>{new Date(url.createdAt).toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" })}</time>
             </span>
           </p>
         </div>
@@ -819,8 +819,8 @@ const Dashboard = ({ user }) => {
                   Member since{" "}
                   <time dateTime={user.createdAt || new Date().toISOString()}>
                     {new Date(user.createdAt || Date.now()).toLocaleDateString(
-                      "en-US",
-                      { month: "short", year: "numeric" }
+                      "en-GB",
+                      { day: "2-digit", month: "2-digit", year: "numeric" }
                     )}
                   </time>
                 </span>

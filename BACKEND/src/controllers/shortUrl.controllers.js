@@ -46,7 +46,7 @@ export const createShortUrl = async (req, res) => {
     }
 
     res.json({
-      short_url: process.env.FRONT_END_URL + "/" + short_url,
+      short_url,
       message: "Short URL created successfully",
       success: true,
       full_url: full_url,
@@ -184,7 +184,7 @@ export const createCustomShortUrl = async (req, res) => {
     );
 
     res.json({
-      short_url: process.env.FRONT_END_URL + "/" + short_url,
+      short_url,
       message: "Custom short URL created successfully",
       success: true,
       full_url: full_url,
