@@ -104,7 +104,7 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth }) => {
       }
 
       if (response && response.data && response.data.short_url) {
-        setShortUrl(response.data.short_url);
+        setShortUrl(`${import.meta.env.VITE_APP_URL}/${response.data.short_url}`);
         showToast.dismiss(loadingToast);
         showToast.success("URL shortened successfully!");
         announce("URL shortened successfully! Your new short URL is ready.");
