@@ -22,7 +22,7 @@ export const toastConfig = {
     borderRadius: '12px',
     boxShadow: '0 10px 40px rgba(0, 0, 0, 0.12)',
     fontSize: '14px',
-    maxWidth: '400px',
+    maxWidth: 'min(400px, calc(100vw - 48px))',
   },
   // Success toast
   success: {

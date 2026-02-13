@@ -155,9 +155,9 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
   };
 
   return (
-    <div className="max-w-md mx-auto mt-8 p-6 bg-white rounded-lg shadow-md border border-gray-200">
+    <div className="max-w-md mx-auto mt-6 sm:mt-8 p-4 sm:p-6 bg-white rounded-lg shadow-md border border-gray-200">
       <div className="text-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-800">Create Account</h2>
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-800">Create Account</h2>
         <p className="text-gray-600 mt-2">Sign up to get started</p>
       </div>
 

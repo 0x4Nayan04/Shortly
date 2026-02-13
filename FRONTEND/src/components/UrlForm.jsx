@@ -152,7 +152,7 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth }) => {
 
   // Helper to get input class based on validation state
   const getInputClass = (field) => {
-    const baseClass = "flex-1 px-4 py-3 border rounded-lg text-base focus:outline-none focus-visible:ring-2 focus:border-transparent transition-all";
+    const baseClass = "flex-1 min-w-0 w-full px-4 py-3 border rounded-lg text-base focus:outline-none focus-visible:ring-2 focus:border-transparent transition-all";
     const hasError = touched[field] && fieldErrors[field];
 
     if (hasError) {
@@ -170,7 +170,7 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth }) => {
         <div className="space-y-3">
           <div className="space-y-1">
             <label htmlFor="url-input" className="sr-only">Enter your long URL</label>
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row gap-3">
               <input
                 id="url-input"
                 type="url"
@@ -187,7 +187,7 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth }) => {
                 type="submit"
                 disabled={loading}
                 aria-busy={loading}
-                className="px-8 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white font-medium rounded-lg text-base transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
+                className="w-full sm:w-auto px-8 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white font-medium rounded-lg text-base transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
                 {loading ? "Shortening..." : "Shorten"}
               </button>
             </div>
@@ -238,8 +238,8 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth }) => {
           {useCustomAlias && (
             <div className="space-y-1">
               <label htmlFor="custom-alias-input" className="sr-only">Custom alias</label>
-              <div className="flex gap-3 items-center">
-                <span className="text-sm text-gray-500 whitespace-nowrap" aria-hidden="true">
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 sm:items-center">
+                <span className="text-sm text-gray-500 whitespace-nowrap shrink-0" aria-hidden="true">
                   {import.meta.env.VITE_APP_URL}/
                 </span>
                 <input
@@ -318,21 +318,21 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth }) => {
               URL shortened successfully!
             </span>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row gap-3">
             <label htmlFor="short-url-output" className="sr-only">Your shortened URL</label>
             <input
               id="short-url-output"
               type="text"
               value={shortUrl}
               readOnly
-              className="flex-1 px-3 py-2 border border-green-300 rounded-lg bg-white text-sm font-mono focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500"
+              className="flex-1 min-w-0 w-full px-3 py-2 border border-green-300 rounded-lg bg-white text-sm font-mono focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500"
               aria-describedby="short-url-description"
             />
             <span id="short-url-description" className="sr-only">Your new shortened URL. Click copy to copy it to your clipboard.</span>
             <button
               onClick={copyToClipboard}
               aria-label={isCopied(shortUrl) ? "URL copied to clipboard" : "Copy URL to clipboard"}
-              className={`px-4 py-2 font-medium rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 ${
+              className={`w-full sm:w-auto px-4 py-2 font-medium rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 ${
                 isCopied(shortUrl)
                   ? "bg-green-600 text-white"
                   : "bg-green-100 text-green-700 hover:bg-green-200"
