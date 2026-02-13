@@ -1,32 +1,42 @@
 # Shortly - URL Shortener Application
 
-## ✨ Features
+A simple URL shortener that converts long URLs into short, shareable links. Live
+at [shortly.nayan04.me](https://shortly.nayan04.me/).
 
-- URL Shortening - Convert long URLs to short links
-- Custom Aliases - Create personalized short URLs (logged-in users)
-- Click Tracking - Monitor URL usage statistics
-- URL Management - View, copy, and delete your links
+## Features
 
-## 🏗️ Architecture
+- **URL Shortening** - Convert long URLs to short links (no account required)
+- **Custom Aliases** - Create personalized short URLs (3–20 chars, logged-in
+  users)
+- **Click Tracking** - Monitor URL usage statistics
+- **URL Management** - View, search, sort, copy, and delete your links
+- **Bulk Delete** - Select and delete multiple URLs at once
+- **Analytics** - Dashboard with stats, recent activity, and top-performing URLs
+
+## Architecture
 
 ### Frontend (React + Vite)
 
 ```
 FRONTEND/
 ├── src/
-│   ├── components/          # Reusable UI components
-│   │   ├── Navbar.jsx      # Navigation with user dropdown
-│   │   ├── LandingPage.jsx # Hero section and URL form
-│   │   ├── Dashboard.jsx   # User dashboard with analytics
-│   │   ├── UrlForm.jsx     # URL shortening form
-│   │   ├── LoginForm.jsx   # Authentication forms
-│   │   └── ...
-│   ├── api/                # API communication layer
-│   │   ├── shortUrl.api.js # URL shortening endpoints
-│   │   └── user.api.js     # User authentication endpoints
-│   ├── utils/              # Utility functions
-│   └── pages/              # Page components
-└── public/                 # Static assets
+│   ├── components/
+│   │   ├── Navbar.jsx
+│   │   ├── LandingPage.jsx
+│   │   ├── Dashboard.jsx
+│   │   ├── UrlForm.jsx
+│   │   ├── LoginForm.jsx
+│   │   ├── RegisterForm.jsx
+│   │   ├── AccountSettings.jsx
+│   │   ├── UserProfileModal.jsx
+│   │   ├── Accessibility.jsx
+│   │   ├── UxEnhancements.jsx
+│   │   └── ErrorBoundary.jsx
+│   ├── api/
+│   │   ├── shortUrl.api.js
+│   │   └── user.api.js
+│   └── utils/
+└── public/
 ```
 
 ### Backend (Node.js + Express)
@@ -34,26 +44,25 @@ FRONTEND/
 ```
 BACKEND/
 ├── src/
-│   ├── controllers/        # Request handlers
-│   │   ├── auth.controller.js      # Authentication logic
-│   │   └── shortUrl.controllers.js # URL shortening logic
-│   ├── models/             # Database schemas
-│   │   ├── user.model.js   # User data structure
-│   │   └── shortUrl.model.js # URL data structure
-│   ├── routes/             # API route definitions
-│   ├── middleware/         # Authentication & validation
-│   ├── services/           # Business logic layer
-│   └── config/             # Database and app configuration
-└── index.js               # Server entry point
+│   ├── controllers/
+│   ├── schema/
+│   ├── dao/
+│   ├── services/
+│   ├── routes/
+│   ├── middleware/
+│   ├── validation/
+│   ├── utils/
+│   └── config/
+└── index.js
 ```
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
-- **Node.js** (v16 or higher)
-- **MongoDB** (local installation or MongoDB Atlas)
-- **npm** or **yarn** package manager
+- Node.js v16+
+- MongoDB (local or MongoDB Atlas)
+- npm or yarn
 
 ### 1. Clone the Repository
 
@@ -64,187 +73,141 @@ cd Shortly
 
 ### 2. Backend Setup
 
-#### Install Dependencies
-
 ```bash
 cd BACKEND
 npm install
 ```
 
-#### Environment Configuration
-
-Create a `.env` file in the `BACKEND` directory:
+Create a `.env` file in `BACKEND/`:
 
 ```env
-# Database Configuration
 MONGODB_URI=mongodb://localhost:27017/url_shortener
-# or use MongoDB Atlas:
-# MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/url_shortener
-
-# JWT Secret (generate a strong secret)
-JWT_SECRET=your_super_secret_jwt_key_here
-
-# Server Configuration
+JWT_SECRET=your_super_secret_jwt_key_at_least_32_chars
+FRONT_END_URL=http://localhost:5173
 PORT=3001
-NODE_ENV=production
-
-# URLs for CORS and cookie settings
-VITE_APP_URL=https://shortly-ky6a.onrender.com
-FRONT_END_URL=https://shortly-livid.vercel.app
+NODE_ENV=development
 ```
 
-#### Start the Backend Server
+**Optional (production):**
 
-```bash
-# Development mode with auto-reload
-npm run dev
-
-# Production mode
-npm start
+```env
+ALLOWED_ORIGINS=https://your-custom-domain.com
 ```
-
-The backend server will start on `http://localhost:3001`
 
 ### 3. Frontend Setup
-
-#### Install Dependencies
 
 ```bash
 cd FRONTEND
 npm install
 ```
 
-#### Environment Configuration
-
-Create a `.env` file in the `FRONTEND` directory:
+Create a `.env` file in `FRONTEND/`:
 
 ```env
-VITE_APP_URL=https://shortly-ky6a.onrender.com
+VITE_APP_URL=http://localhost:3001
 ```
 
-#### Start the Frontend Development Server
+### 4. Run the Application
+
+**Backend:**
 
 ```bash
+cd BACKEND
 npm run dev
 ```
 
-The frontend will start on `http://localhost:5173`
+**Frontend (new terminal):**
 
-### 4. Access the Application
+```bash
+cd FRONTEND
+npm run dev
+```
 
-Open your browser and navigate to `http://localhost:5173` to start using Shortly!
+Open `http://localhost:5173` to use Shortly.
 
-## 🔧 Production Deployment
+## Environment Variables
 
-### Backend Deployment (Render.com)
+### Backend (.env.example)
 
-1. **Environment Variables**: Set the following in your Render dashboard:
-   ```env
-   MONGODB_URI=your_mongodb_atlas_connection_string
-   JWT_SECRET=your_jwt_secret
-   NODE_ENV=production
-   PORT=10000
-   VITE_APP_URL=https://shortly-ky6a.onrender.com
-   FRONT_END_URL=https://shortly-livid.vercel.app
-   ```
+```env
+MONGODB_URI=mongodb://localhost:27017/url_shortener
+JWT_SECRET=your_super_secret_jwt_key_at_least_32_chars
+FRONT_END_URL=http://localhost:5173
+PORT=3001
+NODE_ENV=development
+ALLOWED_ORIGINS=
+```
 
-2. **Build Command**: `npm install`
-3. **Start Command**: `npm start`
+| Variable        | Required | Description                                              |
+| --------------- | -------- | -------------------------------------------------------- |
+| MONGODB_URI     | Yes      | MongoDB connection string                                |
+| JWT_SECRET      | Yes      | Secret for JWT (min 32 chars)                            |
+| FRONT_END_URL   | Yes      | Frontend origin for CORS and cookies                     |
+| PORT            | Yes      | Server port                                              |
+| NODE_ENV        | No       | `development` or `production`                            |
+| ALLOWED_ORIGINS | No       | Comma-separated CORS origins (defaults to FRONT_END_URL) |
 
-### Frontend Deployment (Vercel)
+### Frontend (.env.example)
 
-1. **Environment Variables**: Set in your Vercel dashboard:
-   ```env
-   VITE_APP_URL=https://shortly-ky6a.onrender.com
-   ```
+```env
+VITE_APP_URL=http://localhost:3001
+```
 
-2. **Build Settings**: 
-   - Build Command: `npm run build`
-   - Output Directory: `dist`
+| Variable     | Required | Description          |
+| ------------ | -------- | -------------------- |
+| VITE_APP_URL | Yes      | Backend API base URL |
 
-### Common Deployment Issues & Solutions
+## Production Deployment
 
-#### Authentication Issues (401 Errors)
-- **Problem**: "Access denied. No token provided" or cookies not being sent
-- **Root Causes**: 
-  - Cookie configuration not set for production
-  - `sameSite` and `secure` flags incorrect
-  - Cookie name mismatch between login and authentication middleware
-- **Solutions**: 
-  - Ensure `NODE_ENV=production` is set
-  - Use `sameSite: 'none'` and `secure: true` for cross-origin production
-  - Verify cookie names match between login (`token`) and middleware (`token`)
+### Backend
 
-#### Database Connection Issues (500 Errors)
-- **Problem**: "User not found", MongoDB connection failures
-- **Root Causes**:
-  - Incorrect MongoDB Atlas connection string
-  - IP whitelist restrictions
-  - Missing database name in connection string
-- **Solutions**:
-  - Verify MongoDB Atlas connection string format: 
-    `mongodb+srv://username:password@cluster.mongodb.net/database_name`
-  - Add `0.0.0.0/0` to IP whitelist for production (or specific deployment IPs)
-  - Ensure database name is included in connection string
+1. Set environment variables (no backend URL in docs).
+2. Build: `npm install`
+3. Start: `npm start`
 
-#### CORS Issues
-- **Problem**: Cross-origin requests blocked
-- **Solutions**:
-  - Use `cors` package instead of manual headers
-  - Set `credentials: true` in CORS options
-  - Ensure `FRONT_END_URL` exactly matches your frontend domain
+### Frontend
 
-## 📡 API Documentation
+1. Set `VITE_APP_URL` to your backend API URL.
+2. Build: `npm run build`
+3. Output: `dist/`
+
+### Deployment Notes
+
+- **Auth (401)**: Set `NODE_ENV=production`, use `sameSite: 'none'` and
+  `secure: true` for cross-origin cookies.
+- **CORS**: Ensure `FRONT_END_URL` matches your frontend domain; use
+  `ALLOWED_ORIGINS` for multiple origins.
+- **MongoDB**: Include database name in the connection string; add deployment
+  IPs to Atlas whitelist if needed.
+
+## API Documentation
 
 ### Base URL
 
-**Development:** `http://localhost:3001`
-**Production:** `https://shortly-ky6a.onrender.com`
+- Development: `http://localhost:3001`
 
-### Authentication Endpoints
+### Authentication
 
-#### Register User
+| Method | Endpoint           | Auth | Description   |
+| ------ | ------------------ | ---- | ------------- |
+| POST   | /api/auth/register | No   | Register user |
+| POST   | /api/auth/login    | No   | Login         |
+| GET    | /api/auth/me       | Yes  | Get profile   |
+| POST   | /api/auth/logout   | Yes  | Logout        |
 
-```http
-POST /api/auth/register
-Content-Type: application/json
+### URL Shortening
 
-{
-  "name": "John Doe",
-  "email": "john@example.com",
-  "password": "securepassword"
-}
-```
+| Method | Endpoint            | Auth | Description                              |
+| ------ | ------------------- | ---- | ---------------------------------------- |
+| POST   | /api/create         | No   | Create short URL                         |
+| POST   | /api/create/custom  | Yes  | Create custom short URL                  |
+| GET    | /api/create/my-urls | Yes  | Get user URLs (search, sort, pagination) |
+| GET    | /api/create/stats   | Yes  | Get URL statistics                       |
+| DELETE | /api/create/:id     | Yes  | Delete single URL                        |
+| DELETE | /api/create/bulk    | Yes  | Bulk delete URLs                         |
+| GET    | /:short_url         | No   | Redirect to original URL                 |
 
-#### Login User
-
-```http
-POST /api/auth/login
-Content-Type: application/json
-
-{
-  "email": "john@example.com",
-  "password": "securepassword"
-}
-```
-
-#### Get User Profile
-
-```http
-GET /api/auth/me
-Authorization: Bearer <jwt_token>
-```
-
-#### Logout User
-
-```http
-POST /api/auth/logout
-Authorization: Bearer <jwt_token>
-```
-
-### URL Shortening Endpoints
-
-#### Create Short URL (Public)
+### Example: Create Short URL
 
 ```http
 POST /api/create
@@ -255,189 +218,71 @@ Content-Type: application/json
 }
 ```
 
-#### Create Custom Short URL (Authenticated)
+### Example: Create Custom Short URL
 
 ```http
 POST /api/create/custom
-Authorization: Bearer <jwt_token>
 Content-Type: application/json
+Cookie: token=<jwt>
 
 {
-  "full_url": "https://www.example.com/very/long/url/path",
-  "custom_url": "my-custom-link"
+  "full_url": "https://www.example.com/page",
+  "custom_url": "my-link"
 }
 ```
 
-#### Get User's URLs
+### Example: Get User URLs (with query params)
 
 ```http
-GET /api/create/my-urls
-Authorization: Bearer <jwt_token>
+GET /api/create/my-urls?limit=20&skip=0&search=example&sortBy=createdAt&sortOrder=desc
+Cookie: token=<jwt>
 ```
 
-#### Delete URL
-
-```http
-DELETE /api/create/:id
-Authorization: Bearer <jwt_token>
-```
-
-#### Redirect to Original URL
-
-```http
-GET /:short_code
-```
-
-## 🛠️ Tech Stack
+## Tech Stack
 
 ### Frontend
 
-- **React 19.1.0** - Modern UI library with hooks
-- **Vite 6.3.5** - Fast build tool and dev server
-- **TailwindCSS 4.1.7** - Utility-first CSS framework
-- **React Router Dom** - Client-side routing
-- **Axios** - HTTP client for API calls
-- **React Query** - Server state management
+- React 19, Vite 6, TailwindCSS 4
+- React Router, Axios, React Query
+- react-hot-toast
 
 ### Backend
 
-- **Node.js** - JavaScript runtime
-- **Express 5.1.0** - Web application framework
-- **MongoDB** - NoSQL database
-- **Mongoose 8.15.0** - MongoDB object modeling
-- **JWT** - JSON Web Tokens for authentication
-- **bcrypt** - Password hashing
-- **nanoid** - Unique ID generator for short URLs
-- **CORS** - Cross-origin resource sharing
+- Node.js, Express 5, MongoDB, Mongoose 8
+- JWT, bcrypt, nanoid, Joi, CORS
+- Helmet, compression, cookie-parser
 
-### Development Tools
+### Development
 
-- **ESLint** - Code linting and formatting
-- **Nodemon** - Auto-restart development server
-- **dotenv** - Environment variable management
+- ESLint, Nodemon, dotenv
 
-## 🚦 Usage
+## Usage
 
-### For Anonymous Users
+### Anonymous Users
 
-1. **Visit the Homepage** - Access the URL shortener without registration
-2. **Shorten URLs** - Enter any long URL to get a shortened version
-3. **Copy & Share** - Use the generated short URL anywhere
+1. Visit the homepage
+2. Enter a long URL to shorten
+3. Copy and share the short URL
 
-### For Registered Users
+### Registered Users
 
-1. **Create an Account** - Sign up with name, email, and password
-2. **Dashboard Access** - View all your shortened URLs and statistics
-3. **Custom Aliases** - Create memorable custom short URLs
-4. **Track Analytics** - Monitor click counts and usage patterns
-5. **Manage URLs** - Edit, delete, or copy your shortened URLs
+1. Sign up with name, email, and password
+2. Use the dashboard to manage URLs
+3. Create custom short URLs (3–20 chars, alphanumeric, hyphens, underscores)
+4. View stats, search, sort, and bulk delete
 
-### URL Management
+## Security
 
-- **Create Standard Short URLs** - Automatic generation with nanoid
-- **Create Custom Short URLs** - Choose your own alias (3-20 characters)
-- **View Click Statistics** - Track how many times each URL was accessed
-- **Copy to Clipboard** - One-click copying of short URLs
-- **Delete URLs** - Remove URLs you no longer need
+- Password hashing with bcrypt
+- JWT in HTTP-only cookies
+- Server-side validation (Joi)
+- CORS and Helmet
+- Secure cookie options for production
 
-## 🔒 Security Features
+## Troubleshooting
 
-- **Password Hashing** - bcrypt with salt rounds for secure password storage
-- **JWT Authentication** - Secure token-based authentication with HTTP-only cookies
-- **Input Validation** - Server-side validation for all user inputs
-- **CORS Protection** - Configured cross-origin resource sharing
-- **SQL Injection Prevention** - MongoDB and Mongoose protection
-- **Secure Cookies** - Production-ready cookie configuration with secure flags
-
-## 🐛 Troubleshooting
-
-### Common Issues
-
-#### Authentication Problems
-- **Symptoms**: 401 errors, "Access denied. No token provided"
-- **Causes**: Cookie not being sent cross-origin, incorrect environment variables
-- **Solutions**: 
-  - Verify `FRONT_END_URL` matches your frontend domain exactly
-  - Ensure cookies are configured with `sameSite: 'none'` and `secure: true` for production
-
-#### Database Connection Issues
-- **Symptoms**: 500 errors, "User not found", connection timeouts
-- **Causes**: MongoDB connection string issues, network restrictions
-- **Solutions**:
-  - Verify MongoDB Atlas connection string format
-  - Check IP whitelist settings in MongoDB Atlas
-  - Ensure database name is correct in connection string
-
-#### CORS Errors
-- **Symptoms**: Cross-origin request blocked, preflight failures
-- **Causes**: Incorrect CORS configuration
-- **Solutions**:
-  - Verify `Access-Control-Allow-Origin` header matches frontend URL
-  - Ensure credentials are allowed with `Access-Control-Allow-Credentials: true`
-
-## 🤝 Contributing
-
-We welcome contributions! Please follow these steps:
-
-1. **Fork the Repository**
-
-   ```bash
-   git fork https://github.com/0x4Nayan04/Shortly.git
-   ```
-
-2. **Create a Feature Branch**
-
-   ```bash
-   git checkout -b feature/amazing-feature
-   ```
-
-3. **Commit Your Changes**
-
-   ```bash
-   git commit -m 'Add amazing feature'
-   ```
-
-4. **Push to the Branch**
-
-   ```bash
-   git push origin feature/amazing-feature
-   ```
-
-5. **Open a Pull Request**
-
-## 📝 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🎯 Roadmap
-
-### Version 2.0 (Planned Features)
-
-- [ ] **QR Code Generation** - Generate QR codes for short URLs
-- [ ] **Analytics Dashboard** - Detailed click analytics with charts
-- [ ] **Bulk URL Import** - Upload CSV files with multiple URLs
-- [ ] **API Rate Limiting** - Prevent abuse with rate limiting
-- [ ] **Custom Domains** - Support for custom branded domains
-- [ ] **Link Expiration** - Set expiration dates for URLs
-- [ ] **Link Preview** - Social media link previews
-- [ ] **Team Management** - Share URLs within teams
-- [ ] **Advanced Analytics** - Geographic and device analytics
-- [ ] **Mobile App** - React Native mobile application
-
-### Version 3.0 (Future Vision)
-
-- [ ] **AI-Powered Suggestions** - Smart alias recommendations
-- [ ] **Integration APIs** - Slack, Discord, and other platform integrations
-- [ ] **White-label Solution** - Customizable branding options
-- [ ] **Enterprise Features** - SSO, advanced security, compliance
-
----
-
-<div align="center">
-  <p>Made with ❤️ by the Shortly Team</p>
-  <p>
-    <a href="#top">Back to Top</a> •
-    <a href="https://github.com/0x4Nayan04/Shortly/issues">Report Bug</a> •
-    <a href="https://github.com/0x4Nayan04/Shortly/issues">Request Feature</a>
-  </p>
-</div>
+| Issue           | Solution                                                                          |
+| --------------- | --------------------------------------------------------------------------------- |
+| 401 / No token  | Check `FRONT_END_URL`; ensure `sameSite: 'none'` and `secure: true` in production |
+| 500 / DB errors | Verify MongoDB URI and Atlas IP whitelist                                         |
+| CORS blocked    | Match `FRONT_END_URL` to frontend domain; use `ALLOWED_ORIGINS` if needed         |
