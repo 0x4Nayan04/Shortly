@@ -40,7 +40,7 @@ const UrlItem = memo(({ url, onCopy, onDelete, isCopied, isDeleting, isSelected,
               href={shortUrlFull}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-blue-600 hover:text-blue-800 font-medium text-sm truncate focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 rounded"
+              className="text-blue-600 hover:text-blue-800 font-medium text-sm truncate min-w-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 rounded"
               aria-label={`Open short URL ${shortUrlFull} in new tab`}
             >
               {shortUrlFull}
