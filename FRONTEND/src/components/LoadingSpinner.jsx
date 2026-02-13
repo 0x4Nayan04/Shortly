@@ -1,9 +1,5 @@
 import { memo } from 'react';
 
-/**
- * Reusable loading spinner component
- * Used for Suspense fallbacks and other loading states
- */
 const LoadingSpinner = memo(({ size = 'md', message = 'Loading...', fullScreen = false }) => {
   const sizeClasses = {
     sm: 'h-5 w-5 border-2',
@@ -14,7 +10,7 @@ const LoadingSpinner = memo(({ size = 'md', message = 'Loading...', fullScreen =
   const spinner = (
     <div className="flex flex-col items-center justify-center">
       <div
-        className={`animate-spin rounded-full border-b-blue-600 border-gray-200 ${sizeClasses[size]}`}
+        className={`animate-spin rounded-full border-b-indigo-600 border-gray-200 ${sizeClasses[size]}`}
         role="status"
         aria-label="Loading"
       />
@@ -37,16 +33,22 @@ const LoadingSpinner = memo(({ size = 'md', message = 'Loading...', fullScreen =
 
 LoadingSpinner.displayName = 'LoadingSpinner';
 
-/**
- * Page-level loading component for code-split routes
- */
 export const PageLoader = memo(({ message = 'Loading page...' }) => (
-  <div className="min-h-[calc(100vh-4rem)] bg-gray-50 flex items-center justify-center">
-    <div className="text-center">
-      <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto mb-3" />
-      <p className="text-gray-600">{message}</p>
+  <main
+    id="main-content"
+    className="min-h-[calc(100vh-4rem)] bg-gray-50 flex items-center justify-center animate-fade-in"
+    role="main"
+    aria-busy="true"
+    aria-label="Loading page"
+  >
+    <div className="flex flex-col items-center justify-center gap-4">
+      <div
+        className="h-12 w-12 rounded-full border-2 border-indigo-100 border-t-indigo-600 animate-spin"
+        aria-hidden="true"
+      />
+      <p className="text-gray-600 text-sm font-medium">{message}</p>
     </div>
-  </div>
+  </main>
 ));
 
 PageLoader.displayName = 'PageLoader';

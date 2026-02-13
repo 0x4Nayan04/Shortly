@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { registerUser } from "../api/user.api";
 import { validators } from "../utils/validation";
+import { showToast, useOnlineStatus } from "./UxEnhancements";
 
 const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
   const [name, setName] = useState("");
@@ -11,6 +12,7 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const { isOnline } = useOnlineStatus();
 
   // Field-level validation errors
   const [fieldErrors, setFieldErrors] = useState({
@@ -86,6 +88,12 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Check online status
+    if (!isOnline) {
+      showToast.error("You're offline. Cannot create account.");
+      return;
+    }
+
     // Validate all fields
     if (!validateAllFields()) {
       return;
@@ -98,6 +106,7 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
       const response = await registerUser(name, email, password);
 
       if (response.success) {
+        showToast.success("Account created successfully!");
         // Call the success callback if provided
         if (onRegisterSuccess) {
           onRegisterSuccess(response);
@@ -113,6 +122,7 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
 
       } else {
         setError(response.message || "Registration failed");
+        showToast.error(response.message || "Registration failed");
       }
     } catch (err) {
       const data = err?.response ? err.response.data : err;
@@ -122,10 +132,11 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
           backendErrors[e.field] = e.message;
         });
         setFieldErrors((prev) => ({ ...prev, ...backendErrors }));
+        showToast.error("Please check the form for errors.");
       } else {
-        setError(
-          typeof data === "string" ? data : (data?.message || "Registration failed")
-        );
+        const errorMsg = typeof data === "string" ? data : (data?.message || "Registration failed");
+        setError(errorMsg);
+        showToast.error(errorMsg);
       }
     } finally {
       setLoading(false);

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { createShortUrl, createCustomShortUrl } from "../api/shortUrl.api";
 import { validators } from "../utils/validation";
 import { useAnnouncement, LiveRegion } from "./Accessibility";
+import { showToast, useOnlineStatus, useCopyToClipboard } from "./UxEnhancements";
 
 const UrlForm = ({ onUrlCreated, user, onShowAuth }) => {
   const [url, setUrl] = useState("");
@@ -9,9 +10,10 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth }) => {
   const [shortUrl, setShortUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [isCopied, setIsCopied] = useState(false);
   const [useCustomAlias, setUseCustomAlias] = useState(false);
   const [announcement, announce] = useAnnouncement();
+  const { isOnline } = useOnlineStatus();
+  const { copy, isCopied } = useCopyToClipboard();
 
   // Field-level validation errors
   const [fieldErrors, setFieldErrors] = useState({
@@ -69,6 +71,12 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Check online status
+    if (!isOnline) {
+      showToast.error("You're offline. Cannot create URL.");
+      return;
+    }
+
     // Validate all fields
     if (!validateAllFields()) {
       return;
@@ -77,14 +85,17 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth }) => {
     setLoading(true);
     setError("");
     setShortUrl("");
-    setIsCopied(false);
+
+    const loadingToast = showToast.loading("Creating short URL...");
 
     try {
       let response;
 
       if (useCustomAlias && customAlias) {
         if (!user) {
+          showToast.dismiss(loadingToast);
           setError("Please sign in to use custom aliases");
+          showToast.error("Please sign in to use custom aliases");
           return;
         }
         response = await createCustomShortUrl(url, customAlias);
@@ -94,6 +105,8 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth }) => {
 
       if (response && response.data && response.data.short_url) {
         setShortUrl(response.data.short_url);
+        showToast.dismiss(loadingToast);
+        showToast.success("URL shortened successfully!");
         announce("URL shortened successfully! Your new short URL is ready.");
         // Call the callback if provided (for dashboard refresh)
         if (onUrlCreated) {
@@ -107,9 +120,12 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth }) => {
         setTouched({ url: false, customAlias: false });
       } else {
         console.error("Unexpected response structure:", response);
+        showToast.dismiss(loadingToast);
+        showToast.error("Failed to process the server response.");
         setError("Failed to process the server response.");
       }
     } catch (err) {
+      showToast.dismiss(loadingToast);
       const data = err?.response ? err.response.data : err;
       if (data && typeof data === "object" && Array.isArray(data.errors)) {
         const backendErrors = {};
@@ -118,10 +134,11 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth }) => {
           backendErrors[fieldName] = e.message;
         });
         setFieldErrors((prev) => ({ ...prev, ...backendErrors }));
+        showToast.error("Please check the form for errors.");
       } else {
-        setError(
-          typeof data === "string" ? data : (data?.message || "Failed to create short URL")
-        );
+        const errorMsg = typeof data === "string" ? data : (data?.message || "Failed to create short URL");
+        setError(errorMsg);
+        showToast.error(errorMsg);
       }
     } finally {
       setLoading(false);
@@ -129,20 +146,9 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth }) => {
   };
 
   const copyToClipboard = () => {
-    navigator.clipboard.writeText(shortUrl);
-    setIsCopied(true);
+    copy(shortUrl, "Short URL copied to clipboard!");
     announce("Short URL copied to clipboard");
   };
-
-  // Reset the "Copied!" status after a few seconds
-  useEffect(() => {
-    if (isCopied) {
-      const timer = setTimeout(() => {
-        setIsCopied(false);
-      }, 2000); // Reset after 2 seconds
-      return () => clearTimeout(timer); // Cleanup timer on component unmount or if isCopied changes
-    }
-  }, [isCopied]);
 
   // Helper to get input class based on validation state
   const getInputClass = (field) => {
@@ -325,13 +331,13 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth }) => {
             <span id="short-url-description" className="sr-only">Your new shortened URL. Click copy to copy it to your clipboard.</span>
             <button
               onClick={copyToClipboard}
-              aria-label={isCopied ? "URL copied to clipboard" : "Copy URL to clipboard"}
+              aria-label={isCopied(shortUrl) ? "URL copied to clipboard" : "Copy URL to clipboard"}
               className={`px-4 py-2 font-medium rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 ${
-                isCopied
+                isCopied(shortUrl)
                   ? "bg-green-600 text-white"
                   : "bg-green-100 text-green-700 hover:bg-green-200"
               }`}>
-              {isCopied ? "Copied!" : "Copy"}
+              {isCopied(shortUrl) ? "Copied!" : "Copy"}
             </button>
           </div>
         </div>
