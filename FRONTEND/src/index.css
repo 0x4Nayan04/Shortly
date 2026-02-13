@@ -266,3 +266,8 @@ select:focus-visible {
 .animate-bounce-subtle {
   animation: bounce 2s ease-in-out infinite;
 }
+
+/* Overscroll behavior for dropdowns/modals */
+.overscroll-contain {
+  overscroll-behavior: contain;
+}

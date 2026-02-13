@@ -71,7 +71,7 @@ const Navbar = memo(({ user, onLogout, onShowAuth, onShowProfile }) => {
 
   return (
     <nav
-      className='bg-white/90 backdrop-blur-xl border-b border-gray-200/80 sticky top-0 z-50 shadow-sm'
+      className='bg-white/90 backdrop-blur-xl border-b border-gray-200/80 sticky top-0 z-50 shadow-sm touch-action-manipulation'
       role='navigation'
       aria-label='Main navigation'>
       <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
@@ -82,10 +82,11 @@ const Navbar = memo(({ user, onLogout, onShowAuth, onShowProfile }) => {
               e.preventDefault();
               handleNavigateHome();
             }}
-            className='flex items-center shrink-0 group transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 rounded-lg'
-            aria-label='Shortly - Go to homepage'>
-            <h1 className='text-xl sm:text-2xl font-bold text-gray-900 tracking-tight group-hover:text-indigo-600 transition-colors duration-200'>
-              Short<span className='text-indigo-600'>ly</span>
+            className='flex items-center shrink-0 group transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 rounded-lg px-2 py-1 -ml-2'
+            aria-label='Shortly—Go to homepage'>
+            <h1 className='text-xl sm:text-2xl font-bold tracking-tight'>
+              <span className='text-gray-900 group-hover:text-gray-700 transition-colors'>Short</span>
+              <span className='text-indigo-600 group-hover:text-indigo-500 transition-colors'>ly</span>
             </h1>
           </a>
 
@@ -103,7 +104,7 @@ const Navbar = memo(({ user, onLogout, onShowAuth, onShowProfile }) => {
                       setIsDropdownOpen(true);
                     }
                   }}
-                  className={`flex items-center gap-2 sm:gap-3 rounded-xl sm:rounded-2xl pl-2 pr-3 py-2 sm:px-4 sm:py-2.5 transition-all duration-200 group focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 ${
+                  className={`flex items-center gap-2 sm:gap-3 rounded-xl sm:rounded-2xl pl-2 pr-3 py-2 sm:px-4 sm:py-2.5 transition-colors group focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 ${
                     isDropdownOpen ? 'bg-indigo-50' : 'hover:bg-gray-100'
                   }`}
                   aria-expanded={isDropdownOpen}
@@ -114,6 +115,8 @@ const Navbar = memo(({ user, onLogout, onShowAuth, onShowProfile }) => {
                     <img
                       src={user.avatar}
                       alt=''
+                      width='36'
+                      height='36'
                       aria-hidden='true'
                       className='w-9 h-9 sm:w-10 sm:h-10 rounded-full object-cover ring-2 ring-gray-200'
                       onError={(e) => {
@@ -141,7 +144,7 @@ const Navbar = memo(({ user, onLogout, onShowAuth, onShowProfile }) => {
                     </div>
                   </div>
                   <svg
-                    className={`w-4 h-4 text-gray-400 shrink-0 transition-transform duration-200 ${
+                    className={`w-4 h-4 text-gray-400 shrink-0 transition-transform ${
                       isDropdownOpen ? 'rotate-180' : ''
                     }`}
                     fill='none'
@@ -161,16 +164,18 @@ const Navbar = memo(({ user, onLogout, onShowAuth, onShowProfile }) => {
                   <div
                     ref={focusTrapRef}
                     id='user-menu'
-                    role='group'
+                    role='menu'
                     aria-label='User menu'
                     onKeyDown={handleDropdownKeyDown}
-                    className='absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-50 animate-slide-down'>
+                    className='absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-50 animate-slide-down overscroll-contain'>
                     <div className='px-4 py-3 border-b border-gray-100'>
                       <div className='flex items-center gap-3'>
                         <div className='relative shrink-0'>
                           <img
                             src={user.avatar}
                             alt=''
+                            width='44'
+                            height='44'
                             aria-hidden='true'
                             className='w-11 h-11 rounded-full object-cover ring-2 ring-gray-200'
                             onError={(e) => {
@@ -203,10 +208,11 @@ const Navbar = memo(({ user, onLogout, onShowAuth, onShowProfile }) => {
                     <div className='py-1'>
                       <button
                         onClick={handleNavigateDashboard}
+                        role='menuitem'
                         tabIndex={0}
-                        className='flex items-center w-full gap-3 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-lg mx-1 group focus:outline-none focus:bg-indigo-50 focus:text-indigo-700'>
+                        className='flex items-center w-full gap-3 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-lg mx-1 group focus:outline-none focus-visible:bg-indigo-50 focus-visible:text-indigo-700'>
                         <div
-                          className='w-5 h-5 text-gray-400 group-hover:text-indigo-500 group-focus:text-indigo-500 shrink-0'
+                          className='w-5 h-5 text-gray-400 group-hover:text-indigo-500 group-focus-visible:text-indigo-600 shrink-0 transition-colors'
                           aria-hidden='true'>
                           <svg
                             fill='none'
@@ -231,10 +237,11 @@ const Navbar = memo(({ user, onLogout, onShowAuth, onShowProfile }) => {
 
                       <button
                         onClick={handleShowProfileClick}
+                        role='menuitem'
                         tabIndex={0}
-                        className='flex items-center w-full gap-3 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-lg mx-1 group focus:outline-none focus:bg-indigo-50 focus:text-indigo-700'>
+                        className='flex items-center w-full gap-3 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-lg mx-1 group focus:outline-none focus-visible:bg-indigo-50 focus-visible:text-indigo-700'>
                         <div
-                          className='w-5 h-5 text-gray-400 group-hover:text-indigo-500 group-focus:text-indigo-500 shrink-0'
+                          className='w-5 h-5 text-gray-400 group-hover:text-indigo-500 group-focus-visible:text-indigo-600 shrink-0 transition-colors'
                           aria-hidden='true'>
                           <svg
                             fill='none'
@@ -253,10 +260,11 @@ const Navbar = memo(({ user, onLogout, onShowAuth, onShowProfile }) => {
 
                       <button
                         onClick={handleNavigateSettings}
+                        role='menuitem'
                         tabIndex={0}
-                        className='flex items-center w-full gap-3 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-lg mx-1 group focus:outline-none focus:bg-indigo-50 focus:text-indigo-700'>
+                        className='flex items-center w-full gap-3 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-lg mx-1 group focus:outline-none focus-visible:bg-indigo-50 focus-visible:text-indigo-700'>
                         <div
-                          className='w-5 h-5 text-gray-400 group-hover:text-indigo-500 group-focus:text-indigo-500 shrink-0'
+                          className='w-5 h-5 text-gray-400 group-hover:text-indigo-500 group-focus-visible:text-indigo-600 shrink-0 transition-colors'
                           aria-hidden='true'>
                           <svg
                             fill='none'
@@ -283,10 +291,11 @@ const Navbar = memo(({ user, onLogout, onShowAuth, onShowProfile }) => {
                     <div className='border-t border-gray-100 pt-1 mt-1'>
                       <button
                         onClick={handleLogoutClick}
+                        role='menuitem'
                         tabIndex={0}
-                        className='flex items-center w-full gap-3 px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg mx-1 group focus:outline-none focus:bg-red-50 focus:text-red-700'>
+                        className='flex items-center w-full gap-3 px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg mx-1 group focus:outline-none focus-visible:bg-red-50 focus-visible:text-red-700'>
                         <div
-                          className='w-5 h-5 text-red-500 shrink-0'
+                          className='w-5 h-5 text-red-500 shrink-0 transition-colors'
                           aria-hidden='true'>
                           <svg
                             fill='none'
@@ -300,7 +309,7 @@ const Navbar = memo(({ user, onLogout, onShowAuth, onShowProfile }) => {
                             />
                           </svg>
                         </div>
-                        Sign out
+                        Sign Out
                       </button>
                     </div>
                   </div>
@@ -311,12 +320,12 @@ const Navbar = memo(({ user, onLogout, onShowAuth, onShowProfile }) => {
                 <button
                   onClick={handleNavigateLogin}
                   className='px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-gray-900 border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2'>
-                  Login
+                  Sign In
                 </button>
                 <button
                   onClick={handleNavigateRegister}
                   className='px-4 py-2 rounded-lg text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2'>
-                  Sign up
+                  Sign Up
                 </button>
               </div>
             )}
