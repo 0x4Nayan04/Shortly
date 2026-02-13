@@ -57,6 +57,7 @@ const UrlItem = memo(({ url, onCopy, onDelete, isCopied, isDeleting, isSelected,
             {url.full_url}
             <span className="hidden sm:inline"> · </span>
             <span className="hidden sm:inline">
+              <span className="sr-only">Created: </span>
               <time dateTime={url.createdAt}>{new Date(url.createdAt).toLocaleDateString()}</time>
             </span>
           </p>
