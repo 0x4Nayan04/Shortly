@@ -35,10 +35,9 @@ const AccountSettings = ({ user }) => {
 
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-gray-50">
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+      <div className="max-w-4xl mx-auto px-4 py-6 sm:py-8">
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
             Account Settings
           </h1>
           <p className="text-gray-600">
@@ -50,12 +49,12 @@ const AccountSettings = ({ user }) => {
           {/* Profile Section */}
           <div className="lg:col-span-2 space-y-6">
             {/* Profile Information */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
               <h2 className="text-xl font-semibold text-gray-900 mb-6">
                 Profile Information
               </h2>
 
-              <div className="flex items-center space-x-6 mb-6">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 mb-6">
                 <div className="relative">
                   <img
                     src={user.avatar}
@@ -72,11 +71,11 @@ const AccountSettings = ({ user }) => {
                     </span>
                   </div>
                 </div>
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   <h3 className="text-lg font-medium text-gray-900">
                     {user.name}
                   </h3>
-                  <p className="text-gray-600">{user.email}</p>
+                  <p className="text-gray-600 break-all">{user.email}</p>
                   <p className="text-sm text-gray-500 mt-1">
                     Avatar powered by Gravatar
                   </p>
@@ -137,14 +136,14 @@ const AccountSettings = ({ user }) => {
             </div>
 
             {/* Security Section */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
               <h2 className="text-xl font-semibold text-gray-900 mb-6">
                 Security
               </h2>
 
               <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                  <div>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 border border-gray-200 rounded-lg">
+                  <div className="min-w-0">
                     <h3 className="text-sm font-medium text-gray-900">
                       Password
                     </h3>
@@ -154,13 +153,13 @@ const AccountSettings = ({ user }) => {
                   </div>
                   <button
                     disabled
-                    className="px-4 py-2 text-sm font-medium text-gray-400 bg-gray-100 rounded-lg cursor-not-allowed">
+                    className="w-full sm:w-auto shrink-0 px-4 py-2 text-sm font-medium text-gray-400 bg-gray-100 rounded-lg cursor-not-allowed">
                     Coming Soon
                   </button>
                 </div>
 
-                <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                  <div>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 border border-gray-200 rounded-lg">
+                  <div className="min-w-0">
                     <h3 className="text-sm font-medium text-gray-900">
                       Two-Factor Authentication
                     </h3>
@@ -170,7 +169,7 @@ const AccountSettings = ({ user }) => {
                   </div>
                   <button
                     disabled
-                    className="px-4 py-2 text-sm font-medium text-gray-400 bg-gray-100 rounded-lg cursor-not-allowed">
+                    className="w-full sm:w-auto shrink-0 px-4 py-2 text-sm font-medium text-gray-400 bg-gray-100 rounded-lg cursor-not-allowed">
                     Coming Soon
                   </button>
                 </div>
@@ -181,7 +180,7 @@ const AccountSettings = ({ user }) => {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Account Stats */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">
                 Account Statistics
               </h3>

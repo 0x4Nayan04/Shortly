@@ -14,129 +14,84 @@ const SORT_OPTIONS = [
   { value: "full_url", label: "Original URL" },
 ];
 
-// Memoized URL Item component for better list performance
 const UrlItem = memo(({ url, onCopy, onDelete, isCopied, isDeleting, isSelected, onSelect }) => {
   const shortUrlFull = `${import.meta.env.VITE_APP_URL}/${url.short_url}`;
 
   return (
-    <article 
-      className={`border rounded-lg p-4 transition-colors ${
-        isSelected 
-          ? "border-indigo-300 bg-indigo-50" 
+    <article
+      className={`border rounded-lg p-3 transition-colors ${
+        isSelected
+          ? "border-indigo-300 bg-indigo-50"
           : "border-gray-200 hover:bg-gray-50"
       }`}
       aria-label={`Short URL: ${url.short_url}`}
     >
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3 flex-1 min-w-0">
-          {/* Selection Checkbox */}
-          <input
-            type="checkbox"
-            checked={isSelected}
-            onChange={(e) => onSelect(url._id, e.target.checked)}
-            className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer"
-            aria-label={`Select URL ${url.short_url}`}
-          />
-          
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center space-x-3 mb-2">
-              <a
-                href={shortUrlFull}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-600 hover:text-blue-800 font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 rounded truncate"
-                aria-label={`Open short URL ${shortUrlFull} in new tab`}
-              >
-                {shortUrlFull}
-              </a>
-              <span 
-                className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 shrink-0"
-                aria-label={`${url.click} clicks`}
-              >
-                {url.click} clicks
-              </span>
-            </div>
-            <p className="text-gray-600 text-sm truncate" title={url.full_url}>
-              <span className="sr-only">Original URL: </span>
-              {url.full_url}
-            </p>
-            <div className="flex items-center space-x-4 mt-1">
-              <p className="text-gray-400 text-xs">
-                <span className="sr-only">Created on </span>
-                <time dateTime={url.createdAt}>
-                  Created {new Date(url.createdAt).toLocaleDateString()}
-                </time>
-              </p>
-            </div>
+      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+        <input
+          type="checkbox"
+          checked={isSelected}
+          onChange={(e) => onSelect(url._id, e.target.checked)}
+          className="w-4 h-4 shrink-0 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer"
+          aria-label={`Select URL ${url.short_url}`}
+        />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <a
+              href={shortUrlFull}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:text-blue-800 font-medium text-sm truncate focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 rounded"
+              aria-label={`Open short URL ${shortUrlFull} in new tab`}
+            >
+              {shortUrlFull}
+            </a>
+            <span
+              className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700 shrink-0"
+              aria-label={`${url.click} clicks`}
+            >
+              {url.click}
+            </span>
           </div>
+          <p className="text-gray-500 text-xs truncate mt-0.5" title={url.full_url}>
+            <span className="sr-only">Original URL: </span>
+            {url.full_url}
+            <span className="hidden sm:inline"> · </span>
+            <span className="hidden sm:inline">
+              <time dateTime={url.createdAt}>{new Date(url.createdAt).toLocaleDateString()}</time>
+            </span>
+          </p>
         </div>
-        <div className="flex items-center space-x-2" role="group" aria-label="URL actions">
+        <div className="flex items-center gap-1 shrink-0" role="group" aria-label="URL actions">
           <button
             onClick={() => onCopy(shortUrlFull)}
-            className={`p-2 transition-colors rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
-              isCopied
-                ? "text-green-600"
-                : "text-gray-400 hover:text-gray-600"
+            className={`p-1.5 sm:p-2 transition-colors rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+              isCopied ? "text-green-600" : "text-gray-400 hover:text-gray-600"
             }`}
             aria-label={isCopied ? "Copied to clipboard" : `Copy ${shortUrlFull} to clipboard`}
             aria-live="polite"
           >
             {isCopied ? (
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M5 13l4 4L19 7"
-                />
+              <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             ) : (
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                />
+              <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
               </svg>
             )}
           </button>
-
           <button
             onClick={() => onDelete(url._id, url.short_url)}
             disabled={isDeleting}
-            className="p-2 text-gray-400 hover:text-red-600 transition-colors disabled:opacity-50 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
+            className="p-1.5 sm:p-2 text-gray-400 hover:text-red-600 transition-colors disabled:opacity-50 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
             aria-label={isDeleting ? "Deleting URL..." : `Delete URL ${url.short_url}`}
             aria-busy={isDeleting}
           >
             {isDeleting ? (
-              <div className="w-5 h-5 animate-spin rounded-full border-2 border-gray-300 border-t-red-600" aria-hidden="true"></div>
+              <div className="w-4 h-4 sm:w-5 sm:h-5 animate-spin rounded-full border-2 border-gray-300 border-t-red-600" aria-hidden="true" />
             ) : (
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                />
+              <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
               </svg>
             )}
           </button>
@@ -275,7 +230,7 @@ const TopUrls = memo(({ urls }) => {
       {urls.map((url, index) => (
         <div
           key={url._id}
-          className="flex items-center gap-4 p-3 rounded-lg border border-gray-100 hover:bg-gray-50 hover:border-gray-200 transition-colors"
+          className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 p-3 rounded-lg border border-gray-100 hover:bg-gray-50 hover:border-gray-200 transition-colors"
         >
           <span
             className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-semibold border shrink-0 ${
@@ -345,8 +300,8 @@ const Pagination = memo(({ currentPage, totalPages, onPageChange, disabled }) =>
   };
 
   return (
-    <nav className="flex items-center justify-between border-t border-gray-200 pt-4 mt-4" aria-label="Pagination">
-      <div className="flex items-center gap-2">
+    <nav className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-gray-200 pt-4 mt-4" aria-label="Pagination">
+      <div className="flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-start">
         <button
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1 || disabled}
@@ -357,7 +312,7 @@ const Pagination = memo(({ currentPage, totalPages, onPageChange, disabled }) =>
         </button>
       </div>
 
-      <div className="flex items-center gap-1">
+      <div className="flex items-center justify-center gap-1 flex-wrap">
         {getPageNumbers().map((page, index) => (
           page === '...' ? (
             <span key={`ellipsis-${index}`} className="px-3 py-2 text-gray-400">...</span>
@@ -380,7 +335,7 @@ const Pagination = memo(({ currentPage, totalPages, onPageChange, disabled }) =>
         ))}
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-end">
         <button
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages || disabled}
@@ -478,7 +433,7 @@ const BulkActionsBar = memo(({
   if (totalCount === 0) return null;
 
   return (
-    <div className="flex items-center justify-between py-3 px-4 bg-gray-50 rounded-lg mb-4">
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 py-3 px-4 bg-gray-50 rounded-lg mb-4">
       <div className="flex items-center gap-4">
         <label className="flex items-center gap-2 cursor-pointer">
           <input
@@ -505,7 +460,7 @@ const BulkActionsBar = memo(({
         <button
           onClick={onBulkDelete}
           disabled={disabled}
-          className="px-4 py-2 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
+          className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
           aria-label={`Delete ${selectedCount} selected URLs`}
         >
           Delete Selected ({selectedCount})
@@ -750,7 +705,7 @@ const Dashboard = ({ user }) => {
   const urlList = useMemo(() => {
     if (loading) {
       return (
-        <div className="space-y-4" aria-busy="true" aria-label="Loading URLs">
+        <div className="space-y-2" aria-busy="true" aria-label="Loading URLs">
           {[1, 2, 3].map((i) => (
             <UrlItemSkeleton key={i} />
           ))}
@@ -799,7 +754,7 @@ const Dashboard = ({ user }) => {
     }
 
     return (
-      <div className="space-y-4" role="list" aria-label={`Your URLs, ${myUrls.length} items`}>
+      <div className="space-y-2" role="list" aria-label={`Your URLs, ${myUrls.length} items`}>
         {myUrls.map((url) => (
           <UrlItem
             key={url._id}
@@ -821,11 +776,11 @@ const Dashboard = ({ user }) => {
       {/* Live region for screen reader announcements */}
       <LiveRegion message={announcement} politeness="polite" />
       
-      <div className="max-w-6xl mx-auto px-4 py-8">
+      <div className="max-w-6xl mx-auto px-4 py-6 sm:py-8">
         {/* Enhanced Welcome Section */}
-        <header className="mb-8">
-          <div className="flex items-center space-x-6 mb-6">
-            <div className="relative">
+        <header className="mb-6 sm:mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 mb-6">
+            <div className="relative shrink-0 self-start">
               <img
                 src={user.avatar}
                 alt=""
@@ -844,15 +799,15 @@ const Dashboard = ({ user }) => {
               <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 border-2 border-white rounded-full" aria-hidden="true"></div>
             </div>
             <div className="flex-1">
-              <h1 className="text-3xl font-bold text-gray-900 mb-1">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">
                 Welcome back, {user.name || user.email}!
               </h1>
               <p className="text-gray-600 mb-3">
                 Create and manage your short URLs
               </p>
-              <div className="flex items-center space-x-4 text-sm text-gray-500">
-                <span>{user.email}</span>
-                <span aria-hidden="true">•</span>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-500">
+                <span className="break-all">{user.email}</span>
+                <span aria-hidden="true" className="hidden sm:inline">•</span>
                 <span>
                   Member since{" "}
                   <time dateTime={user.createdAt || new Date().toISOString()}>
@@ -939,15 +894,15 @@ const Dashboard = ({ user }) => {
 
         {/* Analytics Section */}
         {!statsLoading && stats && (
-          <section aria-label="Analytics" className="bg-white rounded-xl shadow-sm border border-gray-200 mb-8">
+          <section aria-label="Analytics" className="bg-white rounded-xl shadow-sm border border-gray-200 mb-6 sm:mb-8">
             <div className="flex flex-col lg:flex-row lg:divide-x divide-gray-200">
-              <div className="flex-1 p-6">
+              <div className="flex-1 p-4 sm:p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-1">Recent Activity</h3>
                 <p className="text-sm text-gray-500 mb-4">URLs created per day</p>
                 <ActivityChart data={stats.recentActivity} />
               </div>
 
-              <div className="flex-1 p-6 border-t lg:border-t-0 border-gray-200">
+              <div className="flex-1 p-4 sm:p-6 border-t lg:border-t-0 border-gray-200">
                 <h3 className="text-lg font-semibold text-gray-900 mb-1">Top Performing URLs</h3>
                 <p className="text-sm text-gray-500 mb-4">By click count</p>
                 <TopUrls urls={stats.topUrls} />
@@ -957,7 +912,7 @@ const Dashboard = ({ user }) => {
         )}
 
         {/* Create URL Section */}
-        <section aria-labelledby="create-url-heading" className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 mb-8">
+        <section aria-labelledby="create-url-heading" className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 md:p-8 mb-6 sm:mb-8">
           <h2 id="create-url-heading" className="text-xl font-semibold text-gray-900 mb-6">
             Create New Short URL
           </h2>
@@ -965,7 +920,7 @@ const Dashboard = ({ user }) => {
         </section>
 
         {/* My URLs Section */}
-        <section aria-labelledby="my-urls-heading" className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+        <section aria-labelledby="my-urls-heading" className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 md:p-8">
           <div className="flex items-center justify-between mb-6">
             <div>
               <h2 id="my-urls-heading" className="text-xl font-semibold text-gray-900">My URLs</h2>

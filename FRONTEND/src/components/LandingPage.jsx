@@ -6,13 +6,13 @@ const LandingPage = ({ onShowAuth, user }) => {
 	return (
 		<main id="main-content" className='min-h-[calc(100vh-4rem)] bg-gradient-to-br from-blue-50 to-indigo-100' role="main">
 			{/* Hero Section */}
-			<div className='max-w-4xl mx-auto px-4 pt-20 pb-16 text-center'>
-				<h1 className='text-5xl md:text-6xl font-bold text-gray-900 mb-6'>
+			<div className='max-w-4xl mx-auto px-4 pt-12 sm:pt-20 pb-12 sm:pb-16 text-center'>
+				<h1 className='text-4xl sm:text-5xl md:text-6xl font-bold text-gray-900 mb-6'>
 					Shorten URLs.
 					<br />
 					<span className='text-blue-600'>Share Everywhere.</span>
 				</h1>
-				<p className='text-xl text-gray-600 mb-12 max-w-2xl mx-auto'>
+				<p className='text-sm sm:text-base md:text-xl text-gray-600 mb-8 sm:mb-12 max-w-2xl mx-auto'>
 					Transform long, complex URLs into short, memorable links that are easy
 					to share and track.
 				</p>
@@ -23,7 +23,7 @@ const LandingPage = ({ onShowAuth, user }) => {
 					aria-labelledby="url-shortener-heading"
 				>
 					<h2 id="url-shortener-heading" className="sr-only">URL Shortener</h2>
-					<div className='bg-white rounded-2xl shadow-xl p-8 border border-gray-100'>
+					<div className='bg-white rounded-2xl shadow-xl p-4 sm:p-6 md:p-8 border border-gray-100'>
 						<UrlForm
 							user={user}
 							onShowAuth={() => navigate('/login')}
@@ -31,7 +31,7 @@ const LandingPage = ({ onShowAuth, user }) => {
 
 						{/* Call to Action - Only show if user is not logged in */}
 						{!user && (
-							<div className='mt-8 p-6 bg-blue-50 rounded-xl border border-blue-100'>
+							<div className='mt-6 sm:mt-8 p-4 sm:p-6 bg-blue-50 rounded-xl border border-blue-100'>
 								<h3 className='text-lg font-semibold text-blue-900 mb-2'>
 									Want to track and manage your links?
 								</h3>
@@ -49,7 +49,7 @@ const LandingPage = ({ onShowAuth, user }) => {
 
 						{/* Logged in user message */}
 						{user && (
-							<div className='mt-8 p-6 bg-green-50 rounded-xl border border-green-100'>
+							<div className='mt-6 sm:mt-8 p-4 sm:p-6 bg-green-50 rounded-xl border border-green-100'>
 								<h3 className='text-lg font-semibold text-green-900 mb-2'>
 									Welcome back, {user.name}!
 								</h3>

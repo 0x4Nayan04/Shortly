@@ -16,6 +16,11 @@
   -moz-osx-font-smoothing: grayscale;
 } */
 
+html,
+body {
+  overflow-x: hidden;
+}
+
 body {
   font-family: "Geist", sans-serif;
 }
