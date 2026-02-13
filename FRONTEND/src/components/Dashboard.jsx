@@ -169,41 +169,81 @@ StatsCard.displayName = 'StatsCard';
 
 // Simple Activity Chart Component
 const ActivityChart = memo(({ data }) => {
-  if (!data || data.length === 0) {
+  const last7Days = useMemo(() => {
+    const days = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      days.push(d.toISOString().slice(0, 10));
+    }
+    return days;
+  }, []);
+
+  const chartData = useMemo(() => {
+    const byDate = (data || []).reduce((acc, d) => {
+      acc[d._id] = { count: d.count, clicks: d.clicks || 0 };
+      return acc;
+    }, {});
+    return last7Days.map((dateId) => ({
+      _id: dateId,
+      count: byDate[dateId]?.count ?? 0,
+      clicks: byDate[dateId]?.clicks ?? 0,
+    }));
+  }, [data, last7Days]);
+
+  const maxCount = Math.max(...chartData.map((d) => d.count), 1);
+  const hasAnyData = chartData.some((d) => d.count > 0);
+  const CHART_HEIGHT = 140;
+  const MIN_BAR_HEIGHT = 20;
+
+  if (!hasAnyData) {
     return (
-      <div className="text-center py-8 text-gray-500">
-        <p>No activity data for the last 7 days</p>
+      <div className="flex flex-col items-center justify-center py-10 text-gray-500 bg-gray-50 rounded-lg border border-gray-100">
+        <svg className="w-10 h-10 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+        </svg>
+        <p className="text-sm font-medium">No activity in the last 7 days</p>
       </div>
     );
   }
 
-  const maxCount = Math.max(...data.map(d => d.count), 1);
-  const maxClicks = Math.max(...data.map(d => d.clicks), 1);
-
   return (
-    <div className="space-y-4">
-      <div className="flex items-end justify-between gap-2 h-32">
-        {data.map((day, index) => {
-          const heightPercent = (day.count / maxCount) * 100;
+    <div className="bg-gray-50 rounded-lg border border-gray-100 p-4">
+      <div className="flex items-end gap-3" style={{ height: `${CHART_HEIGHT}px` }}>
+        {chartData.map((day) => {
           const date = new Date(day._id);
-          const dayLabel = date.toLocaleDateString('en-US', { weekday: 'short' });
-          
+          const dayLabel = date.toLocaleDateString("en-US", { weekday: "short" });
+          const barHeightPx =
+            day.count === 0
+              ? MIN_BAR_HEIGHT
+              : Math.max(MIN_BAR_HEIGHT, (day.count / maxCount) * CHART_HEIGHT);
+
           return (
-            <div key={index} className="flex-1 flex flex-col items-center gap-2">
-              <div 
-                className="w-full bg-indigo-500 rounded-t-sm transition-all duration-300 min-h-[4px]"
-                style={{ height: `${Math.max(heightPercent, 4)}%` }}
-                title={`${day.count} URLs created, ${day.clicks} clicks`}
+            <div
+              key={day._id}
+              className="flex-1 flex flex-col items-center min-w-0"
+              title={`${day.count} URLs created, ${day.clicks} clicks`}
+            >
+              <div
+                className="w-full max-w-[40px] bg-indigo-500 rounded-t transition-all duration-300 hover:bg-indigo-600 mt-auto"
+                style={{ height: `${barHeightPx}px` }}
               />
-              <span className="text-xs text-gray-500">{dayLabel}</span>
             </div>
           );
         })}
       </div>
-      <div className="flex justify-between text-xs text-gray-400">
-        <span>URLs created per day</span>
-        <span>Last 7 days</span>
+      <div className="flex justify-between mt-2 text-xs font-medium text-gray-500">
+        {chartData.map((day) => {
+          const date = new Date(day._id);
+          const dayLabel = date.toLocaleDateString("en-US", { weekday: "short" });
+          return (
+            <span key={day._id} className="flex-1 text-center">
+              {dayLabel}
+            </span>
+          );
+        })}
       </div>
+      <p className="text-xs text-gray-500 text-right mt-3">Last 7 days</p>
     </div>
   );
 });
@@ -214,29 +254,47 @@ ActivityChart.displayName = 'ActivityChart';
 const TopUrls = memo(({ urls }) => {
   if (!urls || urls.length === 0) {
     return (
-      <div className="text-center py-4 text-gray-500">
-        <p>No URLs yet</p>
+      <div className="flex flex-col items-center justify-center py-12 text-gray-500 bg-gray-50 rounded-lg border border-gray-100">
+        <svg className="w-10 h-10 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+        </svg>
+        <p className="text-sm font-medium">No URLs yet</p>
+        <p className="text-xs mt-0.5">Create short URLs to see top performers</p>
       </div>
     );
   }
 
+  const rankStyles = [
+    'bg-amber-100 text-amber-800 border-amber-200',
+    'bg-slate-100 text-slate-700 border-slate-200',
+    'bg-orange-100 text-orange-700 border-orange-200',
+  ];
+
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       {urls.map((url, index) => (
-        <div key={url._id} className="flex items-center gap-3">
-          <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${
-            index === 0 ? 'bg-yellow-100 text-yellow-700' :
-            index === 1 ? 'bg-gray-100 text-gray-700' :
-            index === 2 ? 'bg-orange-100 text-orange-700' :
-            'bg-gray-50 text-gray-500'
-          }`}>
+        <div
+          key={url._id}
+          className="flex items-center gap-4 p-3 rounded-lg border border-gray-100 hover:bg-gray-50 hover:border-gray-200 transition-colors"
+        >
+          <span
+            className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-semibold border shrink-0 ${
+              index < 3 ? rankStyles[index] : 'bg-gray-50 text-gray-600 border-gray-200'
+            }`}
+          >
             {index + 1}
           </span>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-900 truncate">{url.short_url}</p>
-            <p className="text-xs text-gray-500 truncate">{url.full_url}</p>
+            <p className="text-sm font-semibold text-gray-900 truncate" title={url.short_url}>
+              {url.short_url}
+            </p>
+            <p className="text-xs text-gray-500 truncate mt-0.5" title={url.full_url}>
+              {url.full_url}
+            </p>
           </div>
-          <span className="text-sm font-semibold text-indigo-600">{url.click} clicks</span>
+          <span className="text-sm font-semibold text-indigo-600 shrink-0 tabular-nums">
+            {url.click} {url.click === 1 ? 'click' : 'clicks'}
+          </span>
         </div>
       ))}
     </div>
@@ -881,17 +939,19 @@ const Dashboard = ({ user }) => {
 
         {/* Analytics Section */}
         {!statsLoading && stats && (
-          <section aria-label="Analytics" className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            {/* Activity Chart */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
-              <ActivityChart data={stats.recentActivity} />
-            </div>
+          <section aria-label="Analytics" className="bg-white rounded-xl shadow-sm border border-gray-200 mb-8">
+            <div className="flex flex-col lg:flex-row lg:divide-x divide-gray-200">
+              <div className="flex-1 p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-1">Recent Activity</h3>
+                <p className="text-sm text-gray-500 mb-4">URLs created per day</p>
+                <ActivityChart data={stats.recentActivity} />
+              </div>
 
-            {/* Top URLs */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Top Performing URLs</h3>
-              <TopUrls urls={stats.topUrls} />
+              <div className="flex-1 p-6 border-t lg:border-t-0 border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-900 mb-1">Top Performing URLs</h3>
+                <p className="text-sm text-gray-500 mb-4">By click count</p>
+                <TopUrls urls={stats.topUrls} />
+              </div>
             </div>
           </section>
         )}
