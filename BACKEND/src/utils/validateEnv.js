@@ -4,9 +4,14 @@
 
 const requiredEnvVars = [
   'MONGODB_URI',
-  'JWT_SECRET', 
+  'JWT_SECRET',
   'FRONT_END_URL',
   'PORT'
+];
+
+const optionalEnvVars = [
+  'NODE_ENV',
+  'ALLOWED_ORIGINS'
 ];
 
 export const validateEnvironment = () => {
@@ -20,6 +25,13 @@ export const validateEnvironment = () => {
     throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
   }
   
+  if (process.env.NODE_ENV !== 'production') {
+    const presentOptional = optionalEnvVars.filter(varName => process.env[varName]);
+    if (presentOptional.length > 0) {
+      console.log(`ℹ️ Optional environment variables detected: ${presentOptional.join(', ')}`);
+    }
+  }
+
   console.log('✅ Environment validation passed');
 };
 

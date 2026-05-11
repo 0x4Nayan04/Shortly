@@ -12,10 +12,16 @@ export const errorHandler = (err, req, res, next) => {
   }
 
   if (err instanceof AppError) {
-    return res.status(err.statusCode).json({
+    const payload = {
       success: false,
       message: err.message,
-    });
+    };
+
+    if (err.errors) {
+      payload.errors = err.errors;
+    }
+
+    return res.status(err.statusCode).json(payload);
   }
 
   res.status(500).json({
@@ -29,11 +35,13 @@ export const errorHandler = (err, req, res, next) => {
 export class AppError extends Error {
   statusCode;
   isOperational;
+  errors;
 
-  constructor(message, statusCode = 500, isOperational = true) {
+  constructor(message, statusCode = 500, isOperational = true, errors = null) {
     super(message);
     this.statusCode = statusCode;
     this.isOperational = isOperational;
+    this.errors = errors;
     Error.captureStackTrace(this, this.constructor);
   }
 }
@@ -42,7 +50,7 @@ export class ValidationError extends AppError {
   errors;
 
   constructor(message = "Validation failed", errors = []) {
-    super(message, 400);
+    super(message, 400, true, errors);
     this.errors = errors;
   }
 }

@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "dev": "nodemon index.js",
-    "start": "node index.js"
+    "start": "node index.js",
+    "lint": "eslint ."
   },
   "keywords": [],
   "author": "",
@@ -25,7 +26,9 @@
     "nanoid": "^5.1.5"
   },
   "devDependencies": {
+    "@eslint/js": "^9.25.0",
     "@types/compression": "^1.8.1",
+    "eslint": "^9.25.0",
     "nodemon": "^3.1.10"
   }
 }

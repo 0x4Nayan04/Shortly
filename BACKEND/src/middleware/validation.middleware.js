@@ -1,10 +1,12 @@
 /**
  * Validation Middleware
- * 
+ *
  * This middleware validates request data against Joi schemas.
  * It returns consistent error responses WITHOUT modifying existing
  * controller logic or success response structures.
  */
+
+import { ValidationError } from "../utils/errorHandler.js";
 
 /**
  * Creates a validation middleware for request body
@@ -24,11 +26,7 @@ export const validateBody = (schema) => {
         message: detail.message,
       }));
 
-      return res.status(400).json({
-        success: false,
-        message: "Validation failed",
-        errors,
-      });
+      return next(new ValidationError("Validation failed", errors));
     }
 
     // Replace body with validated/sanitized values
@@ -55,11 +53,7 @@ export const validateParams = (schema) => {
         message: detail.message,
       }));
 
-      return res.status(400).json({
-        success: false,
-        message: "Validation failed",
-        errors,
-      });
+      return next(new ValidationError("Validation failed", errors));
     }
 
     req.validatedParams = value;
@@ -85,11 +79,7 @@ export const validateQuery = (schema) => {
         message: detail.message,
       }));
 
-      return res.status(400).json({
-        success: false,
-        message: "Validation failed",
-        errors,
-      });
+      return next(new ValidationError("Validation failed", errors));
     }
 
     req.validatedQuery = value;
