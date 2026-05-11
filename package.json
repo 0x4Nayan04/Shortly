@@ -1,0 +1,14 @@
+{
+  "name": "shortly",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "install:all": "npm --prefix BACKEND install && npm --prefix FRONTEND install",
+    "dev:backend": "npm --prefix BACKEND run dev",
+    "dev:frontend": "npm --prefix FRONTEND run dev",
+    "start:backend": "npm --prefix BACKEND run start",
+    "build:frontend": "npm --prefix FRONTEND run build",
+    "lint:frontend": "npm --prefix FRONTEND run lint",
+    "lint:backend": "npm --prefix BACKEND run lint"
+  }
+}

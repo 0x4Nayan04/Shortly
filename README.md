@@ -71,14 +71,20 @@ git clone https://github.com/0x4Nayan04/Shortly.git
 cd Shortly
 ```
 
-### 2. Backend Setup
+### 2. Install Dependencies (Backend + Frontend)
+
+```bash
+npm run install:all
+```
+
+### 3. Backend Setup
 
 ```bash
 cd BACKEND
 npm install
 ```
 
-Create a `.env` file in `BACKEND/`:
+Create a `.env` file in `BACKEND/` (start from `BACKEND/.env.example`):
 
 ```env
 MONGODB_URI=mongodb://localhost:27017/url_shortener
@@ -94,20 +100,20 @@ NODE_ENV=development
 ALLOWED_ORIGINS=https://your-custom-domain.com
 ```
 
-### 3. Frontend Setup
+### 4. Frontend Setup
 
 ```bash
 cd FRONTEND
 npm install
 ```
 
-Create a `.env` file in `FRONTEND/`:
+Create a `.env` file in `FRONTEND/` (start from `FRONTEND/.env.example`):
 
 ```env
 VITE_APP_URL=http://localhost:3001
 ```
 
-### 4. Run the Application
+### 5. Run the Application
 
 **Backend:**
 
@@ -123,11 +129,20 @@ cd FRONTEND
 npm run dev
 ```
 
+**Optional root helpers:**
+
+```bash
+npm run dev:backend
+npm run dev:frontend
+npm run lint:backend
+npm run lint:frontend
+```
+
 Open `http://localhost:5173` to use Shortly.
 
 ## Environment Variables
 
-### Backend (.env.example)
+### Backend (`BACKEND/.env.example`)
 
 ```env
 MONGODB_URI=mongodb://localhost:27017/url_shortener
@@ -147,7 +162,7 @@ ALLOWED_ORIGINS=
 | NODE_ENV        | No       | `development` or `production`                            |
 | ALLOWED_ORIGINS | No       | Comma-separated CORS origins (defaults to FRONT_END_URL) |
 
-### Frontend (.env.example)
+### Frontend (`FRONTEND/.env.example`)
 
 ```env
 VITE_APP_URL=http://localhost:3001
