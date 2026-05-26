@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getMyUrls } from "../api/shortUrl.api";
+import { getUrlStats } from "../api/shortUrl.api";
 
 const AccountSettings = ({ user }) => {
   const [userStats, setUserStats] = useState({
@@ -11,16 +11,12 @@ const AccountSettings = ({ user }) => {
   useEffect(() => {
     const fetchUserStats = async () => {
       try {
-        const response = await getMyUrls();
-        if (response && response.data && response.data.urls) {
-          const urls = response.data.urls;
-          const totalClicks = urls.reduce(
-            (sum, url) => sum + (url.click || 0),
-            0
-          );
+        const response = await getUrlStats();
+        const payload = response?.data;
+        if (payload?.stats) {
           setUserStats({
-            totalUrls: urls.length,
-            totalClicks: totalClicks,
+            totalUrls: payload.stats.totalUrls || 0,
+            totalClicks: payload.stats.totalClicks || 0,
           });
         }
       } catch (error) {

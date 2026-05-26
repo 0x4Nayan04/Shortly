@@ -1,9 +1,10 @@
-import { useState, useEffect, useMemo, useCallback, memo } from "react";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import { bulkDeleteUrls, deleteShortUrl, getMyUrls, getUrlStats } from "../api/shortUrl.api";
 import UrlForm from "../components/UrlForm";
-import { getMyUrls, deleteShortUrl, bulkDeleteUrls, getUrlStats } from "../api/shortUrl.api";
-import { UrlItemSkeleton, StatsSkeleton } from "./LoadingSpinner";
 import { LiveRegion, useAnnouncement } from "./Accessibility";
-import { showToast, EmptyState, ErrorRecovery, useConfirmDialog, ConfirmDialog, useCopyToClipboard, useOnlineStatus } from "./UxEnhancements";
+import { StatsSkeleton, UrlItemSkeleton } from "./LoadingSpinner";
+import PrivacyDashboard from "./PrivacyDashboard";
+import { ConfirmDialog, EmptyState, ErrorRecovery, showToast, useConfirmDialog, useCopyToClipboard, useOnlineStatus } from "./UxEnhancements";
 
 // Constants for pagination and sorting
 const PAGE_SIZE = 10;
@@ -539,8 +540,9 @@ const Dashboard = ({ user }) => {
         sortOrder,
       });
       
-      if (response && response.data) {
-        const { urls, totalCount: total, totalPages: pages } = response.data;
+      const payload = response?.data;
+      if (payload) {
+        const { urls, totalCount: total, totalPages: pages } = payload;
         setMyUrls(urls || []);
         setTotalCount(total || 0);
         setTotalPages(pages || 1);
@@ -564,8 +566,9 @@ const Dashboard = ({ user }) => {
     setStatsLoading(true);
     try {
       const response = await getUrlStats();
-      if (response && response.data) {
-        setStats(response.data);
+      const payload = response?.data;
+      if (payload) {
+        setStats(payload);
       }
     } catch (err) {
       console.error("Error fetching stats:", err);
@@ -898,6 +901,11 @@ const Dashboard = ({ user }) => {
             </section>
           )}
         </header>
+
+        {/* Privacy Dashboard Section */}
+        <section aria-label="Privacy transparency" className="mb-6 sm:mb-8">
+          <PrivacyDashboard stats={userStats} />
+        </section>
 
         {/* Analytics Section */}
         {!statsLoading && stats && (

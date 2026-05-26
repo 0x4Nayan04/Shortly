@@ -1,17 +1,17 @@
-import { useState, useEffect, lazy, Suspense, useCallback } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import {
-	Routes,
-	Route,
-	useNavigate,
-	useLocation,
-	Navigate
+    Navigate,
+    Route,
+    Routes,
+    useLocation,
+    useNavigate
 } from 'react-router-dom';
-import Navbar from './components/Navbar';
+import { getUrlStats } from './api/shortUrl.api';
+import { getCurrentUser, logoutUser } from './api/user.api';
+import { LiveRegion, SkipLink, useAnnouncement } from './components/Accessibility';
 import { PageLoader } from './components/LoadingSpinner';
-import { SkipLink, LiveRegion, useAnnouncement } from './components/Accessibility';
+import Navbar from './components/Navbar';
 import { showToast } from './components/UxEnhancements';
-import { logoutUser, getCurrentUser } from './api/user.api';
-import { getMyUrls } from './api/shortUrl.api';
 
 // Lazy load heavy components for code splitting
 const LandingPage = lazy(() => import('./components/LandingPage'));
@@ -20,6 +20,7 @@ const LoginForm = lazy(() => import('./components/LoginForm'));
 const RegisterForm = lazy(() => import('./components/RegisterForm'));
 const AccountSettings = lazy(() => import('./components/AccountSettings'));
 const UserProfileModal = lazy(() => import('./components/UserProfileModal'));
+const PrivacyPage = lazy(() => import('./components/PrivacyPage'));
 
 // Helper components for proper routing
 const LoginPage = ({ user, navigate, onLoginSuccess }) => {
@@ -163,17 +164,12 @@ const App = () => {
 	// Memoized fetch user stats function
 	const fetchUserStats = useCallback(async () => {
 		try {
-			// Get first 50 URLs for stats calculation
-			const response = await getMyUrls(50, 0);
-			if (response && response.data && response.data.urls) {
-				const urls = response.data.urls;
-				const totalClicks = urls.reduce(
-					(sum, url) => sum + (url.click || 0),
-					0
-				);
+			const response = await getUrlStats();
+			const payload = response?.data;
+			if (payload?.stats) {
 				setUserStats({
-					totalUrls: response.data.totalCount || urls.length,
-					totalClicks: totalClicks
+					totalUrls: payload.stats.totalUrls || 0,
+					totalClicks: payload.stats.totalClicks || 0
 				});
 			}
 		} catch (error) {
@@ -186,8 +182,9 @@ const App = () => {
 		const checkAuthStatus = async () => {
 			try {
 				const response = await getCurrentUser();
-				if (response && response.user) {
-					setUser(response.user);
+				const userData = response?.data?.user || response?.user;
+				if (userData) {
+					setUser(userData);
 					// If user is logged in and on auth pages, redirect to dashboard
 					if (
 						location.pathname === '/login' ||
@@ -212,9 +209,21 @@ const App = () => {
 	}, [location.pathname, navigate]);
 
 	// Memoized auth success handler
-	const handleAuthSuccess = useCallback((response) => {
-		const userData = response.data?.user || response.user;
-		setUser(userData || { email: 'User' });
+	const handleAuthSuccess = useCallback(async (response) => {
+		const userData = response?.data?.user || response?.user;
+		if (userData) {
+			setUser(userData);
+		} else {
+			try {
+				const current = await getCurrentUser();
+				const currentUser = current?.data?.user || current?.user;
+				if (currentUser) {
+					setUser(currentUser);
+				}
+			} catch {
+				setUser({ email: 'User' });
+			}
+		}
 		announce('Successfully signed in. Redirecting to dashboard.');
 		showToast.success('Welcome back! You have been signed in.');
 		navigate('/dashboard');
@@ -312,6 +321,10 @@ const App = () => {
 								navigate={navigate}
 							/>
 						}
+					/>
+					<Route
+						path='/privacy'
+						element={<PrivacyPage />}
 					/>
 				</Routes>
 			</Suspense>

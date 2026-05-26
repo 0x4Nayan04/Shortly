@@ -15,7 +15,9 @@ export const registerUser = async (name, email, password) => {
   const newUser = await createUser(name, email, password);
 
   const token = await signToken({ id: newUser._id });
-  return token;
+
+  newUser.password = undefined;
+  return { token, user: newUser };
 };
 
 export const loginUser = async (email, password) => {

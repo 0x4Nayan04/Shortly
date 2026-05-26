@@ -5,10 +5,12 @@ import {
   createCustomShortUrl as createCustomShortUrlService,
   getShortUrl,
 } from "../services/shortUrl.services.js";
+import Click from "../schema/click.model.js";
 import { AppError, NotFoundError } from "../utils/errorHandler.js";
 import asyncHandler from "../utils/asyncHandler.js";
+import { getCountryFromRequest } from "../utils/geoip.js";
+import { parseUserAgent } from "../utils/userAgent.js";
 import { SUCCESS_MESSAGES, successResponse } from "../utils/responseMessages.js";
-
 export const createShortUrl = asyncHandler(async (req, res, next) => {
   const { full_url } = req.body;
 
@@ -74,12 +76,29 @@ export const redirectFromShortUrl = asyncHandler(async (req, res, next) => {
 
   // Increment the click count asynchronously (don't wait for it)
   // Using updateOne instead of findByIdAndUpdate for slightly better performance
+  const referrer = req.get("referer") || req.get("referrer") || "";
+  const country = getCountryFromRequest(req);
+  const { user_agent, device_type, browser, os } = parseUserAgent(req);
+
   setImmediate(() => {
     short_urlModel
       .updateOne({ _id: shortUrlData._id }, { $inc: { click: 1 } })
       .catch((error) => {
         console.error("Error updating click count:", error);
       });
+
+    Click.create({
+      short_url_id: shortUrlData._id,
+      referrer,
+      country,
+      user_agent,
+      device_type,
+      browser,
+      os,
+      timestamp: new Date(),
+    }).catch((error) => {
+      console.error("Error saving click analytics:", error);
+    });
   });
 });
 
@@ -315,3 +334,4 @@ export const getUrlStats = asyncHandler(async (req, res, next) => {
     topUrls,
   }));
 });
+

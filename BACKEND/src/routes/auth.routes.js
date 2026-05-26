@@ -15,8 +15,9 @@ const router = express.Router();
 router.post("/register", validateBody(registerSchema), register_user);
 router.post("/login", validateBody(loginSchema), login_user);
 
+// Logout should clear cookie even if token expired
+router.post("/logout", logout_user);
 // Protected routes (require authentication)
-router.post("/logout", isAuthenticated, logout_user);
 router.get("/me", isAuthenticated, get_user_profile);
 
 export default router;
