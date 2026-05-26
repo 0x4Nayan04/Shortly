@@ -16,17 +16,30 @@ import {
   getUserUrlsQuerySchema,
   bulkDeleteUrlsSchema,
 } from "../validation/schemas.js";
+import { rateLimiter, keyGenerators } from "../middleware/rateLimit.middleware.js";
 
 const router = express.Router();
 
+const createLimiterAnon = rateLimiter({
+  windowMs: 5 * 60 * 1000,
+  max: 10,
+  keyGenerator: keyGenerators.ipPerEndpoint("create"),
+});
+
+const createLimiterAuth = rateLimiter({
+  windowMs: 5 * 60 * 1000,
+  max: 100,
+  keyGenerator: keyGenerators.userId,
+});
+
 // Public route - creates short URL, no authentication required
-router.post("/", validateBody(createUrlSchema), createShortUrl);
+router.post("/", createLimiterAnon, validateBody(createUrlSchema), createShortUrl);
 
 // Protected routes - require authentication
-router.post("/custom", isAuthenticated, validateBody(createCustomUrlSchema), createCustomShortUrl); // Create custom short URL (requires auth)
-router.get("/my-urls", isAuthenticated, validateQuery(getUserUrlsQuerySchema), getUserUrls); // Get all URLs created by authenticated user
-router.get("/stats", isAuthenticated, getUrlStats); // Get URL statistics for authenticated user
-router.delete("/bulk", isAuthenticated, validateBody(bulkDeleteUrlsSchema), bulkDeleteUrls); // Bulk delete URLs (requires auth)
-router.delete("/:id", isAuthenticated, validateParams(deleteUrlSchema), deleteShortUrl); // Delete a short URL (requires auth and ownership)
+router.post("/custom", isAuthenticated, createLimiterAuth, validateBody(createCustomUrlSchema), createCustomShortUrl);
+router.get("/my-urls", isAuthenticated, validateQuery(getUserUrlsQuerySchema), getUserUrls);
+router.get("/stats", isAuthenticated, getUrlStats);
+router.delete("/bulk", isAuthenticated, validateBody(bulkDeleteUrlsSchema), bulkDeleteUrls);
+router.delete("/:id", isAuthenticated, validateParams(deleteUrlSchema), deleteShortUrl);
 
 export default router;

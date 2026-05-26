@@ -11,6 +11,13 @@ import authRoutes from "./src/routes/auth.routes.js";
 import shortUrlCreate from "./src/routes/shortUrl.routes.js";
 import { attachUser } from "./src/utils/attachUser.js";
 import { validateEnvFormats, validateEnvironment } from "./src/utils/validateEnv.js";
+import { rateLimiter, keyGenerators } from "./src/middleware/rateLimit.middleware.js";
+
+const redirectLimiter = rateLimiter({
+  windowMs: 60 * 1000,
+  max: 60,
+  keyGenerator: keyGenerators.ipPerEndpoint("redirect"),
+});
 
 // Load environment variables
 dotenv.config("./.env");
@@ -82,7 +89,7 @@ app.use(attachUser);
 app.use("/api/create", shortUrlCreate);
 
 /* Redirect */
-app.get("/:short_url", redirectFromShortUrl);
+app.get("/:short_url", redirectLimiter, redirectFromShortUrl);
 
 /* auth */
 app.use("/api/auth", authRoutes);
