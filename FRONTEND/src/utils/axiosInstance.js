@@ -38,11 +38,7 @@ axiosInstance.interceptors.response.use(
 
     // It's important to reject the promise so that local .catch() handlers
     // in your components can also process the error if needed.
-    return Promise.reject(
-      error.response
-        ? error.response.data
-        : error.message || "An unknown error occurred"
-    );
+    return Promise.reject(error);
   }
 );
 
