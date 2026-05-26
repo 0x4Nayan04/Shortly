@@ -12,11 +12,11 @@ export const register_user = asyncHandler(async (req, res, next) => {
     return next(new AppError(ERROR_MESSAGES.VALIDATION.REQUIRED_FIELDS, 400));
   }
 
-  const token = await registerUser(name, email, password);
+  const { token, user } = await registerUser(name, email, password);
   res.cookie("token", token, cookieOptions);
   res
     .status(201)
-    .json(successResponse(SUCCESS_MESSAGES.AUTH.REGISTER_SUCCESS, { token }));
+    .json(successResponse(SUCCESS_MESSAGES.AUTH.REGISTER_SUCCESS, { user }));
 });
 
 export const login_user = asyncHandler(async (req, res, next) => {
@@ -31,7 +31,7 @@ export const login_user = asyncHandler(async (req, res, next) => {
   res
     .cookie("token", token, cookieOptions)
     .status(200)
-    .json(successResponse(SUCCESS_MESSAGES.AUTH.LOGIN_SUCCESS, { user, token }));
+    .json(successResponse(SUCCESS_MESSAGES.AUTH.LOGIN_SUCCESS, { user }));
 });
 
 export const logout_user = asyncHandler((req, res, next) => {

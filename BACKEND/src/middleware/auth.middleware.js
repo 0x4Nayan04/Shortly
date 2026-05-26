@@ -15,6 +15,14 @@ export const isAuthenticated = async (req, res, next) => {
       token = req.cookies.token;
     }
 
+    // Check for token in Authorization header
+    if (!token) {
+      const authHeader = req.headers?.authorization;
+      if (authHeader?.startsWith("Bearer ")) {
+        token = authHeader.slice(7);
+      }
+    }
+
     // If no token found
     if (!token) {
       return next(new AppError("Access denied. No token provided.", 401));

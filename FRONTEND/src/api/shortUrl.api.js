@@ -5,8 +5,8 @@ export const createShortUrl = async (fullUrl) => {
     full_url: fullUrl,
   };
 
-  const response = await axiosinstance.post(`api/create`, payload);
-  return response;
+  const { data } = await axiosinstance.post(`api/create`, payload);
+  return data;
 };
 
 export const createCustomShortUrl = async (fullUrl, customAlias) => {
@@ -15,13 +15,13 @@ export const createCustomShortUrl = async (fullUrl, customAlias) => {
     custom_url: customAlias,
   };
 
-  const response = await axiosinstance.post(`api/create/custom`, payload);
-  return response;
+  const { data } = await axiosinstance.post(`api/create/custom`, payload);
+  return data;
 };
 
 export const deleteShortUrl = async (urlId) => {
-  const response = await axiosinstance.delete(`api/create/${urlId}`);
-  return response;
+  const { data } = await axiosinstance.delete(`api/create/${urlId}`);
+  return data;
 };
 
 /**
@@ -51,8 +51,8 @@ export const getMyUrls = async ({
     params.append("search", search.trim());
   }
 
-  const response = await axiosinstance.get(`api/create/my-urls?${params.toString()}`);
-  return response;
+  const { data } = await axiosinstance.get(`api/create/my-urls?${params.toString()}`);
+  return data;
 };
 
 /**
@@ -60,16 +60,16 @@ export const getMyUrls = async ({
  * @param {string[]} ids - Array of URL IDs to delete
  */
 export const bulkDeleteUrls = async (ids) => {
-  const response = await axiosinstance.delete(`api/create/bulk`, {
+  const { data } = await axiosinstance.delete(`api/create/bulk`, {
     data: { ids },
   });
-  return response;
+  return data;
 };
 
 /**
  * Get URL statistics and analytics
  */
 export const getUrlStats = async () => {
-  const response = await axiosinstance.get(`api/create/stats`);
-  return response;
+  const { data } = await axiosinstance.get(`api/create/stats`);
+  return data;
 };

@@ -5,7 +5,10 @@ export const loginUser = async (email, password) => {
     email,
     password,
   });
-  return data;
+  return {
+    ...data,
+    user: data?.data?.user ?? data?.user,
+  };
 };
 
 export const registerUser = async (name, email, password) => {
@@ -14,7 +17,10 @@ export const registerUser = async (name, email, password) => {
     email,
     password,
   });
-  return data;
+  return {
+    ...data,
+    user: data?.data?.user ?? data?.user,
+  };
 };
 
 export const logoutUser = async () => {
@@ -24,5 +30,8 @@ export const logoutUser = async () => {
 
 export const getCurrentUser = async () => {
   const { data } = await axiosinstance.get(`api/auth/me`);
-  return data;
+  return {
+    ...data,
+    user: data?.data?.user ?? data?.user,
+  };
 };
