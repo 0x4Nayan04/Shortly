@@ -1,4 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
+import { ChevronLeft } from 'lucide-react';
 import {
   Navigate,
   Route,
@@ -15,7 +16,11 @@ import {
 } from './components/Accessibility';
 import { PageLoader } from './components/LoadingSpinner';
 import Navbar from './components/Navbar';
-import { showToast } from './components/UxEnhancements';
+import {
+  showToast,
+  useConfirmDialog,
+  ConfirmDialog
+} from './components/UxEnhancements';
 
 // Lazy load heavy components for code splitting
 const LandingPage = lazy(() => import('./components/LandingPage'));
@@ -51,19 +56,10 @@ const LoginPage = ({ user, navigate, onLoginSuccess }) => {
           onClick={() => navigate('/')}
           className='mb-6 flex items-center text-gray-600 hover:text-gray-800 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 rounded-lg px-2 py-1'
           aria-label='Go back to home page'>
-          <svg
+          <ChevronLeft
             className='w-5 h-5 mr-2'
-            fill='none'
-            stroke='currentColor'
-            viewBox='0 0 24 24'
-            aria-hidden='true'>
-            <path
-              strokeLinecap='round'
-              strokeLinejoin='round'
-              strokeWidth={2}
-              d='M15 19l-7-7 7-7'
-            />
-          </svg>
+            aria-hidden='true'
+          />
           Back to home
         </button>
         <Suspense fallback={<PageLoader message='Loading login form...' />}>
@@ -99,19 +95,10 @@ const RegisterPage = ({ user, navigate, onRegisterSuccess }) => {
           onClick={() => navigate('/')}
           className='mb-6 flex items-center text-gray-600 hover:text-gray-800 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 rounded-lg px-2 py-1'
           aria-label='Go back to home page'>
-          <svg
+          <ChevronLeft
             className='w-5 h-5 mr-2'
-            fill='none'
-            stroke='currentColor'
-            viewBox='0 0 24 24'
-            aria-hidden='true'>
-            <path
-              strokeLinecap='round'
-              strokeLinejoin='round'
-              strokeWidth={2}
-              d='M15 19l-7-7 7-7'
-            />
-          </svg>
+            aria-hidden='true'
+          />
           Back to home
         </button>
         <Suspense
@@ -146,19 +133,10 @@ const ForgotPasswordPage = ({ user, navigate }) => {
           onClick={() => navigate('/')}
           className='mb-6 flex items-center text-gray-600 hover:text-gray-800 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 rounded-lg px-2 py-1'
           aria-label='Go back to home page'>
-          <svg
+          <ChevronLeft
             className='w-5 h-5 mr-2'
-            fill='none'
-            stroke='currentColor'
-            viewBox='0 0 24 24'
-            aria-hidden='true'>
-            <path
-              strokeLinecap='round'
-              strokeLinejoin='round'
-              strokeWidth={2}
-              d='M15 19l-7-7 7-7'
-            />
-          </svg>
+            aria-hidden='true'
+          />
           Back to home
         </button>
         <Suspense fallback={<PageLoader message='Loading...' />}>
@@ -196,23 +174,7 @@ const ResetPasswordPage = ({ user }) => {
 const ProtectedRoute = ({ user, authChecked, component }) => {
   // Show loading only for protected routes while auth is being checked
   if (!authChecked) {
-    return (
-      <main
-        id='main-content'
-        className='min-h-[calc(100vh-4rem)] bg-gray-50 flex items-center justify-center'
-        role='main'
-        aria-busy='true'
-        aria-label='Checking authentication status'>
-        <div
-          className='text-center'
-          role='status'>
-          <div
-            className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2'
-            aria-hidden='true'></div>
-          <p className='text-gray-600 text-sm'>Checking authentication...</p>
-        </div>
-      </main>
-    );
+    return <PageLoader message='Checking authentication...' />;
   }
 
   if (!user) {
@@ -235,6 +197,7 @@ const App = () => {
     totalClicks: 0
   });
   const [announcement, announce] = useAnnouncement();
+  const confirmLogout = useConfirmDialog();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -274,11 +237,12 @@ const App = () => {
         }
       } catch {
         // User is not authenticated or session expired
-        // If user is not authenticated and trying to access protected route, redirect to home
+        // If user is not authenticated and trying to access protected route, redirect to login
         if (
           location.pathname === '/dashboard' ||
           location.pathname === '/settings'
         ) {
+          showToast.error('Session expired. Please sign in again.');
           navigate('/login');
         }
       } finally {
@@ -323,6 +287,17 @@ const App = () => {
 
   // Memoized logout handler
   const handleLogout = useCallback(async () => {
+    const confirmed = await confirmLogout.confirm({
+      title: 'Sign out',
+      message:
+        'Are you sure you want to sign out? You will need to sign in again to manage your links.',
+      confirmLabel: 'Sign out',
+      cancelLabel: 'Cancel',
+      variant: 'danger'
+    });
+
+    if (!confirmed) return;
+
     try {
       await logoutUser();
       showToast.success('You have been signed out.');
@@ -333,7 +308,7 @@ const App = () => {
       announce('You have been signed out.');
       navigate('/');
     }
-  }, [navigate, announce]);
+  }, [navigate, announce, confirmLogout]);
 
   // Memoized showAuth handler
   const showAuth = useCallback(() => navigate('/login'), [navigate]);
@@ -438,6 +413,9 @@ const App = () => {
           />
         </Routes>
       </Suspense>
+
+      {/* Logout Confirmation Dialog */}
+      <ConfirmDialog {...confirmLogout} />
 
       {/* Profile Modal - Only render when user exists */}
       {user && showProfileModal && (

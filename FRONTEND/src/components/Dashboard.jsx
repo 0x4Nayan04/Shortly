@@ -1,5 +1,27 @@
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import {
+  BarChart3,
+  Check,
+  ChevronDown,
+  Copy,
+  Link2,
+  Loader2,
+  MousePointerClick,
+  Search,
+  Share2,
+  SortAsc,
+  SortDesc,
+  Trash2
+} from 'lucide-react';
+
+const onlineStatusDot = (
+  <div
+    className='absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 border-2 border-white rounded-full'
+    aria-hidden='true'
+  />
+);
+
+import {
   bulkDeleteUrls,
   deleteShortUrl,
   getMyUrls,
@@ -111,33 +133,15 @@ const UrlItem = memo(
               }
               aria-live='polite'>
               {isCopied ? (
-                <svg
+                <Check
                   className='w-4 h-4 sm:w-5 sm:h-5'
-                  fill='none'
-                  stroke='currentColor'
-                  viewBox='0 0 24 24'
-                  aria-hidden='true'>
-                  <path
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth={2}
-                    d='M5 13l4 4L19 7'
-                  />
-                </svg>
+                  aria-hidden='true'
+                />
               ) : (
-                <svg
+                <Copy
                   className='w-4 h-4 sm:w-5 sm:h-5'
-                  fill='none'
-                  stroke='currentColor'
-                  viewBox='0 0 24 24'
-                  aria-hidden='true'>
-                  <path
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth={2}
-                    d='M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z'
-                  />
-                </svg>
+                  aria-hidden='true'
+                />
               )}
             </button>
             <button
@@ -146,19 +150,10 @@ const UrlItem = memo(
               }
               className='p-1.5 sm:p-2 text-gray-400 hover:text-indigo-600 transition-colors rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500'
               aria-label={`Share ${url.short_url}`}>
-              <svg
+              <Share2
                 className='w-4 h-4 sm:w-5 sm:h-5'
-                fill='none'
-                stroke='currentColor'
-                viewBox='0 0 24 24'
-                aria-hidden='true'>
-                <path
-                  strokeLinecap='round'
-                  strokeLinejoin='round'
-                  strokeWidth={2}
-                  d='M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z'
-                />
-              </svg>
+                aria-hidden='true'
+              />
             </button>
             <button
               onClick={() => onDelete(url._id, url.short_url)}
@@ -169,24 +164,17 @@ const UrlItem = memo(
               }
               aria-busy={isDeleting}>
               {isDeleting ? (
-                <div
-                  className='w-4 h-4 sm:w-5 sm:h-5 animate-spin rounded-full border-2 border-gray-300 border-t-red-600'
+                <div className='animate-spin'>
+                  <Loader2
+                    className='w-4 h-4 sm:w-5 sm:h-5 text-red-600'
+                    aria-hidden='true'
+                  />
+                </div>
+              ) : (
+                <Trash2
+                  className='w-4 h-4 sm:w-5 sm:h-5'
                   aria-hidden='true'
                 />
-              ) : (
-                <svg
-                  className='w-4 h-4 sm:w-5 sm:h-5'
-                  fill='none'
-                  stroke='currentColor'
-                  viewBox='0 0 24 24'
-                  aria-hidden='true'>
-                  <path
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth={2}
-                    d='M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16'
-                  />
-                </svg>
               )}
             </button>
           </div>
@@ -256,19 +244,11 @@ const ActivityChart = memo(({ data }) => {
   if (!hasAnyData) {
     return (
       <div className='flex flex-col items-center justify-center py-10 text-gray-500 bg-gray-50 rounded-lg border border-gray-100'>
-        <svg
+        <BarChart3
           className='w-10 h-10 text-gray-300 mb-3'
-          fill='none'
-          stroke='currentColor'
-          viewBox='0 0 24 24'
-          aria-hidden='true'>
-          <path
-            strokeLinecap='round'
-            strokeLinejoin='round'
-            strokeWidth={1.5}
-            d='M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z'
-          />
-        </svg>
+          strokeWidth={1.5}
+          aria-hidden='true'
+        />
         <p className='text-sm font-medium'>No activity in the last 7 days</p>
       </div>
     );
@@ -330,19 +310,11 @@ const TopUrls = memo(({ urls }) => {
   if (!urls || urls.length === 0) {
     return (
       <div className='flex flex-col items-center justify-center py-12 text-gray-500 bg-gray-50 rounded-lg border border-gray-100'>
-        <svg
+        <Link2
           className='w-10 h-10 text-gray-300 mb-3'
-          fill='none'
-          stroke='currentColor'
-          viewBox='0 0 24 24'
-          aria-hidden='true'>
-          <path
-            strokeLinecap='round'
-            strokeLinejoin='round'
-            strokeWidth={1.5}
-            d='M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1'
-          />
-        </svg>
+          strokeWidth={1.5}
+          aria-hidden='true'
+        />
         <p className='text-sm font-medium'>No URLs yet</p>
         <p className='text-xs mt-0.5'>
           Create short URLs to see top performers
@@ -508,19 +480,10 @@ const SearchFilterBar = memo(
         {/* Search Input */}
         <div className='flex-1 relative'>
           <div className='absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none'>
-            <svg
+            <Search
               className='w-5 h-5 text-gray-400'
-              fill='none'
-              stroke='currentColor'
-              viewBox='0 0 24 24'
-              aria-hidden='true'>
-              <path
-                strokeLinecap='round'
-                strokeLinejoin='round'
-                strokeWidth={2}
-                d='M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z'
-              />
-            </svg>
+              aria-hidden='true'
+            />
           </div>
           <input
             type='text'
@@ -528,7 +491,7 @@ const SearchFilterBar = memo(
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder='Search URLs...'
             disabled={disabled}
-            className='w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 disabled:bg-gray-100 disabled:cursor-not-allowed'
+            className='w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus-visible:ring-2 focus-visible:ring-indigo-500 focus:border-indigo-500 disabled:bg-gray-100 disabled:cursor-not-allowed'
             aria-label='Search URLs'
           />
         </div>
@@ -540,7 +503,7 @@ const SearchFilterBar = memo(
               value={sortBy}
               onChange={(e) => onSortByChange(e.target.value)}
               disabled={disabled}
-              className='appearance-none pl-4 pr-10 py-2.5 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 disabled:bg-gray-100 disabled:cursor-not-allowed w-full min-w-[140px]'
+              className='appearance-none pl-4 pr-10 py-2.5 border border-gray-300 rounded-lg bg-white focus-visible:ring-2 focus-visible:ring-indigo-500 focus:border-indigo-500 disabled:bg-gray-100 disabled:cursor-not-allowed w-full min-w-[140px]'
               aria-label='Sort by'>
               {SORT_OPTIONS.map((option) => (
                 <option
@@ -551,19 +514,10 @@ const SearchFilterBar = memo(
               ))}
             </select>
             <div className='absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none'>
-              <svg
+              <ChevronDown
                 className='w-5 h-5 text-gray-500'
-                fill='none'
-                stroke='currentColor'
-                viewBox='0 0 24 24'
-                aria-hidden='true'>
-                <path
-                  strokeLinecap='round'
-                  strokeLinejoin='round'
-                  strokeWidth={2}
-                  d='M19 9l-7 7-7-7'
-                />
-              </svg>
+                aria-hidden='true'
+              />
             </div>
           </div>
 
@@ -573,39 +527,21 @@ const SearchFilterBar = memo(
               onSortOrderChange(sortOrder === 'desc' ? 'asc' : 'desc')
             }
             disabled={disabled}
-            className='px-3 py-2.5 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 focus:ring-2 focus:ring-indigo-500 focus:outline-none disabled:bg-gray-100 disabled:cursor-not-allowed'
+            className='px-3 py-2.5 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 focus-visible:ring-2 focus-visible:ring-indigo-500 focus:outline-none disabled:bg-gray-100 disabled:cursor-not-allowed'
             aria-label={
               sortOrder === 'desc' ? 'Sort descending' : 'Sort ascending'
             }
             title={sortOrder === 'desc' ? 'Sort descending' : 'Sort ascending'}>
             {sortOrder === 'desc' ? (
-              <svg
+              <SortDesc
                 className='w-5 h-5 text-gray-600'
-                fill='none'
-                stroke='currentColor'
-                viewBox='0 0 24 24'
-                aria-hidden='true'>
-                <path
-                  strokeLinecap='round'
-                  strokeLinejoin='round'
-                  strokeWidth={2}
-                  d='M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12'
-                />
-              </svg>
+                aria-hidden='true'
+              />
             ) : (
-              <svg
+              <SortAsc
                 className='w-5 h-5 text-gray-600'
-                fill='none'
-                stroke='currentColor'
-                viewBox='0 0 24 24'
-                aria-hidden='true'>
-                <path
-                  strokeLinecap='round'
-                  strokeLinejoin='round'
-                  strokeWidth={2}
-                  d='M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4'
-                />
-              </svg>
+                aria-hidden='true'
+              />
             )}
           </button>
         </div>
@@ -958,18 +894,11 @@ const Dashboard = ({ user }) => {
       return (
         <EmptyState
           icon={
-            <svg
+            <Link2
               className='w-12 h-12 text-indigo-600'
-              fill='none'
-              stroke='currentColor'
-              viewBox='0 0 24 24'>
-              <path
-                strokeLinecap='round'
-                strokeLinejoin='round'
-                strokeWidth={1.5}
-                d='M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1'
-              />
-            </svg>
+              strokeWidth={1.5}
+              aria-hidden='true'
+            />
           }
           title={debouncedSearch ? 'No results found' : 'No URLs yet'}
           description={emptyMessage}
@@ -1034,10 +963,10 @@ const Dashboard = ({ user }) => {
                 alt=''
                 aria-hidden='true'
                 className='w-16 h-16 rounded-full shadow-lg'
-    onError={(e) => {
-      e.target.style.display = 'none';
-      e.target.nextElementSibling.style.display = 'flex';
-    }}
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                  e.target.nextElementSibling.style.display = 'flex';
+                }}
               />
               <div
                 className='w-16 h-16 bg-blue-100 rounded-full items-center justify-center shadow-lg hidden'
@@ -1046,9 +975,7 @@ const Dashboard = ({ user }) => {
                   {(user.name || user.email || 'U').charAt(0).toUpperCase()}
                 </span>
               </div>
-              <div
-                className='absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 border-2 border-white rounded-full'
-                aria-hidden='true'></div>
+              {onlineStatusDot}
             </div>
             <div className='flex-1'>
               <h1 className='text-2xl sm:text-3xl font-bold text-gray-900 mb-1'>
@@ -1087,19 +1014,10 @@ const Dashboard = ({ user }) => {
               <StatsCard
                 iconBgColor='bg-blue-100'
                 icon={
-                  <svg
+                  <Link2
                     className='w-6 h-6 text-blue-600'
-                    fill='none'
-                    stroke='currentColor'
-                    viewBox='0 0 24 24'
-                    aria-hidden='true'>
-                    <path
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
-                      strokeWidth={2}
-                      d='M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1'
-                    />
-                  </svg>
+                    aria-hidden='true'
+                  />
                 }
                 label='Total URLs'
                 value={userStats.totalUrls}
@@ -1108,19 +1026,10 @@ const Dashboard = ({ user }) => {
               <StatsCard
                 iconBgColor='bg-green-100'
                 icon={
-                  <svg
+                  <MousePointerClick
                     className='w-6 h-6 text-green-600'
-                    fill='none'
-                    stroke='currentColor'
-                    viewBox='0 0 24 24'
-                    aria-hidden='true'>
-                    <path
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
-                      strokeWidth={2}
-                      d='M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122'
-                    />
-                  </svg>
+                    aria-hidden='true'
+                  />
                 }
                 label='Total Clicks'
                 value={userStats.totalClicks}
@@ -1129,19 +1038,10 @@ const Dashboard = ({ user }) => {
               <StatsCard
                 iconBgColor='bg-purple-100'
                 icon={
-                  <svg
+                  <BarChart3
                     className='w-6 h-6 text-purple-600'
-                    fill='none'
-                    stroke='currentColor'
-                    viewBox='0 0 24 24'
-                    aria-hidden='true'>
-                    <path
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
-                      strokeWidth={2}
-                      d='M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z'
-                    />
-                  </svg>
+                    aria-hidden='true'
+                  />
                 }
                 label='Avg. Clicks/URL'
                 value={userStats.avgClicksPerUrl}
@@ -1150,39 +1050,42 @@ const Dashboard = ({ user }) => {
           )}
         </header>
 
-        {/* Privacy Dashboard Section */}
+        {/* Privacy Footer */}
         <section
           aria-label='Privacy transparency'
-          className='mb-6 sm:mb-8'>
+          className='mb-4 sm:mb-6'>
           <PrivacyDashboard stats={userStats} />
         </section>
 
         {/* Analytics Section */}
         {!statsLoading && stats && (
           <>
-            <section
-              aria-label='Analytics'
-              className='bg-white rounded-xl shadow-sm border border-gray-200 mb-6 sm:mb-8'>
-              <div className='flex flex-col lg:flex-row lg:divide-x divide-gray-200'>
-                <div className='flex-1 p-4 sm:p-6'>
-                  <h3 className='text-lg font-semibold text-gray-900 mb-1'>
-                    Recent Activity
-                  </h3>
-                  <p className='text-sm text-gray-500 mb-4'>
-                    URLs created per day
-                  </p>
-                  <ActivityChart data={stats.recentActivity} />
-                </div>
+            {(stats.recentActivity?.length > 0 ||
+              stats.topUrls?.length > 0) && (
+              <section
+                aria-label='Analytics'
+                className='bg-white rounded-xl shadow-sm border border-gray-200 mb-6 sm:mb-8'>
+                <div className='flex flex-col lg:flex-row lg:divide-x divide-gray-200'>
+                  <div className='flex-1 p-4 sm:p-6'>
+                    <h3 className='text-lg font-semibold text-gray-900 mb-1'>
+                      Recent Activity
+                    </h3>
+                    <p className='text-sm text-gray-500 mb-4'>
+                      URLs created per day
+                    </p>
+                    <ActivityChart data={stats.recentActivity} />
+                  </div>
 
-                <div className='flex-1 p-4 sm:p-6 border-t lg:border-t-0 border-gray-200'>
-                  <h3 className='text-lg font-semibold text-gray-900 mb-1'>
-                    Top Performing URLs
-                  </h3>
-                  <p className='text-sm text-gray-500 mb-4'>By click count</p>
-                  <TopUrls urls={stats.topUrls} />
+                  <div className='flex-1 p-4 sm:p-6 border-t lg:border-t-0 border-gray-200'>
+                    <h3 className='text-lg font-semibold text-gray-900 mb-1'>
+                      Top Performing URLs
+                    </h3>
+                    <p className='text-sm text-gray-500 mb-4'>By click count</p>
+                    <TopUrls urls={stats.topUrls} />
+                  </div>
                 </div>
-              </div>
-            </section>
+              </section>
+            )}
 
             {stats.clickAnalytics && (
               <section

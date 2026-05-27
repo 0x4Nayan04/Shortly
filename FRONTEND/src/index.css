@@ -65,9 +65,11 @@ select {
 }
 
 /* Focus visible styles for better keyboard navigation */
-:focus-visible {
-  outline: 2px solid #4f46e5;
+/* Fallback for browsers that don't support :focus-visible */
+:focus {
+  outline: 3px solid #4f46e5;
   outline-offset: 2px;
+  border-radius: 4px;
 }
 
 /* Remove default focus outline when using mouse */
@@ -75,23 +77,33 @@ select {
   outline: none;
 }
 
+/* Enhanced keyboard focus for browsers that support :focus-visible */
+:focus-visible {
+  outline: 3px solid #4f46e5;
+  outline-offset: 2px;
+  border-radius: 4px;
+  box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.15);
+}
+
 /* High contrast focus for buttons and interactive elements */
 button:focus-visible,
 a:focus-visible,
 [role="button"]:focus-visible,
 [tabindex]:focus-visible {
-  outline: 2px solid #4f46e5;
+  outline: 3px solid #4f46e5;
   outline-offset: 2px;
   border-radius: 4px;
+  box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.15);
 }
 
 /* Focus styles for form inputs */
 input:focus-visible,
 textarea:focus-visible,
 select:focus-visible {
-  outline: 2px solid #4f46e5;
+  outline: 3px solid #4f46e5;
   outline-offset: 0;
   border-color: #4f46e5;
+  box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.15);
 }
 
 /* Reduce motion for users who prefer it */
