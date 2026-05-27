@@ -1,13 +1,15 @@
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
-import { Copy, Share2, QrCode, X } from 'lucide-react';
+import { Check, Copy, Share2, QrCode, X } from 'lucide-react';
 import { FaXTwitter, FaWhatsapp } from 'react-icons/fa6';
 import QRCode from 'qrcode';
-import { showToast } from './UxEnhancements';
+import { showToast, useCopyToClipboard } from './UxEnhancements';
 
 const ShareModal = memo(({ isOpen, onClose, shortUrl, fullUrl }) => {
   const dialogRef = useRef(null);
   const [downloading, setDownloading] = useState(false);
+  const { copy, isCopied } = useCopyToClipboard();
   const shortUrlFull = `${import.meta.env.VITE_APP_URL}/${shortUrl}`;
+  const copied = isCopied(shortUrlFull);
 
   useEffect(() => {
     if (isOpen) {
@@ -29,18 +31,9 @@ const ShareModal = memo(({ isOpen, onClose, shortUrl, fullUrl }) => {
     return () => document.removeEventListener('keydown', handleEscape);
   }, [isOpen, onClose]);
 
-  const copyLink = useCallback(async () => {
-    if (!navigator?.clipboard) {
-      showToast.error('Clipboard not supported');
-      return;
-    }
-    try {
-      await navigator.clipboard.writeText(shortUrlFull);
-      showToast.success('Link copied to clipboard!');
-    } catch {
-      showToast.error('Failed to copy');
-    }
-  }, [shortUrlFull]);
+  const handleCopy = useCallback(() => {
+    copy(shortUrlFull, 'Link copied to clipboard!');
+  }, [copy, shortUrlFull]);
 
   const handleWebShare = useCallback(async () => {
     if (!navigator?.share) {
@@ -84,16 +77,6 @@ const ShareModal = memo(({ isOpen, onClose, shortUrl, fullUrl }) => {
   if (!isOpen) return null;
 
   const shareActions = [
-    {
-      label: 'Copy Link',
-      icon: (
-        <Copy
-          className='w-5 h-5'
-          aria-hidden='true'
-        />
-      ),
-      onClick: copyLink
-    },
     {
       label: 'Web Share',
       icon: (
@@ -185,20 +168,36 @@ const ShareModal = memo(({ isOpen, onClose, shortUrl, fullUrl }) => {
         </div>
 
         {/* Short URL Box */}
-        <div className='flex items-center gap-2 bg-gray-50 border border-gray-200 p-1.5 rounded-xl mb-3'>
+        <div className='flex items-stretch bg-gray-50 border border-gray-200 rounded-xl mb-3 overflow-hidden focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-500/20 transition-shadow'>
           <input
             readOnly
             value={shortUrlFull}
-            className='flex-1 bg-transparent text-sm text-gray-800 font-medium px-2 outline-none w-full'
+            className='flex-1 min-w-0 bg-transparent text-sm text-gray-800 font-medium px-3 py-2.5 outline-none'
             onClick={(e) => e.target.select()}
             aria-label='Shortened URL'
           />
           <button
-            onClick={copyLink}
-            className='flex-shrink-0 bg-white border border-gray-200 p-2 rounded-lg text-gray-600 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50 transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm'
-            aria-label='Copy short URL'
-            title='Copy short URL'>
-            <Copy className='w-4 h-4' />
+            type='button'
+            onClick={handleCopy}
+            className={`flex-shrink-0 inline-flex items-center justify-center w-11 border-l transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-500 ${
+              copied
+                ? 'border-green-200 bg-green-50 text-green-600'
+                : 'border-gray-200 bg-white text-gray-500 hover:bg-indigo-50 hover:text-indigo-600'
+            }`}
+            aria-label={copied ? 'Copied to clipboard' : 'Copy short URL'}
+            title={copied ? 'Copied!' : 'Copy short URL'}
+            aria-live='polite'>
+            {copied ? (
+              <Check
+                className='w-4 h-4'
+                aria-hidden='true'
+              />
+            ) : (
+              <Copy
+                className='w-4 h-4'
+                aria-hidden='true'
+              />
+            )}
           </button>
         </div>
 
@@ -217,7 +216,7 @@ const ShareModal = memo(({ isOpen, onClose, shortUrl, fullUrl }) => {
         {/* Actions Grid */}
         <div className='flex flex-row items-start justify-center gap-4 sm:gap-6'>
           {shareActions
-            .filter((a) => !a.hidden && a.label !== 'Copy Link')
+            .filter((a) => !a.hidden)
             .map((action) => (
               <button
                 key={action.label}
