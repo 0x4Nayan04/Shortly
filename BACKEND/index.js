@@ -7,6 +7,7 @@ import helmet from "helmet";
 import { errorHandler } from "../BACKEND/src/utils/errorHandler.js";
 import connectDB from "./src/config/monogo.config.js";
 import { redirectFromShortUrl } from "./src/controllers/shortUrl.controllers.js";
+import { getQrCode } from "./src/controllers/qr.controller.js";
 import authRoutes from "./src/routes/auth.routes.js";
 import shortUrlCreate from "./src/routes/shortUrl.routes.js";
 import { attachUser } from "./src/utils/attachUser.js";
@@ -90,6 +91,9 @@ app.use("/api/create", shortUrlCreate);
 
 /* Redirect */
 app.get("/:short_url", redirectLimiter, redirectFromShortUrl);
+
+/* QR code */
+app.get("/api/qr/:short_url", getQrCode);
 
 /* auth */
 app.use("/api/auth", authRoutes);
