@@ -65,7 +65,7 @@ const corsOptions = {
     "Origin", "X-Requested-With", "Content-Type", "Accept",
     "Authorization", "Cookie", "Cache-Control"
   ],
-  exposedHeaders: ["X-Total-Count", "X-Request-ID"],
+  exposedHeaders: ["X-Total-Count", "X-Request-ID", "X-Page", "X-Per-Page", "X-Total-Pages"],
   maxAge: 86400
 };
 
@@ -76,11 +76,24 @@ app.use(urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(attachUser);
 
+/* Health */
 app.use("/api/v1/health", healthRoutes);
+app.use("/api/health", healthRoutes);
+
+/* Create */
+app.use("/api/v1/create", shortUrlCreate);
 app.use("/api/create", shortUrlCreate);
-app.get("/:short_url", redirectLimiter, redirectFromShortUrl);
-app.get("/api/qr/:short_url", getQrCode);
+
+/* Auth */
+app.use("/api/v1/auth", authRoutes);
 app.use("/api/auth", authRoutes);
+
+/* QR code */
+app.get("/api/v1/qr/:short_url", getQrCode);
+app.get("/api/qr/:short_url", getQrCode);
+
+/* Redirect (unversioned — public-facing) */
+app.get("/:short_url", redirectLimiter, redirectFromShortUrl);
 
 app.use(errorHandler);
 
