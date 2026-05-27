@@ -5,6 +5,7 @@ import {
   createCustomShortUrl as createCustomShortUrlService,
   getShortUrl,
 } from "../services/shortUrl.services.js";
+import { getClickAggregates } from "../services/analytics.service.js";
 import Click from "../schema/click.model.js";
 import { AppError, NotFoundError } from "../utils/errorHandler.js";
 import asyncHandler from "../utils/asyncHandler.js";
@@ -274,9 +275,7 @@ export const bulkDeleteUrls = asyncHandler(async (req, res, next) => {
 export const getUrlStats = asyncHandler(async (req, res, next) => {
   const userId = req.user._id;
 
-  // Get aggregated statistics for the user's URLs
-  const [stats, recentActivity, topUrls] = await Promise.all([
-    // Overall stats
+  const [stats, recentActivity, topUrls, clickStats] = await Promise.all([
     short_urlModel.aggregate([
       { $match: { user: userId } },
       {
@@ -288,7 +287,6 @@ export const getUrlStats = asyncHandler(async (req, res, next) => {
         },
       },
     ]),
-    // Activity in the last 7 days (URLs created per day)
     short_urlModel.aggregate([
       {
         $match: {
@@ -309,13 +307,13 @@ export const getUrlStats = asyncHandler(async (req, res, next) => {
       },
       { $sort: { _id: 1 } },
     ]),
-    // Top 5 URLs by clicks
     short_urlModel
       .find({ user: userId })
       .sort({ click: -1 })
       .limit(5)
       .select("full_url short_url click createdAt")
       .lean(),
+    getClickAggregates(userId),
   ]);
 
   const overallStats = stats[0] || {
@@ -332,6 +330,7 @@ export const getUrlStats = asyncHandler(async (req, res, next) => {
     },
     recentActivity,
     topUrls,
+    clickAnalytics: clickStats,
   }));
 });
 

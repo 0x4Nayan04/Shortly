@@ -24,8 +24,9 @@ We do not store raw IP addresses. We use the IP address only at request time to 
 
 ## Data Retention
 
-- Raw click events are retained for 30 days.
-- Aggregated analytics can be kept longer to provide historical insights.
+- **Raw click events are automatically deleted after 30 days.** We use a MongoDB TTL index on the `timestamp` field, so deletion is automatic with no manual cleanup required. Once deleted, individual click records (country, device, browser, referrer) are permanently gone.
+- **Aggregated statistics** (total clicks, top countries, device breakdowns) are computed on-demand from the remaining raw data and are not stored permanently.
+- If you delete a short URL, its associated click events remain until their 30-day expiry but are no longer linked to any active account.
 
 ## Your Control
 
