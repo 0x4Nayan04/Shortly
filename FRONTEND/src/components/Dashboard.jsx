@@ -4,6 +4,7 @@ import UrlForm from "../components/UrlForm";
 import { LiveRegion, useAnnouncement } from "./Accessibility";
 import { StatsSkeleton, UrlItemSkeleton } from "./LoadingSpinner";
 import PrivacyDashboard from "./PrivacyDashboard";
+import ClickAnalytics from "./ClickAnalytics";
 import { ConfirmDialog, EmptyState, ErrorRecovery, showToast, useConfirmDialog, useCopyToClipboard, useOnlineStatus } from "./UxEnhancements";
 
 // Constants for pagination and sorting
@@ -909,21 +910,30 @@ const Dashboard = ({ user }) => {
 
         {/* Analytics Section */}
         {!statsLoading && stats && (
-          <section aria-label="Analytics" className="bg-white rounded-xl shadow-sm border border-gray-200 mb-6 sm:mb-8">
-            <div className="flex flex-col lg:flex-row lg:divide-x divide-gray-200">
-              <div className="flex-1 p-4 sm:p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-1">Recent Activity</h3>
-                <p className="text-sm text-gray-500 mb-4">URLs created per day</p>
-                <ActivityChart data={stats.recentActivity} />
-              </div>
+          <>
+            <section aria-label="Analytics" className="bg-white rounded-xl shadow-sm border border-gray-200 mb-6 sm:mb-8">
+              <div className="flex flex-col lg:flex-row lg:divide-x divide-gray-200">
+                <div className="flex-1 p-4 sm:p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-1">Recent Activity</h3>
+                  <p className="text-sm text-gray-500 mb-4">URLs created per day</p>
+                  <ActivityChart data={stats.recentActivity} />
+                </div>
 
-              <div className="flex-1 p-4 sm:p-6 border-t lg:border-t-0 border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900 mb-1">Top Performing URLs</h3>
-                <p className="text-sm text-gray-500 mb-4">By click count</p>
-                <TopUrls urls={stats.topUrls} />
+                <div className="flex-1 p-4 sm:p-6 border-t lg:border-t-0 border-gray-200">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-1">Top Performing URLs</h3>
+                  <p className="text-sm text-gray-500 mb-4">By click count</p>
+                  <TopUrls urls={stats.topUrls} />
+                </div>
               </div>
-            </div>
-          </section>
+            </section>
+
+            {stats.clickAnalytics && (
+              <section aria-label="Click analytics" className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 mb-6 sm:mb-8">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Click Analytics</h3>
+                <ClickAnalytics clickAnalytics={stats.clickAnalytics} />
+              </section>
+            )}
+          </>
         )}
 
         {/* Create URL Section */}
