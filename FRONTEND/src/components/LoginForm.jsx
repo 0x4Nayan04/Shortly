@@ -3,7 +3,7 @@ import { loginUser } from "../api/user.api";
 import { validators } from "../utils/validation";
 import { showToast, useOnlineStatus } from "./UxEnhancements";
 
-const LoginForm = ({ onLoginSuccess, switchToRegister }) => {
+const LoginForm = ({ onLoginSuccess, switchToRegister, switchToForgotPassword }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -233,14 +233,24 @@ const LoginForm = ({ onLoginSuccess, switchToRegister }) => {
           )}
         </div>
 
-        <button
-          type="submit"
-          disabled={loading}
-          aria-busy={loading}
-          className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white font-medium rounded-lg text-base transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
-          {loading ? "Signing In..." : "Sign In"}
-        </button>
-      </form>
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={switchToForgotPassword}
+                className="text-sm text-blue-600 hover:text-blue-800 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded"
+              >
+                Forgot password?
+              </button>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              aria-busy={loading}
+              className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white font-medium rounded-lg text-base transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
+              {loading ? "Signing In..." : "Sign In"}
+            </button>
+          </form>
 
       {error && (
         <div 

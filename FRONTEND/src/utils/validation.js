@@ -1,6 +1,6 @@
 /**
  * Frontend Validation Utilities
- * 
+ *
  * These validators mirror the backend validation rules to provide
  * immediate feedback before form submission.
  */
@@ -21,13 +21,13 @@ export const validators = {
   // Name validation
   name: (value) => {
     if (!value || !value.trim()) {
-      return "Name is required";
+      return 'Name is required';
     }
     if (value.trim().length < 2) {
-      return "Name must be at least 2 characters";
+      return 'Name must be at least 2 characters';
     }
     if (value.trim().length > 50) {
-      return "Name cannot exceed 50 characters";
+      return 'Name cannot exceed 50 characters';
     }
     return null;
   },
@@ -35,10 +35,10 @@ export const validators = {
   // Email validation
   email: (value) => {
     if (!value || !value.trim()) {
-      return "Email is required";
+      return 'Email is required';
     }
     if (!EMAIL_REGEX.test(value.trim())) {
-      return "Please provide a valid email address";
+      return 'Please provide a valid email address';
     }
     return null;
   },
@@ -46,15 +46,15 @@ export const validators = {
   // Password validation (for registration)
   password: (value, options = {}) => {
     const { minLength = 6, required = true } = options;
-    
+
     if (required && (!value || !value.trim())) {
-      return "Password is required";
+      return 'Password is required';
     }
     if (value && value.length < minLength) {
       return `Password must be at least ${minLength} characters`;
     }
     if (value && value.length > 128) {
-      return "Password cannot exceed 128 characters";
+      return 'Password cannot exceed 128 characters';
     }
     return null;
   },
@@ -62,7 +62,7 @@ export const validators = {
   // Login password (just check if provided)
   loginPassword: (value) => {
     if (!value) {
-      return "Password is required";
+      return 'Password is required';
     }
     return null;
   },
@@ -70,10 +70,10 @@ export const validators = {
   // Confirm password validation
   confirmPassword: (value, password) => {
     if (!value) {
-      return "Please confirm your password";
+      return 'Please confirm your password';
     }
     if (value !== password) {
-      return "Passwords do not match";
+      return 'Passwords do not match';
     }
     return null;
   },
@@ -81,10 +81,10 @@ export const validators = {
   // URL validation
   url: (value) => {
     if (!value || !value.trim()) {
-      return "URL is required";
+      return 'URL is required';
     }
     if (!URL_REGEX.test(value.trim())) {
-      return "Please provide a valid URL (must start with http:// or https://)";
+      return 'Please provide a valid URL (must start with http:// or https://)';
     }
     return null;
   },
@@ -92,24 +92,24 @@ export const validators = {
   // Custom alias validation
   customAlias: (value, options = {}) => {
     const { required = false } = options;
-    
+
     if (required && (!value || !value.trim())) {
-      return "Custom alias is required";
+      return 'Custom alias is required';
     }
-    
+
     if (value && value.trim()) {
       if (value.trim().length < 3) {
-        return "Custom alias must be at least 3 characters";
+        return 'Custom alias must be at least 3 characters';
       }
-      if (value.trim().length > 30) {
-        return "Custom alias cannot exceed 30 characters";
+      if (value.trim().length > 20) {
+        return 'Custom alias cannot exceed 20 characters';
       }
       if (!CUSTOM_ALIAS_REGEX.test(value.trim())) {
-        return "Custom alias can only contain letters, numbers, hyphens, and underscores";
+        return 'Custom alias can only contain letters, numbers, hyphens, and underscores';
       }
     }
     return null;
-  },
+  }
 };
 
 /**
@@ -120,12 +120,12 @@ export const validators = {
  */
 export const validateForm = (fields, rules) => {
   const errors = {};
-  
+
   for (const [fieldName, value] of Object.entries(fields)) {
     if (rules[fieldName]) {
       const rule = rules[fieldName];
-      
-      if (typeof rule === "function") {
+
+      if (typeof rule === 'function') {
         errors[fieldName] = rule(value);
       } else if (Array.isArray(rule)) {
         // Support passing extra args like [validators.confirmPassword, password]
@@ -134,7 +134,7 @@ export const validateForm = (fields, rules) => {
       }
     }
   }
-  
+
   return errors;
 };
 

@@ -3,8 +3,9 @@
  * Provides toast notifications, offline detection, loading states, and error recovery
  */
 
+/* eslint-disable react-refresh/only-export-components */
 import { useState, useEffect, useCallback, createContext, useContext, useRef, memo } from 'react';
-import toast, { Toaster, useToasterStore } from 'react-hot-toast';
+import toast, { Toaster } from 'react-hot-toast';
 
 // ============================================
 // TOAST NOTIFICATION SYSTEM
@@ -738,7 +739,7 @@ export const useCopyToClipboard = () => {
       // Reset after 2 seconds
       setTimeout(() => setCopiedText(null), 2000);
       return true;
-    } catch (err) {
+    } catch {
       showToast.error('Failed to copy');
       return false;
     }

@@ -11,14 +11,14 @@ export const errorHandler = (err, req, res, _next) => {
     statusCode: err.statusCode || 500,
     category,
     type,
-    ...(process.env.NODE_ENV !== 'production' && { stack: err.stack }),
+    ...(process.env.NODE_ENV !== 'production' && { stack: err.stack })
   });
 
   if (err instanceof ValidationError) {
     return res.status(err.statusCode).json({
       success: false,
       message: err.message,
-      errors: err.errors,
+      errors: err.errors
     });
   }
 
@@ -28,19 +28,25 @@ export const errorHandler = (err, req, res, _next) => {
     return res.status(err.statusCode).json(payload);
   }
 
+  if (err.name === 'MongoServerError' && err.code === 11000) {
+    const field = err.keyPattern ? Object.keys(err.keyPattern)[0] : 'field';
+    const message =
+      field === 'short_url'
+        ? 'This short URL is already taken. Please choose a different one.'
+        : 'A record with this value already exists.';
+    return res.status(409).json({ success: false, message });
+  }
+
   res.status(500).json({
     success: false,
-    message: process.env.NODE_ENV === 'production'
-      ? 'Internal Server Error'
-      : err.message || 'Internal Server Error',
+    message:
+      process.env.NODE_ENV === 'production'
+        ? 'Internal Server Error'
+        : err.message || 'Internal Server Error'
   });
 };
 
 export class AppError extends Error {
-  statusCode;
-  isOperational;
-  errors;
-
   constructor(message, statusCode = 500, isOperational = true, errors = null) {
     super(message);
     this.statusCode = statusCode;
@@ -53,8 +59,6 @@ export class AppError extends Error {
 }
 
 export class ValidationError extends AppError {
-  errors;
-
   constructor(message = 'Validation failed', errors = []) {
     super(message, 400, true, errors);
     this.errors = errors;

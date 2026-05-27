@@ -1,6 +1,6 @@
-import jwt from "jsonwebtoken";
 import { AppError } from "../utils/errorHandler.js";
 import { findUserById } from "../dao/user.dao.js";
+import { verifyToken } from "../utils/helper.js";
 
 /**
  * Middleware to check if user is authenticated
@@ -30,13 +30,20 @@ export const isAuthenticated = async (req, res, next) => {
 
     try {
       // Verify the token
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const decoded = await verifyToken(token);
 
       // Find the user by ID from token payload
       const user = await findUserById(decoded.id);
 
       if (!user) {
         return next(new AppError("User not found. Token may be invalid.", 401));
+      }
+
+      if (
+        decoded?.tokenVersion !== undefined &&
+        (user.tokenVersion ?? 0) !== decoded.tokenVersion
+      ) {
+        return next(new AppError("Session revoked. Please login again.", 401));
       }
 
       // Attach user to request object (remove password)

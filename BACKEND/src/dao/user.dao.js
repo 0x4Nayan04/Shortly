@@ -15,3 +15,16 @@ export const createUser = async (name, email, password) => {
   await user.save();
   return user;
 };
+
+export const findUserByResetToken = async (hashedToken) => {
+  const user = await User.findOne({
+    resetPasswordToken: hashedToken,
+    resetPasswordExpires: { $gt: new Date() },
+  });
+  return user;
+};
+
+export const updateUser = async (id, updates) => {
+  const user = await User.findByIdAndUpdate(id, updates, { new: true, runValidators: true });
+  return user;
+};

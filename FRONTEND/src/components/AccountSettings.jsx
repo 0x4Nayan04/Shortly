@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
 import { getUrlStats } from "../api/shortUrl.api";
+import { changePassword } from "../api/user.api";
+import { showToast, LoadingButton } from "./UxEnhancements";
+import { validators, validateForm, hasErrors, getFirstError } from "../utils/validation";
 
 const AccountSettings = ({ user }) => {
   const [userStats, setUserStats] = useState({
@@ -7,6 +10,13 @@ const AccountSettings = ({ user }) => {
     totalClicks: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [passwordForm, setPasswordForm] = useState({
+    oldPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+  const [passwordErrors, setPasswordErrors] = useState({});
+  const [passwordLoading, setPasswordLoading] = useState(false);
 
   useEffect(() => {
     const fetchUserStats = async () => {
@@ -28,6 +38,34 @@ const AccountSettings = ({ user }) => {
 
     fetchUserStats();
   }, []);
+
+  const handlePasswordChange = async (event) => {
+    event.preventDefault();
+    const errors = validateForm(passwordForm, {
+      oldPassword: validators.loginPassword,
+      newPassword: (value) => validators.password(value, { minLength: 6, required: true }),
+      confirmPassword: [validators.confirmPassword, passwordForm.newPassword],
+    });
+    setPasswordErrors(errors);
+
+    if (hasErrors(errors)) {
+      const firstError = getFirstError(errors);
+      if (firstError) showToast.error(firstError);
+      return;
+    }
+
+    setPasswordLoading(true);
+    try {
+      await changePassword(passwordForm.oldPassword, passwordForm.newPassword);
+      showToast.success("Password updated successfully");
+      setPasswordForm({ oldPassword: "", newPassword: "", confirmPassword: "" });
+    } catch (error) {
+      const apiMessage = error?.response?.data?.message || "Failed to update password";
+      showToast.error(apiMessage);
+    } finally {
+      setPasswordLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-gray-50">
@@ -58,7 +96,7 @@ const AccountSettings = ({ user }) => {
                     className="w-20 h-20 rounded-full shadow-lg"
                     onError={(e) => {
                       e.target.style.display = "none";
-                      e.target.nextSibling.style.display = "flex";
+                      e.target.nextElementSibling.style.display = "flex";
                     }}
                   />
                   <div className="w-20 h-20 bg-blue-100 rounded-full items-center justify-center shadow-lg hidden">
@@ -138,20 +176,83 @@ const AccountSettings = ({ user }) => {
               </h2>
 
               <div className="space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 border border-gray-200 rounded-lg">
-                  <div className="min-w-0">
+                <div className="p-4 border border-gray-200 rounded-lg">
+                  <div className="mb-4">
                     <h3 className="text-sm font-medium text-gray-900">
                       Password
                     </h3>
                     <p className="text-sm text-gray-600">
-                      Change your account password
+                      Update your password to keep your account secure
                     </p>
                   </div>
-                  <button
-                    disabled
-                    className="w-full sm:w-auto shrink-0 px-4 py-2 text-sm font-medium text-gray-400 bg-gray-100 rounded-lg cursor-not-allowed">
-                    Coming Soon
-                  </button>
+                  <form className="space-y-4" onSubmit={handlePasswordChange}>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Current Password
+                      </label>
+                      <input
+                        type="password"
+                        value={passwordForm.oldPassword}
+                        onChange={(e) =>
+                          setPasswordForm((prev) => ({
+                            ...prev,
+                            oldPassword: e.target.value,
+                          }))
+                        }
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                      {passwordErrors.oldPassword && (
+                        <p className="text-sm text-red-600 mt-1">{passwordErrors.oldPassword}</p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        New Password
+                      </label>
+                      <input
+                        type="password"
+                        value={passwordForm.newPassword}
+                        onChange={(e) =>
+                          setPasswordForm((prev) => ({
+                            ...prev,
+                            newPassword: e.target.value,
+                          }))
+                        }
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                      {passwordErrors.newPassword && (
+                        <p className="text-sm text-red-600 mt-1">{passwordErrors.newPassword}</p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Confirm New Password
+                      </label>
+                      <input
+                        type="password"
+                        value={passwordForm.confirmPassword}
+                        onChange={(e) =>
+                          setPasswordForm((prev) => ({
+                            ...prev,
+                            confirmPassword: e.target.value,
+                          }))
+                        }
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                      {passwordErrors.confirmPassword && (
+                        <p className="text-sm text-red-600 mt-1">{passwordErrors.confirmPassword}</p>
+                      )}
+                    </div>
+                    <LoadingButton
+                      type="submit"
+                      loading={passwordLoading}
+                      loadingText="Updating..."
+                      className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg"
+                      disabled={!passwordForm.oldPassword || !passwordForm.newPassword || !passwordForm.confirmPassword}
+                    >
+                      Update Password
+                    </LoadingButton>
+                  </form>
                 </div>
 
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 border border-gray-200 rounded-lg">

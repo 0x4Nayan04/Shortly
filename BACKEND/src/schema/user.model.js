@@ -2,6 +2,8 @@ import mongoose from "mongoose";
 import crypto from "crypto";
 import bcrypt from "bcrypt";
 
+const resetTokenSize = 32;
+
 function getGravatarUrl(email) {
   // Use Node.js built-in crypto instead of md5 package
   const emailHash = crypto
@@ -24,6 +26,18 @@ const userSchema = new mongoose.Schema({
   password: {
     type: String,
     required: true,
+  },
+  tokenVersion: {
+    type: Number,
+    default: 0,
+  },
+  resetPasswordToken: {
+    type: String,
+    default: null,
+  },
+  resetPasswordExpires: {
+    type: Date,
+    default: null,
   },
   avatar: {
     type: String,
@@ -49,6 +63,15 @@ userSchema.pre("save", async function (next) {
     next(error);
   }
 });
+
+userSchema.index({ resetPasswordToken: 1 }, { sparse: true });
+
+userSchema.methods.generateResetToken = function () {
+  const token = crypto.randomBytes(resetTokenSize).toString("hex");
+  this.resetPasswordToken = crypto.createHash("sha256").update(token).digest("hex");
+  this.resetPasswordExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+  return token;
+};
 
 // Instance method to compare password
 userSchema.methods.comparePassword = async function (candidatePassword) {

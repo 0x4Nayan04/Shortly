@@ -67,10 +67,10 @@ const UserProfileModal = ({ isOpen, onClose, user, userStats }) => {
 								src={user.avatar}
 								alt={`${user.name}'s profile picture`}
 								className='w-24 h-24 rounded-full ring-2 ring-gray-100 shadow-lg'
-								onError={(e) => {
-									e.target.style.display = 'none';
-									e.target.nextSibling.style.display = 'flex';
-								}}
+							onError={(e) => {
+								e.target.style.display = 'none';
+								e.target.nextElementSibling.style.display = 'flex';
+							}}
 							/>
 							<div 
 								className='w-24 h-24 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-full flex items-center justify-center ring-2 ring-gray-100 shadow-lg'
