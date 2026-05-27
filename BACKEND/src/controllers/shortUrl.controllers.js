@@ -142,11 +142,19 @@ export const getUserUrls = asyncHandler(async (req, res, next) => {
     short_urlModel.countDocuments(baseQuery)
   ]);
 
+  const currentPage = Math.floor(skip / limit) + 1;
+  const totalPages = Math.ceil(totalCount / limit);
+
+  res.setHeader('X-Page', currentPage);
+  res.setHeader('X-Per-Page', limit);
+  res.setHeader('X-Total-Count', totalCount);
+  res.setHeader('X-Total-Pages', totalPages);
+
   res.json(successResponse("User URLs fetched", {
     count: userUrls.length,
     totalCount,
-    totalPages: Math.ceil(totalCount / limit),
-    currentPage: Math.floor(skip / limit) + 1,
+    totalPages,
+    currentPage,
     hasMore: skip + limit < totalCount,
     urls: userUrls,
   }));
