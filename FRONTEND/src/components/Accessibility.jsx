@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { useEffect, useRef, useCallback, useState } from 'react';
 
 export const SkipLink = ({ targetId = 'main-content', children = 'Skip to main content' }) => {

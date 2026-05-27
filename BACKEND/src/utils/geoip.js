@@ -1,15 +1,7 @@
 import geoip from 'geoip-lite';
 
 const getIpFromRequest = (req) => {
-  const forwardedFor = req.headers['x-forwarded-for'];
-  if (forwardedFor) {
-    const first = forwardedFor.split(',')[0].trim();
-    if (first) {
-      return first;
-    }
-  }
-
-  return req.ip || req.connection?.remoteAddress || '';
+  return req.ip || '';
 };
 
 const normalizeIp = (ip) => {

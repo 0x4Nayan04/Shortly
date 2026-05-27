@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, memo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useFocusTrap } from './Accessibility';
 
-const Navbar = memo(({ user, onLogout, onShowAuth, onShowProfile }) => {
+const Navbar = memo(({ user, onLogout, onShowProfile }) => {
   const navigate = useNavigate();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -125,7 +125,7 @@ const Navbar = memo(({ user, onLogout, onShowAuth, onShowProfile }) => {
                       className='w-9 h-9 sm:w-10 sm:h-10 rounded-full object-cover ring-2 ring-gray-200'
                       onError={(e) => {
                         e.target.style.display = 'none';
-                        e.target.nextSibling.style.display = 'flex';
+                        e.target.nextElementSibling.style.display = 'flex';
                       }}
                     />
                     <div
@@ -184,7 +184,7 @@ const Navbar = memo(({ user, onLogout, onShowAuth, onShowProfile }) => {
                             className='w-11 h-11 rounded-full object-cover ring-2 ring-gray-200'
                             onError={(e) => {
                               e.target.style.display = 'none';
-                              e.target.nextSibling.style.display = 'flex';
+                              e.target.nextElementSibling.style.display = 'flex';
                             }}
                           />
                           <div

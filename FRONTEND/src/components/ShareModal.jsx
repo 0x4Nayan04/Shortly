@@ -2,13 +2,14 @@ import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { Check, Copy, Share2, QrCode, X } from 'lucide-react';
 import { FaXTwitter, FaWhatsapp } from 'react-icons/fa6';
 import QRCode from 'qrcode';
+import { buildPublicShortUrl } from '../utils/publicShortUrl';
 import { showToast, useCopyToClipboard } from './UxEnhancements';
 
 const ShareModal = memo(({ isOpen, onClose, shortUrl, fullUrl }) => {
   const dialogRef = useRef(null);
   const [downloading, setDownloading] = useState(false);
   const { copy, isCopied } = useCopyToClipboard();
-  const shortUrlFull = `${import.meta.env.VITE_APP_URL}/${shortUrl}`;
+  const shortUrlFull = buildPublicShortUrl(shortUrl);
   const copied = isCopied(shortUrlFull);
 
   useEffect(() => {

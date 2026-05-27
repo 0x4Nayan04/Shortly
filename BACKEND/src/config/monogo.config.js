@@ -46,13 +46,6 @@ const connectDB = async () => {
         console.log('MongoDB reconnected');
       });
       
-      // Graceful shutdown handling
-      process.on('SIGINT', async () => {
-        await mongoose.connection.close();
-        console.log('MongoDB connection closed due to app termination');
-        process.exit(0);
-      });
-      
       // Connection successful, break out of retry loop
       break;
       

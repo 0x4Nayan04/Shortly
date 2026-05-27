@@ -35,3 +35,24 @@ export const getCurrentUser = async () => {
     user: data?.data?.user ?? data?.user,
   };
 };
+
+export const changePassword = async (oldPassword, newPassword) => {
+  const { data } = await axiosinstance.post(`api/auth/change-password`, {
+    oldPassword,
+    newPassword,
+  });
+  return {
+    ...data,
+    user: data?.data?.user ?? data?.user,
+  };
+};
+
+export const forgotPassword = async (email) => {
+  const { data } = await axiosinstance.post(`api/auth/forgot-password`, { email });
+  return data;
+};
+
+export const resetPassword = async (token, password) => {
+  const { data } = await axiosinstance.post(`api/auth/reset-password`, { token, password });
+  return data;
+};

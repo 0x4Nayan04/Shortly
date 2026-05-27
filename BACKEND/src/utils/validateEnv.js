@@ -2,6 +2,8 @@
  * Environment variable validation utility
  */
 
+import { logger } from './logger.js';
+
 const requiredEnvVars = [
   'MONGODB_URI',
   'JWT_SECRET',
@@ -11,55 +13,48 @@ const requiredEnvVars = [
 
 const optionalEnvVars = [
   'NODE_ENV',
-  'ALLOWED_ORIGINS'
+  'ALLOWED_ORIGINS',
+  'RESEND_API_KEY'
 ];
 
 export const validateEnvironment = () => {
   const missing = requiredEnvVars.filter(varName => !process.env[varName]);
   
   if (missing.length > 0) {
-    console.error('❌ Missing required environment variables:');
-    missing.forEach(varName => {
-      console.error(`   - ${varName}`);
-    });
+    logger.error('Missing required environment variables', { missing });
     throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
   }
   
   if (process.env.NODE_ENV !== 'production') {
     const presentOptional = optionalEnvVars.filter(varName => process.env[varName]);
     if (presentOptional.length > 0) {
-      console.log(`ℹ️ Optional environment variables detected: ${presentOptional.join(', ')}`);
+      logger.info('Optional environment variables detected', { presentOptional });
     }
   }
 
-  console.log('✅ Environment validation passed');
+  logger.info('Environment validation passed');
 };
 
 /**
  * Optional: Validate environment variable formats
  */
 export const validateEnvFormats = () => {
-  // Validate MongoDB URI format
   if (process.env.MONGODB_URI && !process.env.MONGODB_URI.startsWith('mongodb')) {
-    console.warn('⚠️ MONGODB_URI should start with "mongodb://" or "mongodb+srv://"');
+    logger.warn('MONGODB_URI should start with "mongodb://" or "mongodb+srv://"');
   }
   
-  // Validate JWT_SECRET length
   if (process.env.JWT_SECRET && process.env.JWT_SECRET.length < 32) {
-    console.warn('⚠️ JWT_SECRET should be at least 32 characters long for security');
+    throw new Error('JWT_SECRET must be at least 32 characters long for security');
   }
   
-  // Validate PORT is a number
   if (process.env.PORT && isNaN(parseInt(process.env.PORT))) {
-    console.warn('⚠️ PORT should be a valid number');
+    logger.warn('PORT should be a valid number');
   }
   
-  // Validate FRONT_END_URL format
   if (process.env.FRONT_END_URL && !process.env.FRONT_END_URL.startsWith('http')) {
-    console.warn('⚠️ FRONT_END_URL should start with "http://" or "https://"');
+    logger.warn('FRONT_END_URL should start with "http://" or "https://"');
   }
   
-  // Validate ALLOWED_ORIGINS format if provided
   if (process.env.ALLOWED_ORIGINS) {
     const origins = process.env.ALLOWED_ORIGINS.split(',');
     const invalidOrigins = origins.filter(origin => {
@@ -68,16 +63,12 @@ export const validateEnvFormats = () => {
     });
     
     if (invalidOrigins.length > 0) {
-      console.error('❌ Invalid ALLOWED_ORIGINS configuration: all origins must start with "http://" or "https://"');
-      console.error('   Invalid origins:', invalidOrigins);
-      throw new Error('Invalid ALLOWED_ORIGINS configuration. Please ensure all origins start with "http://" or "https://".');
+      logger.error('Invalid ALLOWED_ORIGINS configuration', { invalidOrigins });
+      throw new Error('Invalid ALLOWED_ORIGINS configuration');
     } else if (process.env.NODE_ENV !== 'production') {
-      console.log(
-        `✅ CORS configured with ${origins.length} allowed origins:`,
-        origins.map(o => o.trim())
-      );
+      logger.info('CORS configured', { origins: origins.map(o => o.trim()) });
     }
   } else if (process.env.NODE_ENV !== 'production') {
-    console.log('ℹ️ Using single origin from FRONT_END_URL for CORS');
+    logger.info('Using single origin from FRONT_END_URL for CORS');
   }
 };
