@@ -11,7 +11,11 @@ at [shortly.nayan04.me](https://shortly.nayan04.me/).
 - **Click Tracking** - Monitor URL usage statistics
 - **URL Management** - View, search, sort, copy, and delete your links
 - **Bulk Delete** - Select and delete multiple URLs at once
+- **QR Codes** - Generate QR codes for any short URL (SVG or PNG)
 - **Analytics** - Dashboard with stats, recent activity, and top-performing URLs
+- **Authentication** - Register, login, and session management with HTTP-only cookies
+- **Password Management** - Change password (authenticated), forgot/reset password via email
+- **Rate Limiting** - Tiered rate limits per endpoint to prevent abuse
 
 ## Architecture
 
@@ -27,6 +31,9 @@ FRONTEND/
 │   │   ├── UrlForm.jsx
 │   │   ├── LoginForm.jsx
 │   │   ├── RegisterForm.jsx
+│   │   ├── ForgotPassword.jsx
+│   │   ├── ResetPassword.jsx
+│   │   ├── NotFound.jsx
 │   │   ├── AccountSettings.jsx
 │   │   ├── UserProfileModal.jsx
 │   │   ├── Accessibility.jsx
@@ -43,17 +50,17 @@ FRONTEND/
 
 ```
 BACKEND/
-├── src/
-│   ├── controllers/
-│   ├── schema/
-│   ├── dao/
-│   ├── services/
-│   ├── routes/
-│   ├── middleware/
-│   ├── validation/
-│   ├── utils/
-│   └── config/
-└── index.js
+├── index.js
+└── src/
+    ├── controllers/
+    ├── schema/
+    ├── dao/
+    ├── services/
+    ├── routes/
+    ├── middleware/
+    ├── validation/
+    ├── utils/
+    └── config/
 ```
 
 ## Quick Start
@@ -148,19 +155,25 @@ Open `http://localhost:5173` to use Shortly.
 MONGODB_URI=mongodb://localhost:27017/url_shortener
 JWT_SECRET=your_super_secret_jwt_key_at_least_32_chars
 FRONT_END_URL=http://localhost:5173
+PUBLIC_BASE_URL=http://localhost:3001
 PORT=3001
 NODE_ENV=development
 ALLOWED_ORIGINS=
+RESEND_API_KEY=re_xxxxxxxxxxxx
+RESEND_FROM_EMAIL=Shortly <noreply@yourdomain.com>
 ```
 
-| Variable        | Required | Description                                              |
-| --------------- | -------- | -------------------------------------------------------- |
-| MONGODB_URI     | Yes      | MongoDB connection string                                |
-| JWT_SECRET      | Yes      | Secret for JWT (min 32 chars)                            |
-| FRONT_END_URL   | Yes      | Frontend origin for CORS and cookies                     |
-| PORT            | Yes      | Server port                                              |
-| NODE_ENV        | No       | `development` or `production`                            |
-| ALLOWED_ORIGINS | No       | Comma-separated CORS origins (defaults to FRONT_END_URL) |
+| Variable         | Required | Description                                                    |
+| ---------------- | -------- | -------------------------------------------------------------- |
+| MONGODB_URI      | Yes      | MongoDB connection string                                      |
+| JWT_SECRET       | Yes      | Secret for JWT (min 32 chars)                                  |
+| FRONT_END_URL    | Yes      | Frontend origin for CORS, cookies, and password reset links    |
+| PORT             | Yes      | Server port                                                    |
+| NODE_ENV         | No       | `development` or `production`                                  |
+| PUBLIC_BASE_URL  | No       | Public origin for short links/QR codes (defaults to request host) |
+| ALLOWED_ORIGINS  | No       | Comma-separated CORS origins (defaults to FRONT_END_URL)       |
+| RESEND_API_KEY   | No*      | Resend API key for password reset emails (*required for forgot-password) |
+| RESEND_FROM_EMAIL| No       | Sender address for password reset emails                       |
 
 ### Frontend (`FRONTEND/.env.example`)
 
@@ -203,12 +216,15 @@ VITE_APP_URL=http://localhost:3001
 
 ### Authentication
 
-| Method | Endpoint           | Auth | Description   |
-| ------ | ------------------ | ---- | ------------- |
-| POST   | /api/auth/register | No   | Register user |
-| POST   | /api/auth/login    | No   | Login         |
-| GET    | /api/auth/me       | Yes  | Get profile   |
-| POST   | /api/auth/logout   | Yes  | Logout        |
+| Method | Endpoint                  | Auth | Description              |
+| ------ | ------------------------- | ---- | ------------------------ |
+| POST   | /api/auth/register        | No   | Register user            |
+| POST   | /api/auth/login           | No   | Login                    |
+| POST   | /api/auth/logout          | Yes  | Logout                   |
+| GET    | /api/auth/me              | Yes  | Get profile              |
+| PUT    | /api/auth/change-password | Yes  | Change password          |
+| POST   | /api/auth/forgot-password | No   | Request password reset   |
+| POST   | /api/auth/reset-password  | No   | Reset password with token|
 
 ### URL Shortening
 
@@ -289,9 +305,14 @@ Cookie: token=<jwt>
 ## Security
 
 - Password hashing with bcrypt
-- JWT in HTTP-only cookies
+- JWT in HTTP-only cookies with token versioning (invalidate sessions on password change)
 - Server-side validation (Joi)
 - CORS and Helmet
+- Rate limiting (per-endpoint tiers)
+- Reserved slug protection (prevents squatting on system paths)
+- ReDoS-safe regex utilities
+- Input sanitization with escapeRegExp
+- Graceful shutdown with connection cleanup
 - Secure cookie options for production
 
 ## Troubleshooting
