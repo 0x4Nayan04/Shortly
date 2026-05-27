@@ -1,9 +1,17 @@
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
-import { Check, Copy, Share2, QrCode, X } from 'lucide-react';
-import { FaXTwitter, FaWhatsapp } from 'react-icons/fa6';
+import { Check, Copy, Loader2, QrCode, Share2, X } from 'lucide-react';
 import QRCode from 'qrcode';
 import { buildPublicShortUrl } from '../utils/publicShortUrl';
 import { showToast, useCopyToClipboard } from './UxEnhancements';
+import { WhatsAppBrandIcon, XBrandIcon } from './ShareBrandIcons';
+
+const dotSeparator = (
+  <div className='w-1 h-1 rounded-full bg-gray-400 mr-2 flex-shrink-0' />
+);
+
+const dividerLine = (
+  <div className='h-px bg-gray-100 w-full mb-4' />
+);
 
 const ShareModal = memo(({ isOpen, onClose, shortUrl, fullUrl }) => {
   const dialogRef = useRef(null);
@@ -24,13 +32,16 @@ const ShareModal = memo(({ isOpen, onClose, shortUrl, fullUrl }) => {
     };
   }, [isOpen]);
 
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
   useEffect(() => {
     const handleEscape = (e) => {
-      if (e.key === 'Escape' && isOpen) onClose?.();
+      if (e.key === 'Escape' && isOpen) onCloseRef.current?.();
     };
     document.addEventListener('keydown', handleEscape);
     return () => document.removeEventListener('keydown', handleEscape);
-  }, [isOpen, onClose]);
+  }, [isOpen]);
 
   const handleCopy = useCallback(() => {
     copy(shortUrlFull, 'Link copied to clipboard!');
@@ -90,28 +101,22 @@ const ShareModal = memo(({ isOpen, onClose, shortUrl, fullUrl }) => {
       hidden: !navigator?.share
     },
     {
-      label: 'Twitter',
-      icon: (
-        <FaXTwitter
-          className='w-5 h-5'
-          aria-hidden='true'
-        />
-      ),
+      label: 'X',
+      icon: <XBrandIcon className='w-5 h-5' />,
+      circleClass:
+        'text-gray-900 group-hover:bg-gray-100 group-hover:border-gray-200',
       onClick: () =>
         window.open(
-          `https://twitter.com/intent/tweet?text=${encodeURIComponent(shortUrlFull)}`,
+          `https://x.com/intent/tweet?text=${encodeURIComponent(shortUrlFull)}`,
           '_blank',
           'noopener'
         )
     },
     {
       label: 'WhatsApp',
-      icon: (
-        <FaWhatsapp
-          className='w-5 h-5'
-          aria-hidden='true'
-        />
-      ),
+      icon: <WhatsAppBrandIcon className='w-5 h-5' />,
+      circleClass:
+        'text-[#25D366] group-hover:bg-green-50 group-hover:border-green-200',
       onClick: () =>
         window.open(
           `https://wa.me/?text=${encodeURIComponent(shortUrlFull)}`,
@@ -122,10 +127,12 @@ const ShareModal = memo(({ isOpen, onClose, shortUrl, fullUrl }) => {
     {
       label: 'Download QR',
       icon: downloading ? (
-        <div
-          className='w-5 h-5 animate-spin rounded-full border-2 border-gray-300 border-t-indigo-600'
-          aria-hidden='true'
-        />
+        <div className='animate-spin'>
+          <Loader2
+            className='w-5 h-5'
+            aria-hidden='true'
+          />
+        </div>
       ) : (
         <QrCode
           className='w-5 h-5'
@@ -204,7 +211,7 @@ const ShareModal = memo(({ isOpen, onClose, shortUrl, fullUrl }) => {
 
         {/* Original URL */}
         <div className='flex items-center px-2 mb-4'>
-          <div className='w-1 h-1 rounded-full bg-gray-400 mr-2 flex-shrink-0'></div>
+          {dotSeparator}
           <p
             className='text-xs text-gray-500 truncate'
             title={fullUrl}>
@@ -212,7 +219,7 @@ const ShareModal = memo(({ isOpen, onClose, shortUrl, fullUrl }) => {
           </p>
         </div>
 
-        <div className='h-px bg-gray-100 w-full mb-4'></div>
+        {dividerLine}
 
         {/* Actions Grid */}
         <div className='flex flex-row items-start justify-center gap-4 sm:gap-6'>
@@ -224,7 +231,11 @@ const ShareModal = memo(({ isOpen, onClose, shortUrl, fullUrl }) => {
                 onClick={action.onClick}
                 className='group flex flex-col items-center gap-2 flex-1 max-w-[5rem] focus:outline-none'
                 aria-label={action.label}>
-                <div className='flex shrink-0 items-center justify-center w-12 h-12 bg-gray-50 border border-gray-100 hover:bg-indigo-50 hover:border-indigo-100 hover:text-indigo-600 text-gray-500 rounded-full transition-all group-focus-visible:ring-2 group-focus-visible:ring-indigo-500 shadow-sm'>
+                <div
+                  className={`flex shrink-0 items-center justify-center w-12 h-12 bg-gray-50 border border-gray-100 rounded-full transition-all group-focus-visible:ring-2 group-focus-visible:ring-indigo-500 shadow-sm ${
+                    action.circleClass ??
+                    'text-gray-500 hover:bg-indigo-50 hover:border-indigo-100 hover:text-indigo-600'
+                  }`}>
                   {action.icon}
                 </div>
                 <span className='text-[9px] sm:text-[10px] font-medium text-gray-500 group-hover:text-gray-900 transition-colors text-center w-full leading-tight'>

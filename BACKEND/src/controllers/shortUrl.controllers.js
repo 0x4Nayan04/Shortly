@@ -83,8 +83,35 @@ export const redirectFromShortUrl = asyncHandler(async (req, res, next) => {
     throw error;
   });
 
-  // Redirect immediately to the full URL for better performance
-  res.redirect(shortUrlData.full_url);
+  // Escape HTML entities to prevent XSS from user-supplied short_url
+  const escapeHtml = (str) =>
+    str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+
+  // Show intermediary redirect page for user context
+  res.status(200).send(`
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="robots" content="noindex">
+      <meta http-equiv="refresh" content="1;url=${shortUrlData.full_url}">
+      <title>Redirecting...</title>
+      <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; background: #f9fafb; }
+        .card { text-align: center; padding: 2rem; max-width: 400px; }
+        .spinner { width: 32px; height: 32px; border: 3px solid #e5e7eb; border-top-color: #6366f1; border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto 1rem; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        p { color: #6b7280; font-size: 14px; margin: 0; }
+      </style>
+    </head>
+    <body>
+      <div class="card">
+        <div class="spinner"></div>
+        <p>Redirecting to <strong>${escapeHtml(short_url)}</strong>...</p>
+      </div>
+    </body>
+    </html>
+  `);
 
   // Increment the click count asynchronously (don't wait for it)
   // Using updateOne instead of findByIdAndUpdate for slightly better performance

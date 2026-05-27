@@ -5,7 +5,7 @@ export const SkipLink = ({ targetId = 'main-content', children = 'Skip to main c
   return (
     <a
       href={`#${targetId}`}
-      className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-indigo-600 focus:text-white focus:rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+      className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-indigo-600 focus:text-white focus:rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
     >
       {children}
     </a>
@@ -39,7 +39,12 @@ export const useAnnouncement = () => {
 export const useFocusTrap = (isActive, options = {}) => {
   const containerRef = useRef(null);
   const previousFocusRef = useRef(null);
+  const onEscapeRef = useRef(null);
+  const restoreFocusRef = useRef(true);
+
   const { onEscape, restoreFocus = true } = options;
+  onEscapeRef.current = onEscape;
+  restoreFocusRef.current = restoreFocus;
 
   useEffect(() => {
     if (!isActive || !containerRef.current) return;
@@ -47,19 +52,24 @@ export const useFocusTrap = (isActive, options = {}) => {
     previousFocusRef.current = document.activeElement;
 
     const container = containerRef.current;
-    const focusableElements = container.querySelectorAll(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-    );
+    let focusableElements;
+    try {
+      focusableElements = container.querySelectorAll(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      );
+    } catch {
+      return;
+    }
     const firstFocusable = focusableElements[0];
     const lastFocusable = focusableElements[focusableElements.length - 1];
 
-    if (firstFocusable) {
+    if (firstFocusable && typeof firstFocusable.focus === 'function') {
       firstFocusable.focus();
     }
 
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape' && onEscape) {
-        onEscape();
+      if (e.key === 'Escape' && onEscapeRef.current) {
+        onEscapeRef.current();
         return;
       }
 
@@ -83,11 +93,11 @@ export const useFocusTrap = (isActive, options = {}) => {
 
     return () => {
       container.removeEventListener('keydown', handleKeyDown);
-      if (restoreFocus && previousFocusRef.current) {
+      if (restoreFocusRef.current && previousFocusRef.current) {
         previousFocusRef.current.focus();
       }
     };
-  }, [isActive, onEscape, restoreFocus]);
+  }, [isActive]);
 
   return containerRef;
 };

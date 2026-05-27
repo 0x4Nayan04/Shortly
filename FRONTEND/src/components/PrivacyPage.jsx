@@ -1,3 +1,5 @@
+import { CheckCircle, FileText, Info, Trash2, X } from 'lucide-react';
+
 const privacyHighlights = [
   {
     label: 'Minimal collection',
@@ -60,18 +62,10 @@ const PrivacyPage = () => {
           {/* Collection Section */}
           <div className='p-6 sm:p-8 border-b border-gray-100'>
             <div className='flex items-center gap-3 mb-6'>
-              <svg
+              <FileText
                 className='h-5 w-5 text-indigo-600'
-                fill='none'
-                stroke='currentColor'
-                viewBox='0 0 24 24'>
-                <path
-                  strokeLinecap='round'
-                  strokeLinejoin='round'
-                  strokeWidth='2'
-                  d='M9 12h6m-6 4h6M7 20h10a2 2 0 002-2V6a2 2 0 00-2-2H7a2 2 0 00-2 2v12a2 2 0 002 2z'
-                />
-              </svg>
+                aria-hidden='true'
+              />
               <h2 className='text-lg font-semibold text-gray-900'>
                 What we collect
               </h2>
@@ -113,17 +107,10 @@ const PrivacyPage = () => {
             </div>
 
             <div className='mt-5 rounded-lg bg-blue-50 px-4 py-3 text-sm text-blue-800 flex gap-3 items-center'>
-              <svg
+              <Info
                 className='w-5 h-5 shrink-0 text-blue-600'
-                fill='none'
-                stroke='currentColor'
-                viewBox='0 0 24 24'>
-                <path
-                  strokeLinecap='round'
-                  strokeLinejoin='round'
-                  strokeWidth='2'
-                  d='M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'></path>
-              </svg>
+                aria-hidden='true'
+              />
               <span>
                 We do not store raw IP addresses. We use the IP address only at
                 request time to derive a country and discard it immediately.
@@ -144,73 +131,38 @@ const PrivacyPage = () => {
             <div className='md:col-span-8'>
               <ul className='grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-700'>
                 <li className='flex items-center gap-3 bg-white px-4 py-3 rounded-lg border border-gray-200 shadow-sm'>
-                  <svg
-                    className='w-4 h-4 text-red-500'
-                    fill='none'
-                    viewBox='0 0 24 24'
-                    stroke='currentColor'>
-                    <path
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
-                      strokeWidth='2'
-                      d='M6 18L18 6M6 6l12 12'></path>
-                  </svg>
+                  <X
+                    className='w-4 h-4 text-red-500 shrink-0'
+                    aria-hidden='true'
+                  />
                   Full IP addresses
                 </li>
                 <li className='flex items-center gap-3 bg-white px-4 py-3 rounded-lg border border-gray-200 shadow-sm'>
-                  <svg
-                    className='w-4 h-4 text-red-500'
-                    fill='none'
-                    viewBox='0 0 24 24'
-                    stroke='currentColor'>
-                    <path
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
-                      strokeWidth='2'
-                      d='M6 18L18 6M6 6l12 12'></path>
-                  </svg>
+                  <X
+                    className='w-4 h-4 text-red-500 shrink-0'
+                    aria-hidden='true'
+                  />
                   Fingerprints
                 </li>
                 <li className='flex items-center gap-3 bg-white px-4 py-3 rounded-lg border border-gray-200 shadow-sm'>
-                  <svg
-                    className='w-4 h-4 text-red-500'
-                    fill='none'
-                    viewBox='0 0 24 24'
-                    stroke='currentColor'>
-                    <path
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
-                      strokeWidth='2'
-                      d='M6 18L18 6M6 6l12 12'></path>
-                  </svg>
+                  <X
+                    className='w-4 h-4 text-red-500 shrink-0'
+                    aria-hidden='true'
+                  />
                   Cookies for tracking
                 </li>
                 <li className='flex items-center gap-3 bg-white px-4 py-3 rounded-lg border border-gray-200 shadow-sm'>
-                  <svg
-                    className='w-4 h-4 text-red-500'
-                    fill='none'
-                    viewBox='0 0 24 24'
-                    stroke='currentColor'>
-                    <path
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
-                      strokeWidth='2'
-                      d='M6 18L18 6M6 6l12 12'></path>
-                  </svg>
+                  <X
+                    className='w-4 h-4 text-red-500 shrink-0'
+                    aria-hidden='true'
+                  />
                   GPS or exact location
                 </li>
                 <li className='flex items-center gap-3 bg-white px-4 py-3 rounded-lg border border-gray-200 shadow-sm sm:col-span-2'>
-                  <svg
-                    className='w-4 h-4 text-red-500'
-                    fill='none'
-                    viewBox='0 0 24 24'
-                    stroke='currentColor'>
-                    <path
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
-                      strokeWidth='2'
-                      d='M6 18L18 6M6 6l12 12'></path>
-                  </svg>
+                  <X
+                    className='w-4 h-4 text-red-500 shrink-0'
+                    aria-hidden='true'
+                  />
                   Personal information about visitors
                 </li>
               </ul>
@@ -225,32 +177,18 @@ const PrivacyPage = () => {
               </h2>
               <div className='space-y-3'>
                 <div className='text-sm p-3 bg-green-50 border border-green-100 rounded-lg text-green-900 flex gap-2'>
-                  <svg
+                  <CheckCircle
                     className='w-5 h-5 shrink-0 text-green-600'
-                    fill='none'
-                    stroke='currentColor'
-                    viewBox='0 0 24 24'>
-                    <path
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
-                      strokeWidth='2'
-                      d='M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'></path>
-                  </svg>
+                    aria-hidden='true'
+                  />
                   If you delete a short URL, its analytics are deleted along
                   with it.
                 </div>
                 <div className='text-sm p-3 bg-green-50 border border-green-100 rounded-lg text-green-900 flex gap-2'>
-                  <svg
+                  <Trash2
                     className='w-5 h-5 shrink-0 text-green-600'
-                    fill='none'
-                    stroke='currentColor'
-                    viewBox='0 0 24 24'>
-                    <path
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
-                      strokeWidth='2'
-                      d='M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16'></path>
-                  </svg>
+                    aria-hidden='true'
+                  />
                   Request deletion of your account and associated data at any
                   time.
                 </div>

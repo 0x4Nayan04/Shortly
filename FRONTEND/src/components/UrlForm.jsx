@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { AlertCircle, Check, Loader2, Share2, User } from 'lucide-react';
+import ShareModal from './ShareModal';
 import { createShortUrl, createCustomShortUrl } from '../api/shortUrl.api';
 import {
   buildPublicShortUrl,
@@ -16,6 +18,8 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth }) => {
   const [url, setUrl] = useState('');
   const [customAlias, setCustomAlias] = useState('');
   const [shortUrl, setShortUrl] = useState('');
+  const [createdLink, setCreatedLink] = useState(null);
+  const [shareOpen, setShareOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [useCustomAlias, setUseCustomAlias] = useState(false);
@@ -103,6 +107,8 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth }) => {
     setLoading(true);
     setError('');
     setShortUrl('');
+    setCreatedLink(null);
+    setShareOpen(false);
 
     const loadingToast = showToast.loading('Creating short URL...');
 
@@ -124,6 +130,7 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth }) => {
       const createdShortUrl = response?.data?.short_url || response?.short_url;
 
       if (createdShortUrl) {
+        setCreatedLink({ slug: createdShortUrl, fullUrl: url });
         setShortUrl(buildPublicShortUrl(createdShortUrl));
         showToast.dismiss(loadingToast);
         showToast.success('URL shortened successfully!');
@@ -226,8 +233,20 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth }) => {
                 type='submit'
                 disabled={loading}
                 aria-busy={loading}
-                className='w-full sm:w-auto px-8 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white font-medium rounded-lg text-base transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2'>
-                {loading ? 'Shortening...' : 'Shorten'}
+                className='w-full sm:w-auto px-8 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white font-medium rounded-lg text-base transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 inline-flex items-center justify-center gap-2'>
+                {loading ? (
+                  <>
+                    <div className='animate-spin'>
+                      <Loader2
+                        className='h-5 w-5'
+                        aria-hidden='true'
+                      />
+                    </div>
+                    Shortening...
+                  </>
+                ) : (
+                  'Shorten'
+                )}
               </button>
             </div>
             {touched.url && fieldErrors.url && (
@@ -238,16 +257,25 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth }) => {
                 {fieldErrors.url}
               </p>
             )}
+            {url && !fieldErrors.url && !loading && !shortUrl && (
+              <p
+                className='text-xs text-gray-400 truncate mt-1 px-1'
+                title={url}>
+                <span aria-hidden='true'>→ </span>
+                {url}
+              </p>
+            )}
           </div>
 
           <div className='flex items-center gap-3'>
             <label
               htmlFor='custom-alias-checkbox'
-              className='flex items-center gap-3 cursor-pointer'>
+              className={`flex items-center gap-3 ${!user ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
               <input
                 id='custom-alias-checkbox'
                 type='checkbox'
                 checked={useCustomAlias}
+                disabled={!user}
                 onChange={(e) => {
                   if (!user && e.target.checked) {
                     setError('Please sign in to use custom aliases');
@@ -263,11 +291,11 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth }) => {
                     setTouched((prev) => ({ ...prev, customAlias: false }));
                   }
                 }}
-                className='w-4 h-4 shrink-0 min-w-0 min-h-0 text-blue-600 border-gray-300 rounded focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2'
+                className='w-4 h-4 shrink-0 min-w-0 min-h-0 text-blue-600 border-gray-300 rounded focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:opacity-50'
                 aria-describedby='custom-alias-description'
               />
               <span
-                className='text-sm font-medium text-gray-700'
+                className={`text-sm font-medium ${!user ? 'text-gray-400' : 'text-gray-700'}`}
                 id='custom-alias-description'>
                 Use custom alias
                 {!user && (
@@ -339,43 +367,35 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth }) => {
           role='alert'
           aria-live='assertive'>
           <div className='flex items-center'>
-            <svg
+            <AlertCircle
               className='w-5 h-5 mr-2'
-              fill='none'
-              stroke='currentColor'
-              viewBox='0 0 24 24'
-              aria-hidden='true'>
-              <path
-                strokeLinecap='round'
-                strokeLinejoin='round'
-                strokeWidth={2}
-                d='M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'
-              />
-            </svg>
+              aria-hidden='true'
+            />
             {error}
+          </div>
+          <div className='mt-3 flex gap-2'>
+            <button
+              type='button'
+              onClick={handleSubmit}
+              className='px-3 py-1.5 text-sm font-medium bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2'>
+              Retry
+            </button>
           </div>
         </div>
       )}
 
       {shortUrl && (
         <div
-          className='p-6 bg-green-50 border border-green-200 rounded-lg'
+          className='p-6 bg-green-50 border border-green-200 rounded-lg animate-fade-in'
           role='status'
           aria-live='polite'>
           <div className='flex items-center mb-3'>
-            <svg
-              className='w-5 h-5 text-green-600 mr-2'
-              fill='none'
-              stroke='currentColor'
-              viewBox='0 0 24 24'
-              aria-hidden='true'>
-              <path
-                strokeLinecap='round'
-                strokeLinejoin='round'
-                strokeWidth={2}
-                d='M5 13l4 4L19 7'
+            <div className='w-6 h-6 bg-green-600 rounded-full flex items-center justify-center mr-2 shrink-0'>
+              <Check
+                className='w-4 h-4 text-white'
+                aria-hidden='true'
               />
-            </svg>
+            </div>
             <span className='font-medium text-green-800'>
               URL shortened successfully!
             </span>
@@ -397,25 +417,78 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth }) => {
             <span
               id='short-url-description'
               className='sr-only'>
-              Your new shortened URL. Click copy to copy it to your clipboard.
+              Your new shortened URL. Copy it or share it using the buttons
+              below.
             </span>
-            <button
-              onClick={copyToClipboard}
-              aria-label={
-                isCopied(shortUrl)
-                  ? 'URL copied to clipboard'
-                  : 'Copy URL to clipboard'
-              }
-              className={`w-full sm:w-auto px-4 py-2 font-medium rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 ${
-                isCopied(shortUrl)
-                  ? 'bg-green-600 text-white'
-                  : 'bg-green-100 text-green-700 hover:bg-green-200'
-              }`}>
-              {isCopied(shortUrl) ? 'Copied!' : 'Copy'}
-            </button>
+            <div className='flex flex-row gap-2 w-full sm:w-auto shrink-0'>
+              <button
+                type='button'
+                onClick={copyToClipboard}
+                aria-label={
+                  isCopied(shortUrl)
+                    ? 'URL copied to clipboard'
+                    : 'Copy URL to clipboard'
+                }
+                className={`w-full sm:w-auto px-4 py-2 font-medium rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 inline-flex items-center justify-center gap-2 ${
+                  isCopied(shortUrl)
+                    ? 'bg-green-600 text-white'
+                    : 'bg-green-100 text-green-700 hover:bg-green-200'
+                }`}>
+                {isCopied(shortUrl) ? (
+                  <>
+                    <Check
+                      className='w-4 h-4'
+                      aria-hidden='true'
+                    />{' '}
+                    Copied
+                  </>
+                ) : (
+                  'Copy'
+                )}
+              </button>
+              <button
+                type='button'
+                onClick={() => setShareOpen(true)}
+                className='w-full sm:w-auto px-4 py-2 font-medium rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 inline-flex items-center justify-center gap-2 bg-white border border-green-300 text-green-800 hover:bg-green-100'
+                aria-label='Share shortened URL'>
+                <Share2
+                  className='w-4 h-4'
+                  aria-hidden='true'
+                />
+                Share
+              </button>
+            </div>
           </div>
+
+          {!user && (
+            <div className='mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100'>
+              <div className='flex items-center gap-3'>
+                <User
+                  className='w-5 h-5 text-blue-600 shrink-0'
+                  aria-hidden='true'
+                />
+                <p className='text-sm text-blue-800'>
+                  <strong>Not saved to your account.</strong>{' '}
+                  <button
+                    type='button'
+                    onClick={onShowAuth}
+                    className='text-blue-700 underline hover:text-blue-900 font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded'>
+                    Sign up free
+                  </button>{' '}
+                  to track clicks and manage your links.
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       )}
+
+      <ShareModal
+        isOpen={shareOpen}
+        onClose={() => setShareOpen(false)}
+        shortUrl={createdLink?.slug}
+        fullUrl={createdLink?.fullUrl}
+      />
     </div>
   );
 };
