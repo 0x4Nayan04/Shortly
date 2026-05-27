@@ -5,6 +5,7 @@ import { LiveRegion, useAnnouncement } from "./Accessibility";
 import { StatsSkeleton, UrlItemSkeleton } from "./LoadingSpinner";
 import PrivacyDashboard from "./PrivacyDashboard";
 import ClickAnalytics from "./ClickAnalytics";
+import ShareModal from "./ShareModal";
 import { ConfirmDialog, EmptyState, ErrorRecovery, showToast, useConfirmDialog, useCopyToClipboard, useOnlineStatus } from "./UxEnhancements";
 
 // Constants for pagination and sorting
@@ -16,7 +17,7 @@ const SORT_OPTIONS = [
   { value: "full_url", label: "Original URL" },
 ];
 
-const UrlItem = memo(({ url, onCopy, onDelete, isCopied, isDeleting, isSelected, onSelect }) => {
+const UrlItem = memo(({ url, onCopy, onDelete, isCopied, isDeleting, isSelected, onSelect, onShare }) => {
   const shortUrlFull = `${import.meta.env.VITE_APP_URL}/${url.short_url}`;
 
   return (
@@ -72,7 +73,7 @@ const UrlItem = memo(({ url, onCopy, onDelete, isCopied, isDeleting, isSelected,
             aria-label={isCopied ? "Copied to clipboard" : `Copy ${shortUrlFull} to clipboard`}
             aria-live="polite"
           >
-            {isCopied ? (
+              {isCopied ? (
               <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
@@ -81,6 +82,15 @@ const UrlItem = memo(({ url, onCopy, onDelete, isCopied, isDeleting, isSelected,
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
               </svg>
             )}
+          </button>
+          <button
+            onClick={() => onShare({ short_url: url.short_url, full_url: url.full_url })}
+            className="p-1.5 sm:p-2 text-gray-400 hover:text-indigo-600 transition-colors rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            aria-label={`Share ${url.short_url}`}
+          >
+            <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+            </svg>
           </button>
           <button
             onClick={() => onDelete(url._id, url.short_url)}
@@ -503,6 +513,9 @@ const Dashboard = ({ user }) => {
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
   
+  // Share modal state
+  const [shareUrl, setShareUrl] = useState(null);
+
   // Analytics state
   const [stats, setStats] = useState(null);
   const [statsLoading, setStatsLoading] = useState(true);
@@ -602,6 +615,11 @@ const Dashboard = ({ user }) => {
     copy(url, "URL copied to clipboard!");
     announce("URL copied to clipboard");
   }, [copy, announce]);
+
+  // Share modal handler
+  const handleShareUrl = useCallback((url) => {
+    setShareUrl(url);
+  }, []);
 
   // Single delete handler
   const handleDeleteUrl = useCallback(async (urlId, shortUrl) => {
@@ -776,6 +794,7 @@ const Dashboard = ({ user }) => {
             onCopy={copyToClipboard}
             onDelete={handleDeleteUrl}
             onSelect={handleSelectUrl}
+            onShare={handleShareUrl}
           />
         ))}
       </div>
@@ -1000,6 +1019,14 @@ const Dashboard = ({ user }) => {
 
       {/* Confirmation Dialog */}
       <ConfirmDialog {...confirmDialog} />
+
+      {/* Share Modal */}
+      <ShareModal
+        isOpen={!!shareUrl}
+        onClose={() => setShareUrl(null)}
+        shortUrl={shareUrl?.short_url}
+        fullUrl={shareUrl?.full_url}
+      />
     </main>
   );
 };

@@ -25,6 +25,7 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.15.0",
     "nanoid": "^5.1.5",
+    "qrcode": "^1.5.4",
     "ua-parser-js": "^1.0.39"
   },
   "devDependencies": {
