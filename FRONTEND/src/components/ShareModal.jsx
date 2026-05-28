@@ -5,14 +5,6 @@ import { buildPublicShortUrl } from '../utils/publicShortUrl';
 import { showToast, useCopyToClipboard } from './UxEnhancements';
 import { WhatsAppBrandIcon, XBrandIcon } from './ShareBrandIcons';
 
-const dotSeparator = (
-  <div className='w-1 h-1 rounded-full bg-gray-400 mr-2 flex-shrink-0' />
-);
-
-const dividerLine = (
-  <div className='h-px bg-gray-100 w-full mb-4' />
-);
-
 const ShareModal = memo(({ isOpen, onClose, shortUrl, fullUrl }) => {
   const dialogRef = useRef(null);
   const [downloading, setDownloading] = useState(false);
@@ -72,7 +64,7 @@ const ShareModal = memo(({ isOpen, onClose, shortUrl, fullUrl }) => {
         type: 'image/png',
         margin: 2,
         width: 400,
-        color: { dark: '#000000', light: '#ffffff' }
+        color: { dark: '#0b1015', light: '#ffffff' }
       });
       const a = document.createElement('a');
       a.href = dataUrl;
@@ -93,7 +85,7 @@ const ShareModal = memo(({ isOpen, onClose, shortUrl, fullUrl }) => {
       label: 'Web Share',
       icon: (
         <Share2
-          className='w-5 h-5'
+          className='h-5 w-5'
           aria-hidden='true'
         />
       ),
@@ -102,9 +94,9 @@ const ShareModal = memo(({ isOpen, onClose, shortUrl, fullUrl }) => {
     },
     {
       label: 'X',
-      icon: <XBrandIcon className='w-5 h-5' />,
+      icon: <XBrandIcon className='h-5 w-5' />,
       circleClass:
-        'text-gray-900 group-hover:bg-gray-100 group-hover:border-gray-200',
+        'text-ink hover:bg-[var(--color-surface-muted)] hover:border-border',
       onClick: () =>
         window.open(
           `https://x.com/intent/tweet?text=${encodeURIComponent(shortUrlFull)}`,
@@ -114,9 +106,9 @@ const ShareModal = memo(({ isOpen, onClose, shortUrl, fullUrl }) => {
     },
     {
       label: 'WhatsApp',
-      icon: <WhatsAppBrandIcon className='w-5 h-5' />,
+      icon: <WhatsAppBrandIcon className='h-5 w-5' />,
       circleClass:
-        'text-[#25D366] group-hover:bg-green-50 group-hover:border-green-200',
+        'text-[#25D366] hover:bg-[var(--color-surface-muted)] hover:border-border',
       onClick: () =>
         window.open(
           `https://wa.me/?text=${encodeURIComponent(shortUrlFull)}`,
@@ -127,15 +119,13 @@ const ShareModal = memo(({ isOpen, onClose, shortUrl, fullUrl }) => {
     {
       label: 'Download QR',
       icon: downloading ? (
-        <div className='animate-spin'>
-          <Loader2
-            className='w-5 h-5'
-            aria-hidden='true'
-          />
-        </div>
+        <Loader2
+          className='h-5 w-5 animate-spin'
+          aria-hidden='true'
+        />
       ) : (
         <QrCode
-          className='w-5 h-5'
+          className='h-5 w-5'
           aria-hidden='true'
         />
       ),
@@ -145,100 +135,112 @@ const ShareModal = memo(({ isOpen, onClose, shortUrl, fullUrl }) => {
 
   return (
     <div
-      className='fixed inset-0 z-50 flex items-center justify-center p-4'
+      className='fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4'
       role='dialog'
       aria-modal='true'
       aria-labelledby='share-dialog-title'>
       <div
-        className='absolute inset-0 bg-black/50 backdrop-blur-sm'
+        className='absolute inset-0 bg-[color-mix(in_srgb,var(--color-ink)_45%,transparent)] backdrop-blur-sm'
         onClick={onClose}
         aria-hidden='true'
       />
       <div
         ref={dialogRef}
         tabIndex={-1}
-        className='relative bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 animate-scale-in'>
-        <div className='flex items-center justify-between mb-6'>
-          <h2
-            id='share-dialog-title'
-            className='text-lg font-semibold text-gray-900'>
-            Share URL
-          </h2>
+        className='share-modal relative app-panel w-full max-w-[30rem] max-h-[90dvh] overflow-y-auto animate-scale-in'>
+        <div className='share-modal__header'>
+          <div className='share-modal__title-wrap'>
+            <p className='share-modal__eyebrow'>Quick actions</p>
+            <h2
+              id='share-dialog-title'
+              className='share-modal__title'>
+              Share URL
+            </h2>
+          </div>
           <button
+            type='button'
             onClick={onClose}
-            className='p-1.5 text-gray-400 hover:text-gray-600 transition-colors rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-300'
+            className='landing-icon-btn share-modal__close'
             aria-label='Close'>
             <X
-              className='w-5 h-5'
+              className='h-5 w-5'
               aria-hidden='true'
             />
           </button>
         </div>
 
-        {/* Short URL Box */}
-        <div className='flex items-stretch bg-gray-50 border border-gray-200 rounded-xl mb-3 overflow-hidden focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-500/20 transition-shadow'>
-          <input
-            readOnly
-            value={shortUrlFull}
-            className='flex-1 min-w-0 bg-transparent text-sm text-gray-800 font-medium px-3 py-2.5 outline-none'
-            onClick={(e) => e.target.select()}
-            aria-label='Shortened URL'
-          />
-          <button
-            type='button'
-            onClick={handleCopy}
-            className={`flex-shrink-0 inline-flex items-center justify-center w-11 border-l transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-500 ${
-              copied
-                ? 'border-green-200 bg-green-50 text-green-600'
-                : 'border-gray-200 bg-white text-gray-500 hover:bg-indigo-50 hover:text-indigo-600'
-            }`}
-            aria-label={copied ? 'Copied to clipboard' : 'Copy short URL'}
-            title={copied ? 'Copied!' : 'Copy short URL'}
-            aria-live='polite'>
-            {copied ? (
-              <Check
-                className='w-4 h-4'
-                aria-hidden='true'
-              />
-            ) : (
-              <Copy
-                className='w-4 h-4'
-                aria-hidden='true'
-              />
-            )}
-          </button>
+        <div className='share-modal__url-block'>
+          <label
+            className='share-modal__field-label'
+            htmlFor='share-modal-short-url'>
+            Short URL
+          </label>
+          <div className='share-modal__short-row'>
+            <input
+              id='share-modal-short-url'
+              readOnly
+              value={shortUrlFull}
+              className='sm-input share-modal__short-input'
+              onClick={(e) => e.target.select()}
+              aria-label='Shortened URL'
+            />
+            <button
+              type='button'
+              onClick={handleCopy}
+              className={`share-modal__copy-btn ${
+                copied ? 'share-modal__copy-btn--copied' : ''
+              }`}
+              aria-label={copied ? 'Copied to clipboard' : 'Copy short URL'}
+              title={copied ? 'Copied!' : 'Copy short URL'}
+              aria-live='polite'>
+              {copied ? (
+                <Check
+                  className='h-4 w-4'
+                  aria-hidden='true'
+                />
+              ) : (
+                <Copy
+                  className='h-4 w-4'
+                  aria-hidden='true'
+                />
+              )}
+            </button>
+          </div>
         </div>
 
-        {/* Original URL */}
-        <div className='flex items-center px-2 mb-4'>
-          {dotSeparator}
+        <div className='share-modal__original-row'>
+          <span
+            className='share-modal__original-label'
+            aria-hidden='true'>
+            Original
+          </span>
           <p
-            className='text-xs text-gray-500 truncate'
+            className='share-modal__original-url'
             title={fullUrl}>
             {fullUrl}
           </p>
         </div>
 
-        {dividerLine}
+        <div className='share-modal__divider' aria-hidden='true' />
 
-        {/* Actions Grid */}
-        <div className='flex flex-row items-start justify-center gap-4 sm:gap-6'>
+        <div className='share-modal__actions'>
           {shareActions
             .filter((a) => !a.hidden)
             .map((action) => (
               <button
                 key={action.label}
+                type='button'
                 onClick={action.onClick}
-                className='group flex flex-col items-center gap-2 flex-1 max-w-[5rem] focus:outline-none'
+                className='share-modal__action group'
                 aria-label={action.label}>
                 <div
-                  className={`flex shrink-0 items-center justify-center w-12 h-12 bg-gray-50 border border-gray-100 rounded-full transition-all group-focus-visible:ring-2 group-focus-visible:ring-indigo-500 shadow-sm ${
+                  className={`share-modal__action-icon ${
                     action.circleClass ??
-                    'text-gray-500 hover:bg-indigo-50 hover:border-indigo-100 hover:text-indigo-600'
+                    'text-muted hover:border-primary hover:bg-[var(--color-blue-tint)] hover:text-primary'
                   }`}>
                   {action.icon}
                 </div>
-                <span className='text-[9px] sm:text-[10px] font-medium text-gray-500 group-hover:text-gray-900 transition-colors text-center w-full leading-tight'>
+                <span className='share-modal__action-label'>
                   {action.label}
                 </span>
               </button>

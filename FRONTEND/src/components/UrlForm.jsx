@@ -1,5 +1,17 @@
 import { useState } from 'react';
-import { AlertCircle, Check, Loader2, Share2, User } from 'lucide-react';
+import {
+  AlertCircle,
+  Check,
+  Share2,
+  User,
+  Plus,
+  Lock,
+  Sparkles,
+  Settings2,
+  ChevronDown,
+  ChevronUp
+} from 'lucide-react';
+import { BrandedSpinner } from './LoadingSpinner';
 import ShareModal from './ShareModal';
 import { createShortUrl, createCustomShortUrl } from '../api/shortUrl.api';
 import {
@@ -7,6 +19,10 @@ import {
   getPublicShortBaseUrl
 } from '../utils/publicShortUrl';
 import { validators } from '../utils/validation';
+import {
+  formAlertClass,
+  formCompoundClass
+} from '../utils/designFormClasses';
 import { useAnnouncement, LiveRegion } from './Accessibility';
 import {
   showToast,
@@ -14,7 +30,8 @@ import {
   useCopyToClipboard
 } from './UxEnhancements';
 
-const UrlForm = ({ onUrlCreated, user, onShowAuth }) => {
+const UrlForm = ({ onUrlCreated, user, onShowAuth, variant = 'default' }) => {
+  const isLanding = variant === 'landing';
   const [url, setUrl] = useState('');
   const [customAlias, setCustomAlias] = useState('');
   const [shortUrl, setShortUrl] = useState('');
@@ -185,20 +202,12 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth }) => {
     announce('Short URL copied to clipboard');
   };
 
-  // Helper to get input class based on validation state
-  const getInputClass = (field) => {
-    const baseClass =
-      'flex-1 min-w-0 w-full px-4 py-3 border rounded-lg text-base focus:outline-none focus-visible:ring-2 focus:border-transparent transition-all';
-    const hasError = touched[field] && fieldErrors[field];
-
-    if (hasError) {
-      return `${baseClass} border-red-300 focus-visible:ring-red-500`;
-    }
-    return `${baseClass} border-gray-300 focus-visible:ring-blue-500`;
-  };
+  const urlHasError = touched.url && fieldErrors.url;
+  const aliasHasError = touched.customAlias && fieldErrors.customAlias;
+  const compoundHasError = urlHasError || aliasHasError;
 
   return (
-    <div className='space-y-6'>
+    <div className={isLanding ? '' : 'space-y-6'}>
       {/* Live region for screen reader announcements */}
       <LiveRegion
         message={announcement}
@@ -207,168 +216,368 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth }) => {
 
       <form
         onSubmit={handleSubmit}
-        className='space-y-4'
+        className={isLanding ? 'pt-0' : 'space-y-4'}
         aria-label='URL shortener form'>
-        <div className='space-y-3'>
-          <div className='space-y-1'>
-            <label
-              htmlFor='url-input'
-              className='sr-only'>
-              Enter your long URL
-            </label>
-            <div className='flex flex-col sm:flex-row gap-3'>
-              <input
-                id='url-input'
-                type='url'
-                value={url}
-                onChange={(e) => handleChange('url', e.target.value, setUrl)}
-                onBlur={(e) => handleBlur('url', e.target.value)}
-                placeholder='Enter your long URL here...'
-                className={getInputClass('url')}
-                aria-invalid={touched.url && fieldErrors.url ? 'true' : 'false'}
-                aria-describedby={fieldErrors.url ? 'url-error' : undefined}
-                autoComplete='url'
-              />
-              <button
-                type='submit'
-                disabled={loading}
-                aria-busy={loading}
-                className='w-full sm:w-auto px-8 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white font-medium rounded-lg text-base transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 inline-flex items-center justify-center gap-2'>
-                {loading ? (
-                  <>
-                    <div className='animate-spin'>
-                      <Loader2
-                        className='h-5 w-5'
-                        aria-hidden='true'
-                      />
-                    </div>
-                    Shortening...
-                  </>
-                ) : (
-                  'Shorten'
-                )}
-              </button>
-            </div>
-            {touched.url && fieldErrors.url && (
-              <p
-                id='url-error'
-                className='text-sm text-red-600'
-                role='alert'>
-                {fieldErrors.url}
-              </p>
-            )}
-            {url && !fieldErrors.url && !loading && !shortUrl && (
-              <p
-                className='text-xs text-gray-400 truncate mt-1 px-1'
-                title={url}>
-                <span aria-hidden='true'>→ </span>
-                {url}
-              </p>
-            )}
-          </div>
-
-          <div className='flex items-center gap-3'>
-            <label
-              htmlFor='custom-alias-checkbox'
-              className={`flex items-center gap-3 ${!user ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
-              <input
-                id='custom-alias-checkbox'
-                type='checkbox'
-                checked={useCustomAlias}
-                disabled={!user}
-                onChange={(e) => {
-                  if (!user && e.target.checked) {
-                    setError('Please sign in to use custom aliases');
-                    if (onShowAuth) {
-                      onShowAuth();
-                    }
-                    return;
-                  }
-                  setUseCustomAlias(e.target.checked);
-                  setError('');
-                  if (!e.target.checked) {
-                    setFieldErrors((prev) => ({ ...prev, customAlias: null }));
-                    setTouched((prev) => ({ ...prev, customAlias: false }));
-                  }
-                }}
-                className='w-4 h-4 shrink-0 min-w-0 min-h-0 text-blue-600 border-gray-300 rounded focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:opacity-50'
-                aria-describedby='custom-alias-description'
-              />
-              <span
-                className={`text-sm font-medium ${!user ? 'text-gray-400' : 'text-gray-700'}`}
-                id='custom-alias-description'>
-                Use custom alias
-                {!user && (
-                  <span className='text-blue-600 ml-1'>(requires login)</span>
-                )}
-              </span>
-            </label>
-          </div>
-
-          {useCustomAlias && (
-            <div className='space-y-1'>
+        {isLanding ? (
+          <>
+            <div
+              className={`hero-form-compound${compoundHasError ? ' hero-form-compound-error' : ''}`}>
               <label
-                htmlFor='custom-alias-input'
+                htmlFor='url-input'
                 className='sr-only'>
-                Custom alias
+                Long URL
               </label>
-              <div className='flex flex-col sm:flex-row gap-2 sm:gap-3 sm:items-center'>
+              <div className='hero-cli-bar'>
                 <span
-                  className='text-sm text-gray-500 whitespace-nowrap shrink-0'
+                  className='hero-cli-prefix'
                   aria-hidden='true'>
-                  {getPublicShortBaseUrl()}/
+                  url
                 </span>
                 <input
-                  id='custom-alias-input'
-                  type='text'
-                  value={customAlias}
-                  onChange={(e) =>
-                    handleChange('customAlias', e.target.value, setCustomAlias)
-                  }
-                  onBlur={(e) => handleBlur('customAlias', e.target.value)}
-                  placeholder='your-custom-alias'
-                  className={getInputClass('customAlias')}
-                  aria-invalid={
-                    touched.customAlias && fieldErrors.customAlias
-                      ? 'true'
-                      : 'false'
-                  }
-                  aria-describedby={
-                    fieldErrors.customAlias
-                      ? 'customAlias-error'
-                      : 'customAlias-hint'
-                  }
-                  autoComplete='off'
+                  id='url-input'
+                  type='url'
+                  value={url}
+                  onChange={(e) => handleChange('url', e.target.value, setUrl)}
+                  onBlur={(e) => handleBlur('url', e.target.value)}
+                  placeholder='https://example.com/your-long-link'
+                  className='hero-cli-input'
+                  aria-invalid={urlHasError ? 'true' : 'false'}
+                  aria-describedby={fieldErrors.url ? 'url-error' : undefined}
+                  autoComplete='url'
                 />
+                <button
+                  type='submit'
+                  disabled={loading}
+                  aria-busy={loading}
+                  className='hero-cli-submit focus-visible:shadow-[var(--shadow-focus)] outline-none'>
+                  {loading ? (
+                    <BrandedSpinner
+                      size='sm'
+                      decorative
+                    />
+                  ) : (
+                    'Shorten'
+                  )}
+                </button>
               </div>
-              {touched.customAlias && fieldErrors.customAlias ? (
-                <p
-                  id='customAlias-error'
-                  className='text-sm text-red-600'
-                  role='alert'>
-                  {fieldErrors.customAlias}
-                </p>
+
+              {/* Progressive Customization Drawer */}
+              {!user ? (
+                <div className='catalog-row flex w-full items-center justify-between gap-2 px-4'>
+                  <button
+                    type='button'
+                    onClick={onShowAuth}
+                    className='flex min-h-[var(--btn-h)] flex-1 items-center gap-1.5 border-0 bg-transparent text-sm font-medium text-muted-strong transition-colors hover:text-ink outline-none focus-visible:shadow-[var(--shadow-focus)] active:scale-[0.99] duration-100'>
+                    <Settings2 size={15} /> Customize link{' '}
+                    <ChevronDown
+                      size={14}
+                      className='opacity-50'
+                    />
+                  </button>
+                  <span
+                    className='flex shrink-0 items-center gap-1 rounded bg-background-alt px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-muted-strong cursor-default'
+                    title='Members only'>
+                    <Lock
+                      size={10}
+                      strokeWidth={2.5}
+                    />{' '}
+                    Members
+                  </span>
+                </div>
               ) : (
+                <div className='flex flex-col'>
+                  <button
+                    type='button'
+                    onClick={() => {
+                      const next = !useCustomAlias;
+                      setUseCustomAlias(next);
+                      setError('');
+                      if (!next) {
+                        setFieldErrors((prev) => ({
+                          ...prev,
+                          customAlias: null
+                        }));
+                        setTouched((prev) => ({
+                          ...prev,
+                          customAlias: false
+                        }));
+                      }
+                    }}
+                    className='catalog-row flex w-full items-center gap-1.5 border-0 border-t border-border bg-transparent px-4 text-sm font-medium text-muted-strong transition-colors hover:bg-[color-mix(in_srgb,var(--color-background-alt)_35%,white)] hover:text-ink outline-none focus-visible:shadow-[var(--shadow-focus)] active:scale-[0.99] duration-100'
+                    aria-expanded={useCustomAlias}>
+                    <Settings2
+                      size={15}
+                      className={useCustomAlias ? 'text-primary' : 'text-muted'}
+                    />
+                    <span
+                      className={
+                        useCustomAlias ? 'text-ink' : 'text-muted-strong'
+                      }>
+                      Customize link
+                    </span>
+                    {useCustomAlias ? (
+                      <ChevronUp
+                        size={14}
+                        className='ml-auto opacity-60 text-muted-strong'
+                      />
+                    ) : (
+                      <ChevronDown
+                        size={14}
+                        className='ml-auto opacity-50'
+                      />
+                    )}
+                  </button>
+
+                  {useCustomAlias && (
+                    <div className='animate-in fade-in slide-in-from-top-1 duration-200'>
+                      <label
+                        htmlFor='custom-alias-input'
+                        className='sr-only'>
+                        Custom alias
+                      </label>
+                      <div className='hero-cli-bar hero-alias-bar'>
+                        <span
+                          className='hero-cli-prefix shrink-0'
+                          aria-hidden='true'>
+                          {getPublicShortBaseUrl()}/
+                        </span>
+                        <input
+                          id='custom-alias-input'
+                          type='text'
+                          value={customAlias}
+                          onChange={(e) =>
+                            handleChange(
+                              'customAlias',
+                              e.target.value,
+                              setCustomAlias
+                            )
+                          }
+                          onBlur={(e) =>
+                            handleBlur('customAlias', e.target.value)
+                          }
+                          placeholder='my-link'
+                          className='hero-cli-input font-mono text-sm'
+                          aria-invalid={
+                            touched.customAlias && fieldErrors.customAlias
+                              ? 'true'
+                              : 'false'
+                          }
+                          aria-describedby={
+                            fieldErrors.customAlias
+                              ? 'customAlias-error'
+                              : 'customAlias-hint'
+                          }
+                          autoComplete='off'
+                        />
+                      </div>
+                      {touched.customAlias && fieldErrors.customAlias ? (
+                        <p
+                          id='customAlias-error'
+                          className='hero-form-error px-4 pb-3'
+                          role='alert'>
+                          {fieldErrors.customAlias}
+                        </p>
+                      ) : (
+                        <p
+                          id='customAlias-hint'
+                          className='px-4 pb-3 text-xs text-muted'>
+                          3–20 chars · letters, numbers, hyphens, underscores
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+              {urlHasError && (
                 <p
-                  id='customAlias-hint'
-                  className='text-sm text-gray-500'>
-                  3-20 characters. Letters, numbers, hyphens, and underscores
-                  only.
+                  id='url-error'
+                  className='hero-form-error'
+                  role='alert'>
+                  {fieldErrors.url}
+                </p>
+              )}
+              {url && !fieldErrors.url && !loading && !shortUrl && (
+                <p
+                  className='truncate px-4 pb-3 font-mono text-xs text-muted'
+                  title={url}>
+                  → {url}
                 </p>
               )}
             </div>
-          )}
-        </div>
+          </>
+        ) : (
+          <div className='space-y-4'>
+            <div
+              className={formCompoundClass(urlHasError)}>
+              <label
+                htmlFor='url-input'
+                className='sr-only'>
+                Enter your long URL
+              </label>
+              <div className='hero-cli-bar'>
+                <input
+                  id='url-input'
+                  type='url'
+                  value={url}
+                  onChange={(e) => handleChange('url', e.target.value, setUrl)}
+                  onBlur={(e) => handleBlur('url', e.target.value)}
+                  placeholder='Enter your long URL here...'
+                  className='hero-cli-input'
+                  aria-invalid={urlHasError ? 'true' : 'false'}
+                  aria-describedby={fieldErrors.url ? 'url-error' : undefined}
+                  autoComplete='url'
+                />
+                <button
+                  type='submit'
+                  disabled={loading}
+                  aria-busy={loading}
+                  className='hero-cli-submit'>
+                  {loading ? (
+                    <BrandedSpinner
+                      size='sm'
+                      decorative
+                    />
+                  ) : (
+                    'Shorten'
+                  )}
+                </button>
+              </div>
+              {urlHasError && (
+                <p
+                  id='url-error'
+                  className='hero-form-error px-4 pb-3'
+                  role='alert'>
+                  {fieldErrors.url}
+                </p>
+              )}
+              {url && !fieldErrors.url && !loading && !shortUrl && (
+                <p
+                  className='truncate px-4 pb-3 font-mono text-xs text-muted'
+                  title={url}>
+                  <span aria-hidden='true'>→ </span>
+                  {url}
+                </p>
+              )}
+            </div>
+
+            <>
+              <div className='flex items-center gap-3'>
+                <label
+                  htmlFor='custom-alias-checkbox'
+                  className={`flex items-center gap-3 ${!user ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
+                  <input
+                    id='custom-alias-checkbox'
+                    type='checkbox'
+                    checked={useCustomAlias}
+                    disabled={!user}
+                    onChange={(e) => {
+                      if (!user && e.target.checked) {
+                        setError('Please sign in to use custom aliases');
+                        if (onShowAuth) {
+                          onShowAuth();
+                        }
+                        return;
+                      }
+                      setUseCustomAlias(e.target.checked);
+                      setError('');
+                      if (!e.target.checked) {
+                        setFieldErrors((prev) => ({
+                          ...prev,
+                          customAlias: null
+                        }));
+                        setTouched((prev) => ({
+                          ...prev,
+                          customAlias: false
+                        }));
+                      }
+                    }}
+                    className='h-4 w-4 shrink-0 min-w-0 min-h-0 accent-[var(--color-primary)] cursor-pointer disabled:opacity-50'
+                    aria-describedby='custom-alias-description'
+                  />
+                  <span
+                    className={`text-sm font-medium ${!user ? 'text-muted' : 'text-muted-strong'}`}
+                    id='custom-alias-description'>
+                    Use custom alias
+                    {!user && (
+                      <span className='ml-1 text-primary'>
+                        (requires login)
+                      </span>
+                    )}
+                  </span>
+                </label>
+              </div>
+
+              {useCustomAlias && (
+                <div
+                  className={formCompoundClass(aliasHasError)}>
+                  <label
+                    htmlFor='custom-alias-input'
+                    className='sr-only'>
+                    Custom alias
+                  </label>
+                  <div className='hero-cli-bar hero-alias-bar'>
+                    <span
+                      className='hero-cli-prefix shrink-0'
+                      aria-hidden='true'>
+                      {getPublicShortBaseUrl()}/
+                    </span>
+                    <input
+                      id='custom-alias-input'
+                      type='text'
+                      value={customAlias}
+                      onChange={(e) =>
+                        handleChange(
+                          'customAlias',
+                          e.target.value,
+                          setCustomAlias
+                        )
+                      }
+                      onBlur={(e) => handleBlur('customAlias', e.target.value)}
+                      placeholder='your-custom-alias'
+                      className='hero-cli-input font-mono text-sm'
+                      aria-invalid={
+                        touched.customAlias && fieldErrors.customAlias
+                          ? 'true'
+                          : 'false'
+                      }
+                      aria-describedby={
+                        fieldErrors.customAlias
+                          ? 'customAlias-error'
+                          : 'customAlias-hint'
+                      }
+                      autoComplete='off'
+                    />
+                  </div>
+                  {touched.customAlias && fieldErrors.customAlias ? (
+                    <p
+                      id='customAlias-error'
+                      className='hero-form-error px-4 pb-3'
+                      role='alert'>
+                      {fieldErrors.customAlias}
+                    </p>
+                  ) : (
+                    <p
+                      id='customAlias-hint'
+                      className='px-4 pb-3 text-sm text-muted'>
+                      3-20 characters. Letters, numbers, hyphens, and
+                      underscores only.
+                    </p>
+                  )}
+                </div>
+              )}
+            </>
+          </div>
+        )}
       </form>
 
       {error && (
         <div
-          className='p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg'
+          className={formAlertClass}
           role='alert'
           aria-live='assertive'>
           <div className='flex items-center'>
             <AlertCircle
-              className='w-5 h-5 mr-2'
+              className='w-5 h-5 mr-2 shrink-0'
               aria-hidden='true'
             />
             {error}
@@ -377,7 +586,7 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth }) => {
             <button
               type='button'
               onClick={handleSubmit}
-              className='px-3 py-1.5 text-sm font-medium bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2'>
+              className='sm-btn sm-btn-primary text-sm !bg-[#dc2626] hover:!opacity-90'>
               Retry
             </button>
           </div>
@@ -386,41 +595,75 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth }) => {
 
       {shortUrl && (
         <div
-          className='p-6 bg-green-50 border border-green-200 rounded-lg animate-fade-in'
+          className={
+            isLanding
+              ? 'mt-4 border border-border bg-background-alt/30 p-5 animate-fade-in'
+              : 'app-panel border-[color-mix(in_srgb,var(--color-primary)_18%,var(--color-border))] bg-[var(--color-blue-tint)] animate-fade-in'
+          }
           role='status'
           aria-live='polite'>
-          <div className='flex items-center mb-3'>
-            <div className='w-6 h-6 bg-green-600 rounded-full flex items-center justify-center mr-2 shrink-0'>
+          <div
+            className={`flex items-center gap-2 mb-3 ${isLanding ? '' : ''}`}>
+            <div
+              className={`flex h-6 w-6 shrink-0 items-center justify-center text-white ${
+                isLanding ? 'bg-primary' : 'bg-primary'
+              }`}>
               <Check
-                className='w-4 h-4 text-white'
+                className='w-4 h-4'
                 aria-hidden='true'
               />
             </div>
-            <span className='font-medium text-green-800'>
-              URL shortened successfully!
+            <span
+              className={
+                isLanding ? 'font-medium text-ink' : 'font-medium text-ink'
+              }>
+              {isLanding
+                ? 'Your short link is ready'
+                : 'URL shortened successfully!'}
             </span>
           </div>
-          <div className='flex flex-col sm:flex-row gap-3'>
+          <div
+            className={
+              isLanding ? 'space-y-3' : 'flex flex-col sm:flex-row gap-3'
+            }>
             <label
               htmlFor='short-url-output'
               className='sr-only'>
               Your shortened URL
             </label>
-            <input
-              id='short-url-output'
-              type='text'
-              value={shortUrl}
-              readOnly
-              className='flex-1 min-w-0 w-full px-3 py-2 border border-green-300 rounded-lg bg-white text-sm font-mono focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500'
-              aria-describedby='short-url-description'
-            />
+            {isLanding ? (
+              <div className='hero-cli-bar'>
+                <input
+                  id='short-url-output'
+                  type='text'
+                  value={shortUrl}
+                  readOnly
+                  className='hero-cli-input font-mono text-sm'
+                  aria-describedby='short-url-description'
+                />
+              </div>
+            ) : (
+              <input
+                id='short-url-output'
+                type='text'
+                value={shortUrl}
+                readOnly
+                className='sm-input flex-1 min-w-0 w-full font-mono text-sm'
+                aria-describedby='short-url-description'
+              />
+            )}
             <span
               id='short-url-description'
               className='sr-only'>
               Your new shortened URL. Copy it or share it using the buttons
               below.
             </span>
-            <div className='flex flex-row gap-2 w-full sm:w-auto shrink-0'>
+            <div
+              className={
+                isLanding
+                  ? 'grid grid-cols-2 gap-2'
+                  : 'flex flex-row gap-2 w-full sm:w-auto shrink-0'
+              }>
               <button
                 type='button'
                 onClick={copyToClipboard}
@@ -429,17 +672,17 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth }) => {
                     ? 'URL copied to clipboard'
                     : 'Copy URL to clipboard'
                 }
-                className={`w-full sm:w-auto px-4 py-2 font-medium rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 inline-flex items-center justify-center gap-2 ${
-                  isCopied(shortUrl)
-                    ? 'bg-green-600 text-white'
-                    : 'bg-green-100 text-green-700 hover:bg-green-200'
-                }`}>
+                className={
+                  isLanding
+                    ? `sm-btn sm-btn-primary ${isCopied(shortUrl) ? '' : ''}`
+                    : 'sm-btn sm-btn-primary w-full sm:w-auto'
+                }>
                 {isCopied(shortUrl) ? (
                   <>
                     <Check
-                      className='w-4 h-4'
+                      className='w-4 h-4 inline sm:mr-1'
                       aria-hidden='true'
-                    />{' '}
+                    />
                     Copied
                   </>
                 ) : (
@@ -449,33 +692,68 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth }) => {
               <button
                 type='button'
                 onClick={() => setShareOpen(true)}
-                className='w-full sm:w-auto px-4 py-2 font-medium rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 inline-flex items-center justify-center gap-2 bg-white border border-green-300 text-green-800 hover:bg-green-100'
+                className={
+                  isLanding
+                    ? 'sm-btn sm-btn-secondary'
+                    : 'sm-btn sm-btn-secondary w-full sm:w-auto inline-flex items-center justify-center gap-2'
+                }
                 aria-label='Share shortened URL'>
-                <Share2
-                  className='w-4 h-4'
-                  aria-hidden='true'
-                />
+                {!isLanding && (
+                  <Share2
+                    className='w-4 h-4'
+                    aria-hidden='true'
+                  />
+                )}
                 Share
               </button>
             </div>
           </div>
 
           {!user && (
-            <div className='mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100'>
+            <div
+              className={
+                isLanding
+                  ? 'mt-4 border-t border-border pt-4'
+                  : 'mt-4 border-t border-border pt-4'
+              }>
               <div className='flex items-center gap-3'>
-                <User
-                  className='w-5 h-5 text-blue-600 shrink-0'
-                  aria-hidden='true'
-                />
-                <p className='text-sm text-blue-800'>
-                  <strong>Not saved to your account.</strong>{' '}
-                  <button
-                    type='button'
-                    onClick={onShowAuth}
-                    className='text-blue-700 underline hover:text-blue-900 font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded'>
-                    Sign up free
-                  </button>{' '}
-                  to track clicks and manage your links.
+                {!isLanding && (
+                  <User
+                    className='h-5 w-5 shrink-0 text-primary'
+                    aria-hidden='true'
+                  />
+                )}
+                <p
+                  className={
+                    isLanding
+                      ? 'text-sm text-muted-strong'
+                      : 'text-sm text-muted-strong'
+                  }>
+                  {isLanding ? (
+                    <>
+                      <span className='font-medium text-ink'>Not saved</span> —{' '}
+                      <button
+                        type='button'
+                        onClick={onShowAuth}
+                        className='font-medium text-primary underline-offset-2 hover:underline focus:outline-none focus-visible:shadow-focus rounded-sm'>
+                        Sign up
+                      </button>{' '}
+                      to track clicks
+                    </>
+                  ) : (
+                    <>
+                      <strong className='text-ink'>
+                        Not saved to your account.
+                      </strong>{' '}
+                      <button
+                        type='button'
+                        onClick={onShowAuth}
+                        className='landing-text-link font-medium'>
+                        Sign up free
+                      </button>{' '}
+                      to track clicks and manage your links.
+                    </>
+                  )}
                 </p>
               </div>
             </div>

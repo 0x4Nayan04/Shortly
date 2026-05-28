@@ -1,5 +1,4 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
-import { ChevronLeft } from 'lucide-react';
 import {
   Navigate,
   Route,
@@ -14,15 +13,19 @@ import {
   SkipLink,
   useAnnouncement
 } from './components/Accessibility';
-import { PageLoader } from './components/LoadingSpinner';
-import Navbar from './components/Navbar';
+import AppCatalogShell, {
+  LandingFrameInner,
+  LandingSectionBlock
+} from './components/app/AppCatalogShell';
+import AppNavbar from './components/app/AppNavbar';
+import HeroDotGridWrap from './components/landing/HeroDotGridWrap';
+import LoadingSpinner, { AuthPageLoader } from './components/LoadingSpinner';
 import {
   showToast,
   useConfirmDialog,
   ConfirmDialog
 } from './components/UxEnhancements';
 
-// Lazy load heavy components for code splitting
 const LandingPage = lazy(() => import('./components/LandingPage'));
 const Dashboard = lazy(() => import('./components/Dashboard'));
 const LoginForm = lazy(() => import('./components/LoginForm'));
@@ -34,47 +37,59 @@ const ForgotPassword = lazy(() => import('./components/ForgotPassword'));
 const ResetPassword = lazy(() => import('./components/ResetPassword'));
 const NotFound = lazy(() => import('./components/NotFound'));
 
-// Helper components for proper routing
-const LoginPage = ({ user, navigate, onLoginSuccess }) => {
-  if (user) {
-    return (
-      <Navigate
-        to='/dashboard'
-        replace
-      />
-    );
-  }
-
-  return (
+const AuthPageShell = ({
+  user,
+  onLogout,
+  onShowRegister,
+  onShowProfile,
+  sectionLabel,
+  headingId,
+  loadingMessage,
+  skeletonVariant = 'login',
+  skeletonForgotRow,
+  children
+}) => (
+  <AppCatalogShell>
+    <AppNavbar
+      user={user}
+      onLogout={onLogout}
+      onShowRegister={onShowRegister}
+      onShowProfile={onShowProfile}
+    />
     <main
       id='main-content'
-      className='min-h-[calc(100vh-4rem)] bg-gray-50 flex items-center justify-center py-12 px-4'
+      className='flex flex-1 flex-col'
       role='main'
-      aria-labelledby='login-heading'>
-      <div className='max-w-md w-full'>
-        <button
-          onClick={() => navigate('/')}
-          className='mb-6 flex items-center text-gray-600 hover:text-gray-800 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 rounded-lg px-2 py-1'
-          aria-label='Go back to home page'>
-          <ChevronLeft
-            className='w-5 h-5 mr-2'
-            aria-hidden='true'
-          />
-          Back to home
-        </button>
-        <Suspense fallback={<PageLoader message='Loading login form...' />}>
-          <LoginForm
-            onLoginSuccess={onLoginSuccess}
-            switchToRegister={() => navigate('/register')}
-            switchToForgotPassword={() => navigate('/forgot-password')}
-          />
-        </Suspense>
-      </div>
+      aria-labelledby={headingId}>
+      <LandingSectionBlock
+        className='auth-section-block'
+        label={sectionLabel}
+        index={1}
+        total={1}>
+        <HeroDotGridWrap
+          wrapClassName='auth-page-dot-grid bg-surface'
+          className='auth-page-inner'>
+          <LandingFrameInner>
+            <div className='auth-form-shell mx-auto w-full max-w-md'>
+              <Suspense
+                fallback={
+                  <AuthPageLoader
+                    variant={skeletonVariant}
+                    label={loadingMessage}
+                    showForgotRow={skeletonForgotRow}
+                  />
+                }>
+                {children}
+              </Suspense>
+            </div>
+          </LandingFrameInner>
+        </HeroDotGridWrap>
+      </LandingSectionBlock>
     </main>
-  );
-};
+  </AppCatalogShell>
+);
 
-const RegisterPage = ({ user, navigate, onRegisterSuccess }) => {
+const LoginPage = ({ user, navigate, onLoginSuccess, ...shellProps }) => {
   if (user) {
     return (
       <Navigate
@@ -85,96 +100,137 @@ const RegisterPage = ({ user, navigate, onRegisterSuccess }) => {
   }
 
   return (
+    <AuthPageShell
+      {...shellProps}
+      user={user}
+      sectionLabel='SIGN IN'
+      headingId='login-heading'
+      loadingMessage='Loading sign in form'
+      skeletonVariant='login'>
+      <LoginForm
+        onLoginSuccess={onLoginSuccess}
+        switchToRegister={() => navigate('/register')}
+        switchToForgotPassword={() => navigate('/forgot-password')}
+      />
+    </AuthPageShell>
+  );
+};
+
+const RegisterPage = ({ user, navigate, onRegisterSuccess, ...shellProps }) => {
+  if (user) {
+    return (
+      <Navigate
+        to='/dashboard'
+        replace
+      />
+    );
+  }
+
+  return (
+    <AuthPageShell
+      {...shellProps}
+      user={user}
+      sectionLabel='REGISTER'
+      headingId='register-heading'
+      loadingMessage='Loading sign up form'
+      skeletonVariant='register'>
+      <RegisterForm
+        onRegisterSuccess={onRegisterSuccess}
+        switchToLogin={() => navigate('/login')}
+      />
+    </AuthPageShell>
+  );
+};
+
+const ForgotPasswordPage = ({ user, navigate, ...shellProps }) => {
+  if (user) {
+    return (
+      <Navigate
+        to='/dashboard'
+        replace
+      />
+    );
+  }
+
+  return (
+    <AuthPageShell
+      {...shellProps}
+      user={user}
+      sectionLabel='RESET'
+      headingId='forgot-heading'
+      loadingMessage='Loading password reset form'
+      skeletonVariant='compact'>
+      <ForgotPassword switchToLogin={() => navigate('/login')} />
+    </AuthPageShell>
+  );
+};
+
+const ResetPasswordPage = ({ user, ...shellProps }) => {
+  if (user) {
+    return (
+      <Navigate
+        to='/dashboard'
+        replace
+      />
+    );
+  }
+
+  return (
+    <AuthPageShell
+      {...shellProps}
+      user={user}
+      sectionLabel='NEW PASSWORD'
+      headingId='reset-heading'
+      loadingMessage='Loading new password form'
+      skeletonVariant='login'
+      skeletonForgotRow={false}>
+      <ResetPassword />
+    </AuthPageShell>
+  );
+};
+
+/** Preload lazy protected-route chunks during auth so refresh shows one loader. */
+const PROTECTED_ROUTE_PRELOADS = {
+  '/dashboard': () => import('./components/Dashboard'),
+  '/settings': () => import('./components/AccountSettings')
+};
+
+const CatalogPageLoader = ({ user, message, ...shellProps }) => (
+  <AppCatalogShell>
+    <AppNavbar
+      user={user}
+      {...shellProps}
+    />
     <main
       id='main-content'
-      className='min-h-[calc(100vh-4rem)] bg-gray-50 flex items-center justify-center py-12 px-4'
+      className='flex-1'
       role='main'
-      aria-labelledby='register-heading'>
-      <div className='max-w-md w-full'>
-        <button
-          onClick={() => navigate('/')}
-          className='mb-6 flex items-center text-gray-600 hover:text-gray-800 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 rounded-lg px-2 py-1'
-          aria-label='Go back to home page'>
-          <ChevronLeft
-            className='w-5 h-5 mr-2'
-            aria-hidden='true'
+      aria-busy='true'
+      aria-label={message}>
+      <LandingSectionBlock
+        label='LOADING'
+        index={1}
+        total={1}>
+        <LandingFrameInner className='flex min-h-[50vh] items-center justify-center py-12'>
+          <LoadingSpinner
+            size='lg'
+            message={message}
           />
-          Back to home
-        </button>
-        <Suspense
-          fallback={<PageLoader message='Loading registration form...' />}>
-          <RegisterForm
-            onRegisterSuccess={onRegisterSuccess}
-            switchToLogin={() => navigate('/login')}
-          />
-        </Suspense>
-      </div>
+        </LandingFrameInner>
+      </LandingSectionBlock>
     </main>
-  );
-};
+  </AppCatalogShell>
+);
 
-const ForgotPasswordPage = ({ user, navigate }) => {
-  if (user) {
-    return (
-      <Navigate
-        to='/dashboard'
-        replace
-      />
-    );
-  }
-
-  return (
-    <main
-      id='main-content'
-      className='min-h-[calc(100vh-4rem)] bg-gray-50 flex items-center justify-center py-12 px-4'
-      role='main'>
-      <div className='max-w-md w-full'>
-        <button
-          onClick={() => navigate('/')}
-          className='mb-6 flex items-center text-gray-600 hover:text-gray-800 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 rounded-lg px-2 py-1'
-          aria-label='Go back to home page'>
-          <ChevronLeft
-            className='w-5 h-5 mr-2'
-            aria-hidden='true'
-          />
-          Back to home
-        </button>
-        <Suspense fallback={<PageLoader message='Loading...' />}>
-          <ForgotPassword switchToLogin={() => navigate('/login')} />
-        </Suspense>
-      </div>
-    </main>
-  );
-};
-
-const ResetPasswordPage = ({ user }) => {
-  if (user) {
-    return (
-      <Navigate
-        to='/dashboard'
-        replace
-      />
-    );
-  }
-
-  return (
-    <main
-      id='main-content'
-      className='min-h-[calc(100vh-4rem)] bg-gray-50 flex items-center justify-center py-12 px-4'
-      role='main'>
-      <div className='max-w-md w-full'>
-        <Suspense fallback={<PageLoader message='Loading...' />}>
-          <ResetPassword />
-        </Suspense>
-      </div>
-    </main>
-  );
-};
-
-const ProtectedRoute = ({ user, authChecked, component }) => {
-  // Show loading only for protected routes while auth is being checked
+const ProtectedRoute = ({ user, authChecked, component, shellProps }) => {
   if (!authChecked) {
-    return <PageLoader message='Checking authentication...' />;
+    return (
+      <CatalogPageLoader
+        user={user}
+        message='Checking authentication...'
+        {...shellProps}
+      />
+    );
   }
 
   if (!user) {
@@ -201,7 +257,6 @@ const App = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Memoized fetch user stats function
   const fetchUserStats = useCallback(async () => {
     try {
       const response = await getUrlStats();
@@ -217,15 +272,16 @@ const App = () => {
     }
   }, []);
 
-  // Check for existing user session on component mount
   useEffect(() => {
+    const routePreload =
+      PROTECTED_ROUTE_PRELOADS[location.pathname]?.() ?? Promise.resolve();
+
     const checkAuthStatus = async () => {
       try {
         const response = await getCurrentUser();
         const userData = response?.data?.user || response?.user;
         if (userData) {
           setUser(userData);
-          // If user is logged in and on auth pages, redirect to dashboard
           if (
             location.pathname === '/login' ||
             location.pathname === '/register' ||
@@ -236,8 +292,6 @@ const App = () => {
           }
         }
       } catch {
-        // User is not authenticated or session expired
-        // If user is not authenticated and trying to access protected route, redirect to login
         if (
           location.pathname === '/dashboard' ||
           location.pathname === '/settings'
@@ -246,6 +300,7 @@ const App = () => {
           navigate('/login');
         }
       } finally {
+        await routePreload;
         setAuthChecked(true);
       }
     };
@@ -253,7 +308,6 @@ const App = () => {
     checkAuthStatus();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Memoized auth success handler
   const handleAuthSuccess = useCallback(
     async (response) => {
       const userData = response?.data?.user || response?.user;
@@ -285,7 +339,6 @@ const App = () => {
     [navigate, announce]
   );
 
-  // Memoized logout handler
   const handleLogout = useCallback(async () => {
     const confirmed = await confirmLogout.confirm({
       title: 'Sign out',
@@ -310,42 +363,47 @@ const App = () => {
     }
   }, [navigate, announce, confirmLogout]);
 
-  // Memoized showAuth handler
   const showAuth = useCallback(() => navigate('/login'), [navigate]);
+  const showRegister = useCallback(() => navigate('/register'), [navigate]);
 
-  // Memoized profile handler
   const handleShowProfile = useCallback(() => {
     fetchUserStats();
     setShowProfileModal(true);
   }, [fetchUserStats]);
 
-  // Memoized close profile handler
   const handleCloseProfile = useCallback(() => setShowProfileModal(false), []);
 
+  const shellProps = {
+    onLogout: handleLogout,
+    onShowAuth: showAuth,
+    onShowRegister: showRegister,
+    onShowProfile: handleShowProfile
+  };
+
   return (
-    <div className='min-h-screen bg-gray-50'>
-      {/* Skip Link for keyboard navigation */}
+    <div className='min-h-screen'>
       <SkipLink targetId='main-content' />
 
-      {/* Live region for screen reader announcements */}
       <LiveRegion
         message={announcement}
         politeness='polite'
       />
 
-      <Navbar
-        user={user}
-        onLogout={handleLogout}
-        onShowAuth={showAuth}
-        onShowProfile={handleShowProfile}
-      />
-      <Suspense fallback={<PageLoader />}>
+      <Suspense
+        fallback={
+          <CatalogPageLoader
+            user={user}
+            message='Loading page...'
+            {...shellProps}
+          />
+        }>
         <Routes>
           <Route
             path='/'
             element={
               <LandingPage
                 onShowAuth={showAuth}
+                onLogout={handleLogout}
                 user={user}
               />
             }
@@ -357,6 +415,7 @@ const App = () => {
                 user={user}
                 navigate={navigate}
                 onLoginSuccess={handleAuthSuccess}
+                {...shellProps}
               />
             }
           />
@@ -367,6 +426,7 @@ const App = () => {
                 user={user}
                 navigate={navigate}
                 onRegisterSuccess={handleAuthSuccess}
+                {...shellProps}
               />
             }
           />
@@ -376,7 +436,15 @@ const App = () => {
               <ProtectedRoute
                 user={user}
                 authChecked={authChecked}
-                component={<Dashboard user={user} />}
+                shellProps={shellProps}
+                component={
+                  <Dashboard
+                    user={user}
+                    onLogout={handleLogout}
+                    onShowAuth={showAuth}
+                    onShowProfile={handleShowProfile}
+                  />
+                }
               />
             }
           />
@@ -386,13 +454,24 @@ const App = () => {
               <ProtectedRoute
                 user={user}
                 authChecked={authChecked}
-                component={<AccountSettings user={user} />}
+                shellProps={shellProps}
+                component={
+                  <AccountSettings
+                    user={user}
+                    {...shellProps}
+                  />
+                }
               />
             }
           />
           <Route
             path='/privacy'
-            element={<PrivacyPage />}
+            element={
+              <PrivacyPage
+                user={user}
+                {...shellProps}
+              />
+            }
           />
           <Route
             path='/forgot-password'
@@ -400,24 +479,33 @@ const App = () => {
               <ForgotPasswordPage
                 user={user}
                 navigate={navigate}
+                {...shellProps}
               />
             }
           />
           <Route
             path='/reset-password/:token'
-            element={<ResetPasswordPage user={user} />}
+            element={
+              <ResetPasswordPage
+                user={user}
+                {...shellProps}
+              />
+            }
           />
           <Route
             path='*'
-            element={<NotFound />}
+            element={
+              <NotFound
+                user={user}
+                {...shellProps}
+              />
+            }
           />
         </Routes>
       </Suspense>
 
-      {/* Logout Confirmation Dialog */}
       <ConfirmDialog {...confirmLogout} />
 
-      {/* Profile Modal - Only render when user exists */}
       {user && showProfileModal && (
         <Suspense fallback={null}>
           <UserProfileModal

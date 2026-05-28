@@ -1,6 +1,11 @@
 import { useState, useEffect } from 'react';
+import AuthSubmitButton from './AuthSubmitButton';
 import { useBlocker } from 'react-router-dom';
 import { registerUser } from '../api/user.api';
+import {
+  formAlertClass,
+  getDesignInputClass
+} from '../utils/designFormClasses';
 import { validators } from '../utils/validation';
 import PasswordVisibilityToggle from './PasswordVisibilityToggle';
 import {
@@ -48,14 +53,12 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
     }
   }, [navigationBlocker.state]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Field-level validation errors
   const [fieldErrors, setFieldErrors] = useState({
     name: null,
     email: null,
     password: null,
     confirmPassword: null
   });
-  // Track which fields have been touched
   const [touched, setTouched] = useState({
     name: false,
     email: false,
@@ -63,7 +66,6 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
     confirmPassword: false
   });
 
-  // Validate a single field
   const validateField = (field, value) => {
     switch (field) {
       case 'name':
@@ -79,7 +81,6 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
     }
   };
 
-  // Handle field blur - validate and mark as touched
   const handleBlur = (field, value) => {
     setTouched((prev) => ({ ...prev, [field]: true }));
     setFieldErrors((prev) => ({
@@ -88,13 +89,10 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
     }));
   };
 
-  // Handle field change
   const handleChange = (field, value, setter) => {
     setter(value);
-    // Clear server error when user starts typing
     if (error) setError('');
 
-    // If field was touched, validate on change for immediate feedback
     if (touched[field]) {
       setFieldErrors((prev) => ({
         ...prev,
@@ -102,7 +100,6 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
       }));
     }
 
-    // Special case: if password changes and confirmPassword is touched, revalidate confirmPassword
     if (field === 'password' && touched.confirmPassword) {
       setFieldErrors((prev) => ({
         ...prev,
@@ -111,7 +108,6 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
     }
   };
 
-  // Validate all fields before submit
   const validateAllFields = () => {
     const errors = {
       name: validators.name(name),
@@ -138,13 +134,11 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Check online status
     if (!isOnline) {
       showToast.error("You're offline. Cannot create account.");
       return;
     }
 
-    // Validate all fields
     if (!validateAllFields()) {
       return;
     }
@@ -157,12 +151,10 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
 
       if (response.success) {
         showToast.success('Account created successfully!');
-        // Call the success callback if provided
         if (onRegisterSuccess) {
           onRegisterSuccess(response);
         }
 
-        // Clear form
         setName('');
         setEmail('');
         setPassword('');
@@ -205,35 +197,26 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
     }
   };
 
-  // Helper to get input class based on validation state
-  const getInputClass = (field) => {
-    const baseClass =
-      'w-full px-4 py-3 border rounded-lg text-base focus:outline-none focus-visible:ring-2 transition-colors';
-    const hasError = touched[field] && fieldErrors[field];
-
-    if (hasError) {
-      return `${baseClass} border-red-300 focus-visible:ring-red-500 focus:border-red-500`;
-    }
-    return `${baseClass} border-gray-300 focus-visible:ring-blue-500 focus:border-blue-500`;
-  };
-
   return (
-    <div className='max-w-md mx-auto mt-6 sm:mt-8 p-4 sm:p-6 bg-white rounded-lg shadow-md border border-gray-200'>
-      <div className='text-center mb-6'>
-        <h2 className='text-xl sm:text-2xl font-bold text-gray-800'>
-          Create Account
+    <div className='app-panel'>
+      <div className='mb-6 text-center'>
+        <h2
+          id='register-heading'
+          className='font-display text-xl font-medium tracking-display text-ink sm:text-2xl'>
+          Create account
         </h2>
-        <p className='text-gray-600 mt-2'>Sign up to get started</p>
+        <p className='mt-2 text-muted-strong'>Sign up to get started</p>
       </div>
 
       <form
         onSubmit={handleSubmit}
-        className='space-y-4'>
+        className='space-y-4'
+        aria-labelledby='register-heading'>
         <div>
           <label
             htmlFor='name'
-            className='block text-sm font-medium text-gray-700 mb-1'>
-            Full Name
+            className='sm-label'>
+            Full name
           </label>
           <input
             id='name'
@@ -242,14 +225,16 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
             onChange={(e) => handleChange('name', e.target.value, setName)}
             onBlur={(e) => handleBlur('name', e.target.value)}
             placeholder='Enter your full name'
-            className={getInputClass('name')}
+            className={getDesignInputClass({
+              hasError: touched.name && fieldErrors.name
+            })}
             aria-invalid={touched.name && fieldErrors.name ? 'true' : 'false'}
             aria-describedby={fieldErrors.name ? 'name-error' : undefined}
           />
           {touched.name && fieldErrors.name && (
             <p
               id='name-error'
-              className='mt-1 text-sm text-red-600'
+              className='sm-field-error'
               role='alert'>
               {fieldErrors.name}
             </p>
@@ -259,8 +244,8 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
         <div>
           <label
             htmlFor='email'
-            className='block text-sm font-medium text-gray-700 mb-1'>
-            Email Address
+            className='sm-label'>
+            Email address
           </label>
           <input
             id='email'
@@ -269,14 +254,16 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
             onChange={(e) => handleChange('email', e.target.value, setEmail)}
             onBlur={(e) => handleBlur('email', e.target.value)}
             placeholder='Enter your email'
-            className={getInputClass('email')}
+            className={getDesignInputClass({
+              hasError: touched.email && fieldErrors.email
+            })}
             aria-invalid={touched.email && fieldErrors.email ? 'true' : 'false'}
             aria-describedby={fieldErrors.email ? 'email-error' : undefined}
           />
           {touched.email && fieldErrors.email && (
             <p
               id='email-error'
-              className='mt-1 text-sm text-red-600'
+              className='sm-field-error'
               role='alert'>
               {fieldErrors.email}
             </p>
@@ -286,7 +273,7 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
         <div>
           <label
             htmlFor='password'
-            className='block text-sm font-medium text-gray-700 mb-1'>
+            className='sm-label'>
             Password
           </label>
           <div className='relative'>
@@ -299,7 +286,10 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
               }
               onBlur={(e) => handleBlur('password', e.target.value)}
               placeholder='Enter your password'
-              className={`${getInputClass('password')} pr-12`}
+              className={getDesignInputClass({
+                hasError: touched.password && fieldErrors.password,
+                className: 'pr-12'
+              })}
               aria-invalid={
                 touched.password && fieldErrors.password ? 'true' : 'false'
               }
@@ -314,7 +304,7 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
           </div>
           {password.length > 0 && password.length < 6 && (
             <p
-              className={`mt-1 text-sm ${touched.password && fieldErrors.password ? 'text-red-600' : 'text-gray-500'}`}
+              className={`mt-1 text-sm ${touched.password && fieldErrors.password ? 'sm-field-error !mt-1' : 'text-muted'}`}
               role={
                 touched.password && fieldErrors.password ? 'alert' : undefined
               }>
@@ -335,13 +325,13 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
                 ].map((met, i) => (
                   <div
                     key={i}
-                    className={`h-1.5 flex-1 rounded-full transition-colors ${
-                      met ? 'bg-green-500' : 'bg-gray-200'
+                    className={`h-1.5 flex-1 transition-colors ${
+                      met ? 'bg-primary' : 'bg-border'
                     }`}
                   />
                 ))}
               </div>
-              <p className='text-xs text-gray-500 mt-1'>
+              <p className='mt-1 text-xs text-muted'>
                 {password.length >= 8 &&
                 /[A-Z]/.test(password) &&
                 /[0-9]/.test(password) &&
@@ -358,8 +348,8 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
         <div>
           <label
             htmlFor='confirmPassword'
-            className='block text-sm font-medium text-gray-700 mb-1'>
-            Confirm Password
+            className='sm-label'>
+            Confirm password
           </label>
           <div className='relative'>
             <input
@@ -375,7 +365,11 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
               }
               onBlur={(e) => handleBlur('confirmPassword', e.target.value)}
               placeholder='Confirm your password'
-              className={`${getInputClass('confirmPassword')} pr-12`}
+              className={getDesignInputClass({
+                hasError:
+                  touched.confirmPassword && fieldErrors.confirmPassword,
+                className: 'pr-12'
+              })}
               aria-invalid={
                 touched.confirmPassword && fieldErrors.confirmPassword
                   ? 'true'
@@ -395,52 +389,23 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
           {touched.confirmPassword && fieldErrors.confirmPassword && (
             <p
               id='confirmPassword-error'
-              className='mt-1 text-sm text-red-600'
+              className='sm-field-error'
               role='alert'>
               {fieldErrors.confirmPassword}
             </p>
           )}
         </div>
 
-        <button
-          type='submit'
-          disabled={loading}
-          aria-busy={loading}
-          className='w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white font-medium rounded-lg text-base transition-colors inline-flex items-center justify-center gap-2'>
-          {loading ? (
-            <>
-              <div className='animate-spin'>
-                <svg
-                  className='h-5 w-5'
-                  fill='none'
-                  viewBox='0 0 24 24'
-                  aria-hidden='true'>
-                  <circle
-                    className='opacity-25'
-                    cx='12'
-                    cy='12'
-                    r='10'
-                    stroke='currentColor'
-                    strokeWidth='4'
-                  />
-                  <path
-                    className='opacity-75'
-                    fill='currentColor'
-                    d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z'
-                  />
-                </svg>
-              </div>
-              Creating Account...
-            </>
-          ) : (
-            'Create Account'
-          )}
-        </button>
+        <AuthSubmitButton
+          loading={loading}
+          loadingLabel='Creating account…'>
+          Create account
+        </AuthSubmitButton>
       </form>
 
       {error && (
         <div
-          className='mt-4 p-3 bg-red-100 border border-red-300 text-red-700 rounded-lg text-sm'
+          className={formAlertClass}
           role='alert'
           aria-live='assertive'>
           {error}
@@ -450,12 +415,12 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
       <ConfirmDialog {...unsavedDialog} />
 
       <div className='mt-6 text-center'>
-        <p className='text-sm text-gray-600'>
+        <p className='text-sm text-muted-strong'>
           Already have an account?{' '}
           <button
             type='button'
             onClick={switchToLogin}
-            className='text-blue-600 hover:text-blue-800 font-medium hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded'>
+            className='landing-text-link font-medium'>
             Sign in here
           </button>
         </p>

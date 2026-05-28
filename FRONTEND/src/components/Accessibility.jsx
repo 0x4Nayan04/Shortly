@@ -1,25 +1,30 @@
 /* eslint-disable react-refresh/only-export-components */
 import { useEffect, useRef, useCallback, useState } from 'react';
 
-export const SkipLink = ({ targetId = 'main-content', children = 'Skip to main content' }) => {
+export const SkipLink = ({
+  targetId = 'main-content',
+  children = 'Skip to main content'
+}) => {
   return (
     <a
       href={`#${targetId}`}
-      className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-indigo-600 focus:text-white focus:rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-    >
+      className='sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] sm-btn sm-btn-primary focus-visible:shadow-[var(--shadow-focus)] focus-visible:outline-none'>
       {children}
     </a>
   );
 };
 
-export const LiveRegion = ({ message, politeness = 'polite', atomic = true }) => {
+export const LiveRegion = ({
+  message,
+  politeness = 'polite',
+  atomic = true
+}) => {
   return (
     <div
-      role="status"
+      role='status'
       aria-live={politeness}
       aria-atomic={atomic}
-      className="sr-only"
-    >
+      className='sr-only'>
       {message}
     </div>
   );
@@ -81,7 +86,6 @@ export const useFocusTrap = (isActive, options = {}) => {
           lastFocusable?.focus();
         }
       } else {
-        // Tab
         if (document.activeElement === lastFocusable) {
           e.preventDefault();
           firstFocusable?.focus();
@@ -106,5 +110,5 @@ export default {
   SkipLink,
   LiveRegion,
   useAnnouncement,
-  useFocusTrap,
+  useFocusTrap
 };

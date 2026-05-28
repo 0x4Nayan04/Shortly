@@ -1,9 +1,20 @@
 import { useEffect, useRef, useState } from 'react';
 import { useBlocker } from 'react-router-dom';
+import AuthSubmitButton from './AuthSubmitButton';
 import { loginUser } from '../api/user.api';
+import {
+  formAlertClass,
+  getDesignInputClass
+} from '../utils/designFormClasses';
 import { validators } from '../utils/validation';
 import PasswordVisibilityToggle from './PasswordVisibilityToggle';
-import { showToast, useOnlineStatus, useUnsavedChanges, useConfirmDialog, ConfirmDialog } from './UxEnhancements';
+import {
+  showToast,
+  useOnlineStatus,
+  useUnsavedChanges,
+  useConfirmDialog,
+  ConfirmDialog
+} from './UxEnhancements';
 
 const LoginForm = ({
   onLoginSuccess,
@@ -44,18 +55,15 @@ const LoginForm = ({
     }
   }, [navigationBlocker.state]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Field-level validation errors (shown on blur or submit)
   const [fieldErrors, setFieldErrors] = useState({
     email: null,
     password: null
   });
-  // Track which fields have been touched (blurred)
   const [touched, setTouched] = useState({
     email: false,
     password: false
   });
 
-  // Validate a single field
   const validateField = (field, value) => {
     switch (field) {
       case 'email':
@@ -67,7 +75,6 @@ const LoginForm = ({
     }
   };
 
-  // Handle field blur - validate and mark as touched
   const handleBlur = (field, value) => {
     setTouched((prev) => ({ ...prev, [field]: true }));
     setFieldErrors((prev) => ({
@@ -76,13 +83,10 @@ const LoginForm = ({
     }));
   };
 
-  // Handle field change - clear error if field is touched and now valid
   const handleChange = (field, value, setter) => {
     setter(value);
-    // Clear server error when user starts typing
     if (error) setError('');
 
-    // If field was touched, validate on change for immediate feedback
     if (touched[field]) {
       setFieldErrors((prev) => ({
         ...prev,
@@ -91,7 +95,6 @@ const LoginForm = ({
     }
   };
 
-  // Validate all fields before submit
   const validateAllFields = () => {
     const errors = {
       email: validators.email(email),
@@ -106,13 +109,11 @@ const LoginForm = ({
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Check online status
     if (!isOnline) {
       showToast.error("You're offline. Cannot sign in.");
       return;
     }
 
-    // Validate all fields
     const errors = validateAllFields();
     if (errors.email || errors.password) {
       showToast.error('Please fill in all required fields.');
@@ -131,12 +132,10 @@ const LoginForm = ({
       const response = await loginUser(email, password);
 
       if (response.success) {
-        // Call the success callback if provided
         if (onLoginSuccess) {
           onLoginSuccess(response);
         }
 
-        // Clear form
         setEmail('');
         setPassword('');
         setFieldErrors({ email: null, password: null });
@@ -167,27 +166,15 @@ const LoginForm = ({
     }
   };
 
-  // Helper to get input class based on validation state
-  const getInputClass = (field) => {
-    const baseClass =
-      'w-full px-4 py-3 border rounded-lg text-base focus:outline-none focus-visible:ring-2 transition-colors';
-    const hasError = touched[field] && fieldErrors[field];
-
-    if (hasError) {
-      return `${baseClass} border-red-300 focus-visible:ring-red-500 focus:border-red-500`;
-    }
-    return `${baseClass} border-gray-300 focus-visible:ring-blue-500 focus:border-blue-500`;
-  };
-
   return (
-    <div className='max-w-md mx-auto mt-6 sm:mt-8 p-4 sm:p-6 bg-white rounded-lg shadow-md border border-gray-200'>
-      <div className='text-center mb-6'>
+    <div className='app-panel'>
+      <div className='mb-6 text-center'>
         <h2
           id='login-heading'
-          className='text-xl sm:text-2xl font-bold text-gray-800'>
-          Welcome Back
+          className='font-display text-xl font-medium tracking-display text-ink sm:text-2xl'>
+          Welcome back
         </h2>
-        <p className='text-gray-600 mt-2'>Sign in to your account</p>
+        <p className='mt-2 text-muted-strong'>Sign in to your account</p>
       </div>
 
       <form
@@ -197,8 +184,8 @@ const LoginForm = ({
         <div>
           <label
             htmlFor='login-email'
-            className='block text-sm font-medium text-gray-700 mb-1'>
-            Email Address
+            className='sm-label'>
+            Email address
           </label>
           <input
             ref={emailRef}
@@ -208,7 +195,9 @@ const LoginForm = ({
             onChange={(e) => handleChange('email', e.target.value, setEmail)}
             onBlur={(e) => handleBlur('email', e.target.value)}
             placeholder='Enter your email'
-            className={getInputClass('email')}
+            className={getDesignInputClass({
+              hasError: touched.email && fieldErrors.email
+            })}
             aria-invalid={touched.email && fieldErrors.email ? 'true' : 'false'}
             aria-describedby={
               fieldErrors.email ? 'login-email-error' : undefined
@@ -218,7 +207,7 @@ const LoginForm = ({
           {touched.email && fieldErrors.email && (
             <p
               id='login-email-error'
-              className='mt-1 text-sm text-red-600'
+              className='sm-field-error'
               role='alert'>
               {fieldErrors.email}
             </p>
@@ -228,7 +217,7 @@ const LoginForm = ({
         <div>
           <label
             htmlFor='login-password'
-            className='block text-sm font-medium text-gray-700 mb-1'>
+            className='sm-label'>
             Password
           </label>
           <div className='relative'>
@@ -242,7 +231,10 @@ const LoginForm = ({
               }
               onBlur={(e) => handleBlur('password', e.target.value)}
               placeholder='Enter your password'
-              className={`${getInputClass('password')} pr-12`}
+              className={getDesignInputClass({
+                hasError: touched.password && fieldErrors.password,
+                className: 'pr-12'
+              })}
               aria-invalid={
                 touched.password && fieldErrors.password ? 'true' : 'false'
               }
@@ -259,7 +251,7 @@ const LoginForm = ({
           {touched.password && fieldErrors.password && (
             <p
               id='login-password-error'
-              className='mt-1 text-sm text-red-600'
+              className='sm-field-error'
               role='alert'>
               {fieldErrors.password}
             </p>
@@ -270,50 +262,21 @@ const LoginForm = ({
           <button
             type='button'
             onClick={switchToForgotPassword}
-            className='text-sm text-blue-600 hover:text-blue-800 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded'>
+            className='landing-text-link text-sm'>
             Forgot password?
           </button>
         </div>
 
-        <button
-          type='submit'
-          disabled={loading}
-          aria-busy={loading}
-          className='w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white font-medium rounded-lg text-base transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 inline-flex items-center justify-center gap-2'>
-          {loading ? (
-            <>
-              <div className='animate-spin'>
-                <svg
-                  className='h-5 w-5'
-                  fill='none'
-                  viewBox='0 0 24 24'
-                  aria-hidden='true'>
-                  <circle
-                    className='opacity-25'
-                    cx='12'
-                    cy='12'
-                    r='10'
-                    stroke='currentColor'
-                    strokeWidth='4'
-                  />
-                  <path
-                    className='opacity-75'
-                    fill='currentColor'
-                    d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z'
-                  />
-                </svg>
-              </div>
-              Signing In...
-            </>
-          ) : (
-            'Sign In'
-          )}
-        </button>
+        <AuthSubmitButton
+          loading={loading}
+          loadingLabel='Signing in…'>
+          Sign in
+        </AuthSubmitButton>
       </form>
 
       {error && (
         <div
-          className='mt-4 p-3 bg-red-100 border border-red-300 text-red-700 rounded-lg text-sm'
+          className={formAlertClass}
           role='alert'
           aria-live='assertive'>
           {error}
@@ -323,11 +286,12 @@ const LoginForm = ({
       <ConfirmDialog {...unsavedDialog} />
 
       <div className='mt-6 text-center'>
-        <p className='text-sm text-gray-600'>
-          Don't have an account?{' '}
+        <p className='text-sm text-muted-strong'>
+          Don&apos;t have an account?{' '}
           <button
+            type='button'
             onClick={switchToRegister}
-            className='text-blue-600 hover:text-blue-800 font-medium hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded'>
+            className='landing-text-link font-medium'>
             Sign up here
           </button>
         </p>

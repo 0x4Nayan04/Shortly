@@ -2,8 +2,14 @@ import { useState } from 'react';
 import { Check, Loader2 } from 'lucide-react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { resetPassword } from '../api/user.api';
+import {
+  formAlertClass,
+  formSuccessIconWrapClass,
+  getDesignInputClass
+} from '../utils/designFormClasses';
 import { validators } from '../utils/validation';
 import { showToast, useOnlineStatus } from './UxEnhancements';
+import PasswordVisibilityToggle from './PasswordVisibilityToggle';
 
 const ResetPassword = () => {
   const { token } = useParams();
@@ -12,20 +18,34 @@ const ResetPassword = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [fieldErrors, setFieldErrors] = useState({ password: null, confirmPassword: null });
-  const [touched, setTouched] = useState({ password: false, confirmPassword: false });
+  const [fieldErrors, setFieldErrors] = useState({
+    password: null,
+    confirmPassword: null
+  });
+  const [touched, setTouched] = useState({
+    password: false,
+    confirmPassword: false
+  });
   const [done, setDone] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { isOnline } = useOnlineStatus();
 
   const handleBlur = (field) => {
     setTouched((prev) => ({ ...prev, [field]: true }));
     if (field === 'password') {
-      setFieldErrors((prev) => ({ ...prev, password: validators.password(password) }));
-    } else {
-      const matchErr = password !== confirmPassword ? 'Passwords do not match' : null;
       setFieldErrors((prev) => ({
         ...prev,
-        confirmPassword: !confirmPassword ? 'Please confirm your password' : matchErr
+        password: validators.password(password)
+      }));
+    } else {
+      const matchErr =
+        password !== confirmPassword ? 'Passwords do not match' : null;
+      setFieldErrors((prev) => ({
+        ...prev,
+        confirmPassword: !confirmPassword
+          ? 'Please confirm your password'
+          : matchErr
       }));
     }
   };
@@ -69,33 +89,25 @@ const ResetPassword = () => {
     }
   };
 
-  const getInputClass = (field) => {
-    const baseClass = 'w-full px-4 py-3 border rounded-lg text-base focus:outline-none focus-visible:ring-2 transition-colors';
-    const hasError = touched[field] && fieldErrors[field];
-    if (hasError) {
-      return `${baseClass} border-red-300 focus-visible:ring-red-500`;
-    }
-    return `${baseClass} border-gray-300 focus-visible:ring-blue-500`;
-  };
-
   if (done) {
     return (
-      <div className='max-w-md mx-auto mt-6 sm:mt-8 p-4 sm:p-6 bg-white rounded-lg shadow-md border border-gray-200 text-center'>
-        <div className='w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4'>
+      <div className='app-panel text-center'>
+        <div className={formSuccessIconWrapClass}>
           <Check
-            className='w-8 h-8 text-green-600'
+            className='h-8 w-8 text-primary'
             aria-hidden='true'
           />
         </div>
-        <h2 className='text-xl font-bold text-gray-800 mb-2'>
-          Password reset!
+        <h2 className='font-display text-xl font-medium tracking-display text-ink mb-2'>
+          Password reset
         </h2>
-        <p className='text-gray-600 mb-6'>
+        <p className='text-muted-strong mb-6'>
           Your password has been updated successfully.
         </p>
         <button
+          type='button'
           onClick={() => navigate('/login')}
-          className='px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2'>
+          className='sm-btn sm-btn-primary'>
           Sign in with new password
         </button>
       </div>
@@ -103,45 +115,67 @@ const ResetPassword = () => {
   }
 
   return (
-    <div className='max-w-md mx-auto mt-6 sm:mt-8 p-4 sm:p-6 bg-white rounded-lg shadow-md border border-gray-200'>
-      <div className='text-center mb-6'>
-        <h2 className='text-xl sm:text-2xl font-bold text-gray-800'>
+    <div className='app-panel'>
+      <div className='mb-6 text-center'>
+        <h2
+          id='reset-heading'
+          className='font-display text-xl font-medium tracking-display text-ink sm:text-2xl'>
           Set new password
         </h2>
-        <p className='text-gray-600 mt-2'>
+        <p className='mt-2 text-muted-strong'>
           Choose a new password for your account.
         </p>
       </div>
 
       <form
         onSubmit={handleSubmit}
-        className='space-y-4'>
+        className='space-y-4'
+        aria-labelledby='reset-heading'>
         <div>
           <label
             htmlFor='reset-password'
-            className='block text-sm font-medium text-gray-700 mb-1'>
-            New Password
+            className='sm-label'>
+            New password
           </label>
-          <input
-            id='reset-password'
-            type='password'
-            value={password}
-            onChange={(e) => {
-              setPassword(e.target.value);
-              setError('');
-              if (touched.password) {
-                setFieldErrors((prev) => ({ ...prev, password: validators.password(e.target.value) }));
+          <div className='relative'>
+            <input
+              id='reset-password'
+              type={showPassword ? 'text' : 'password'}
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                setError('');
+                if (touched.password) {
+                  setFieldErrors((prev) => ({
+                    ...prev,
+                    password: validators.password(e.target.value)
+                  }));
+                }
+              }}
+              onBlur={() => handleBlur('password')}
+              placeholder='At least 6 characters'
+              className={getDesignInputClass({
+                hasError: touched.password && fieldErrors.password,
+                className: 'pr-12'
+              })}
+              aria-invalid={
+                touched.password && fieldErrors.password ? 'true' : 'false'
               }
-            }}
-            onBlur={() => handleBlur('password')}
-            placeholder='At least 6 characters'
-            className={getInputClass('password')}
-            aria-invalid={touched.password && fieldErrors.password ? 'true' : 'false'}
-            aria-describedby={fieldErrors.password ? 'reset-password-error' : undefined}
-            autoComplete='new-password'
-          />
+              aria-describedby={
+                fieldErrors.password ? 'reset-password-error' : undefined
+              }
+              autoComplete='new-password'
+            />
+            <PasswordVisibilityToggle
+              visible={showPassword}
+              onToggle={() => setShowPassword((v) => !v)}
+            />
+          </div>
           {touched.password && fieldErrors.password && (
-            <p id='reset-password-error' className='mt-1 text-sm text-red-600' role='alert'>
+            <p
+              id='reset-password-error'
+              className='sm-field-error'
+              role='alert'>
               {fieldErrors.password}
             </p>
           )}
@@ -150,30 +184,57 @@ const ResetPassword = () => {
         <div>
           <label
             htmlFor='reset-confirm-password'
-            className='block text-sm font-medium text-gray-700 mb-1'>
-            Confirm Password
+            className='sm-label'>
+            Confirm password
           </label>
-          <input
-            id='reset-confirm-password'
-            type='password'
-            value={confirmPassword}
-            onChange={(e) => {
-              setConfirmPassword(e.target.value);
-              setError('');
-              if (touched.confirmPassword) {
-                const matchErr = e.target.value !== password ? 'Passwords do not match' : null;
-                setFieldErrors((prev) => ({ ...prev, confirmPassword: !e.target.value ? 'Please confirm your password' : matchErr }));
+          <div className='relative'>
+            <input
+              id='reset-confirm-password'
+              type={showConfirmPassword ? 'text' : 'password'}
+              value={confirmPassword}
+              onChange={(e) => {
+                setConfirmPassword(e.target.value);
+                setError('');
+                if (touched.confirmPassword) {
+                  const matchErr =
+                    e.target.value !== password
+                      ? 'Passwords do not match'
+                      : null;
+                  setFieldErrors((prev) => ({
+                    ...prev,
+                    confirmPassword: !e.target.value
+                      ? 'Please confirm your password'
+                      : matchErr
+                  }));
+                }
+              }}
+              onBlur={() => handleBlur('confirmPassword')}
+              placeholder='Re-enter your password'
+              className={getDesignInputClass({
+                hasError:
+                  touched.confirmPassword && fieldErrors.confirmPassword,
+                className: 'pr-12'
+              })}
+              aria-invalid={
+                touched.confirmPassword && fieldErrors.confirmPassword
+                  ? 'true'
+                  : 'false'
               }
-            }}
-            onBlur={() => handleBlur('confirmPassword')}
-            placeholder='Re-enter your password'
-            className={getInputClass('confirmPassword')}
-            aria-invalid={touched.confirmPassword && fieldErrors.confirmPassword ? 'true' : 'false'}
-            aria-describedby={fieldErrors.confirmPassword ? 'reset-confirm-error' : undefined}
-            autoComplete='new-password'
-          />
+              aria-describedby={
+                fieldErrors.confirmPassword ? 'reset-confirm-error' : undefined
+              }
+              autoComplete='new-password'
+            />
+            <PasswordVisibilityToggle
+              visible={showConfirmPassword}
+              onToggle={() => setShowConfirmPassword((v) => !v)}
+            />
+          </div>
           {touched.confirmPassword && fieldErrors.confirmPassword && (
-            <p id='reset-confirm-error' className='mt-1 text-sm text-red-600' role='alert'>
+            <p
+              id='reset-confirm-error'
+              className='sm-field-error'
+              role='alert'>
               {fieldErrors.confirmPassword}
             </p>
           )}
@@ -183,12 +244,13 @@ const ResetPassword = () => {
           type='submit'
           disabled={loading}
           aria-busy={loading}
-          className='w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white font-medium rounded-lg text-base transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 inline-flex items-center justify-center gap-2'>
+          className='sm-btn sm-btn-primary sm-btn-block'>
           {loading ? (
             <>
-              <div className='animate-spin'>
-                <Loader2 className='h-5 w-5' aria-hidden='true' />
-              </div>
+              <Loader2
+                className='h-5 w-5 animate-spin'
+                aria-hidden='true'
+              />
               Resetting...
             </>
           ) : (
@@ -199,7 +261,7 @@ const ResetPassword = () => {
 
       {error && (
         <div
-          className='mt-4 p-3 bg-red-100 border border-red-300 text-red-700 rounded-lg text-sm'
+          className={formAlertClass}
           role='alert'>
           {error}
         </div>
@@ -208,7 +270,7 @@ const ResetPassword = () => {
       <div className='mt-4 text-center'>
         <Link
           to='/forgot-password'
-          className='text-sm text-blue-600 hover:text-blue-800 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded'>
+          className='landing-text-link text-sm'>
           Request a new reset link
         </Link>
       </div>
