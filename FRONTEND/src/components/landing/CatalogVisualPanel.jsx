@@ -16,7 +16,10 @@ const CatalogVisualPanel = ({ item, playKey, compact = false }) => {
         playKey={playKey}
         staticMode={true}
       />
-      <span className='catalog-visual-corner' />
+      <div className='catalog-visual-corners'>
+        <span className='catalog-visual-corner' />
+        <span className='catalog-visual-corner' />
+      </div>
       <div
         className='catalog-visual-body'
         key={item.num}>
@@ -34,11 +37,14 @@ const CatalogVisualPanel = ({ item, playKey, compact = false }) => {
           <p className='catalog-visual-detail'>{item.detail}</p>
         ) : null}
       </div>
-      <span className='catalog-visual-corner ml-auto' />
-      <p className='catalog-visual-progress'>
-        {item.num}
-        <span className='text-white/35'> / 05</span>
-      </p>
+      <div className='catalog-visual-footer'>
+        <span className='catalog-visual-corner' />
+        <p className='catalog-visual-progress'>
+          {item.num}
+          <span className='catalog-visual-progress-sep'>/</span>
+          <span className='catalog-visual-progress-total'>05</span>
+        </p>
+      </div>
     </>
   );
 };

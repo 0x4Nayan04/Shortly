@@ -6,7 +6,7 @@
   box-sizing: border-box;
 }
 
-html,
+/* Only clip horizontal overflow on body — overflow-x on html breaks position:sticky section bars */
 body {
   overflow-x: hidden;
 }
@@ -147,7 +147,7 @@ input:not(.sm-input):not(.hero-cli-input):not([type='checkbox']):not(
     [type='radio']
   ):focus-visible,
 textarea:not(.sm-input):not(.hero-cli-input):focus-visible,
-select:not(.sm-input):focus-visible {
+select:not(.sm-input):not(.dashboard-toolbar-compound__select):focus-visible {
   outline: none;
   border-radius: 0;
   border-color: var(--color-primary, #0562ef);
@@ -159,7 +159,7 @@ button:not(
     .sm-btn,
     .hero-cli-submit,
     .faq-filter,
-    .faq-item-trigger,
+  .faq-item,
     .hero-chip,
     .catalog-row,
     .landing-icon-btn,
@@ -167,7 +167,9 @@ button:not(
     .nav-landing-link,
     .nav-user-trigger,
     .nav-user-menu-row,
-    .landing-text-link
+    .landing-text-link,
+    .dashboard-toolbar-compound__order,
+    .dashboard-toolbar-compound__select
   ):focus-visible,
 a:not(
     .sm-btn,

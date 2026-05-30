@@ -40,16 +40,16 @@ const FaqItem = ({
   panelId,
   buttonId
 }) => (
-  <div className={`faq-item ${isOpen ? 'faq-item-open' : ''}`}>
-    <button
-      type='button'
-      id={buttonId}
-      aria-expanded={isOpen}
-      aria-controls={panelId}
-      onClick={onToggle}
-      className={`faq-item-trigger focus-visible:shadow-[var(--shadow-focus)] outline-none ${
-        isOpen ? 'faq-item-trigger-open' : ''
-      }`}>
+  <button
+    type="button"
+    id={buttonId}
+    className={`faq-item focus-visible:shadow-[var(--shadow-focus)] outline-none ${isOpen ? 'faq-item-open' : ''}`}
+    onClick={onToggle}
+    aria-expanded={isOpen}
+    aria-controls={panelId}>
+    <div
+      className={`faq-item-trigger ${isOpen ? 'faq-item-trigger-open' : ''}`}
+      aria-hidden='true'>
       <span
         className={`faq-item-num ${isOpen ? 'faq-item-num-open' : ''}`}
         aria-hidden='true'>
@@ -67,7 +67,7 @@ const FaqItem = ({
           aria-hidden='true'
         />
       )}
-    </button>
+    </div>
     {isOpen && (
       <div
         id={panelId}
@@ -77,7 +77,7 @@ const FaqItem = ({
         <p className='faq-item-answer'>{item.a}</p>
       </div>
     )}
-  </div>
+  </button>
 );
 
 const LandingFaq = () => {
@@ -120,26 +120,29 @@ const LandingFaq = () => {
               <span className='text-primary'>in plain English.</span>
             </h2>
           </div>
-
-          <div
-            className='faq-filters shrink-0'
-            role='tablist'
-            aria-label='Filter questions by topic'>
-            {FAQ_CATEGORIES.map((cat) => (
-              <button
-                key={cat.id}
-                type='button'
-                role='tab'
-                aria-selected={activeCategory === cat.id}
-                onClick={() => handleCategoryChange(cat.id)}
-                className={`faq-filter focus-visible:shadow-[var(--shadow-focus)] outline-none ${
-                  activeCategory === cat.id ? 'faq-filter-active' : ''
-                }`}>
-                {cat.label}
-              </button>
-            ))}
-          </div>
         </div>
+      </LandingFrameInner>
+
+      <LandingFrameInner>
+        <div
+          className='faq-filters'
+          role='tablist'
+          aria-label='Filter questions by topic'
+          style={{ justifyContent: 'flex-start', marginTop: '0', marginBottom: '0.75rem' }}>
+        {FAQ_CATEGORIES.map((cat) => (
+          <button
+            key={cat.id}
+            type='button'
+            role='tab'
+            aria-selected={activeCategory === cat.id}
+            onClick={() => handleCategoryChange(cat.id)}
+            className={`faq-filter focus-visible:shadow-[var(--shadow-focus)] outline-none ${
+              activeCategory === cat.id ? 'faq-filter-active' : ''
+            }`}>
+            {cat.label}
+          </button>
+        ))}
+      </div>
       </LandingFrameInner>
 
       <div className='faq-list'>

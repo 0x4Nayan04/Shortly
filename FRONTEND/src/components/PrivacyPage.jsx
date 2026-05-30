@@ -116,13 +116,19 @@ const PrivacyPage = ({ user, onLogout, onShowAuth, onShowProfile }) => {
         className='flex-1'
         role='main'
         aria-labelledby='privacy-heading'>
-        <LandingSectionBlock
-          label='PRIVACY'
-          index={1}
-          total={3}>
+        <LandingSectionBlock>
           <LandingFrameInner className='py-8'>
             <header className='mb-8 border-b border-border pb-6'>
-              <p className='mb-4 inline-flex items-center gap-2 border border-border bg-[var(--color-blue-tint)] px-2.5 py-1 text-xs font-semibold uppercase tracking-wider text-primary'>
+              <Link
+                to='/'
+                className='mb-4 inline-flex items-center gap-1 text-[13px] text-muted-strong transition-colors duration-150 hover:text-primary'>
+                <ArrowLeft
+                  className='h-3.5 w-3.5'
+                  aria-hidden='true'
+                />
+                Back to home
+              </Link>
+              <p className='mb-4 font-mono text-[11px] font-medium uppercase tracking-[0.08em] text-primary'>
                 Privacy promise
               </p>
               <h1
@@ -135,15 +141,7 @@ const PrivacyPage = ({ user, onLogout, onShowAuth, onShowProfile }) => {
                 the smallest amount of data needed to provide useful analytics,
                 and we never sell or share that data with third parties.
               </p>
-              <Link
-                to='/'
-                className='landing-text-link mt-4 inline-flex items-center gap-2 text-sm font-medium'>
-                <ArrowLeft
-                  className='h-4 w-4'
-                  aria-hidden='true'
-                />
-                Back to home
-              </Link>
+
             </header>
 
             <div className='grid gap-4 sm:grid-cols-3'>
@@ -166,10 +164,7 @@ const PrivacyPage = ({ user, onLogout, onShowAuth, onShowProfile }) => {
           </LandingFrameInner>
         </LandingSectionBlock>
 
-        <LandingSectionBlock
-          label='COLLECTION'
-          index={2}
-          total={3}>
+        <LandingSectionBlock>
           <LandingFrameInner className='py-8'>
             <div className='app-panel !p-0 overflow-hidden'>
               <div className='border-b border-border p-6 sm:p-8'>
@@ -219,7 +214,7 @@ const PrivacyPage = ({ user, onLogout, onShowAuth, onShowProfile }) => {
                   ))}
                 </div>
 
-                <div className='mt-5 flex items-center gap-3 border border-border bg-[var(--color-blue-tint)] px-4 py-3 text-sm text-muted-strong'>
+                <div className='mt-5 flex items-center gap-3 border-t border-border bg-[var(--color-blue-tint)] px-4 py-3 text-sm text-muted-strong'>
                   <Info
                     className='h-5 w-5 shrink-0 text-primary'
                     aria-hidden='true'
@@ -242,13 +237,13 @@ const PrivacyPage = ({ user, onLogout, onShowAuth, onShowProfile }) => {
                   </p>
                 </header>
                 <ul
-                  className='grid grid-cols-1 gap-3 lg:grid-cols-6 lg:gap-4'
+                  className='grid grid-cols-1 gap-3 lg:grid-cols-3 lg:gap-4'
                   role='list'>
                   {privacyExclusions.map((item, index) => (
                     <li
                       key={item}
                       className={`flex items-start gap-3 border border-border bg-surface px-4 py-3.5 ${
-                        index < 2 ? 'lg:col-span-3' : 'lg:col-span-2'
+                        index === 4 ? 'lg:col-span-3' : ''
                       }`}>
                       <X
                         className='mt-0.5 h-4 w-4 shrink-0 text-[#dc2626]'
@@ -265,10 +260,7 @@ const PrivacyPage = ({ user, onLogout, onShowAuth, onShowProfile }) => {
           </LandingFrameInner>
         </LandingSectionBlock>
 
-        <LandingSectionBlock
-          label='CONTROL'
-          index={3}
-          total={3}>
+        <LandingSectionBlock>
           <LandingFrameInner className='py-8'>
             <div className='app-panel privacy-panel'>
               <div className='privacy-panel__grid'>

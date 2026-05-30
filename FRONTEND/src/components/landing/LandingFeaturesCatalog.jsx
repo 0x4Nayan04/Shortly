@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import CatalogVisualPanel from './CatalogVisualPanel';
 import { LandingFrameInner } from './LandingFrame';
 
@@ -47,30 +47,7 @@ const CATALOG_ITEMS = [
 
 const LandingFeaturesCatalog = () => {
   const [activeIndex, setActiveIndex] = useState(0);
-  const stepRefs = useRef([]);
   const active = CATALOG_ITEMS[activeIndex] ?? CATALOG_ITEMS[0];
-
-  useEffect(() => {
-    if (typeof window === 'undefined' || window.innerWidth >= 768) return;
-    const observers = [];
-
-    stepRefs.current.forEach((step, index) => {
-      if (!step) return;
-      const observer = new IntersectionObserver(
-        ([entry]) => {
-          if (entry.isIntersecting) setActiveIndex(index);
-        },
-        {
-          threshold: 0.55,
-          rootMargin: '-10% 0px -20% 0px'
-        }
-      );
-      observer.observe(step);
-      observers.push(observer);
-    });
-
-    return () => observers.forEach((observer) => observer.disconnect());
-  }, []);
 
   return (
     <section
@@ -89,56 +66,17 @@ const LandingFeaturesCatalog = () => {
         </p>
       </LandingFrameInner>
 
-      <div className='catalog-scrolly md:hidden'>
-        <div className='catalog-scrolly-scroll'>
-          {CATALOG_ITEMS.map((item, index) => {
-            const isActive = index === activeIndex;
-            const detail = item.detail ?? item.stat;
-            return (
-              <article
-                key={item.num}
-                ref={(element) => {
-                  stepRefs.current[index] = element;
-                }}
-                className={`catalog-scrolly-step${isActive ? ' catalog-scrolly-step--active' : ''}`}>
-                <div className='catalog-scrolly-step-inner'>
-                  <span className='catalog-scrolly-step-num'>{item.num}</span>
-                  <div className='catalog-scrolly-step-copy'>
-                    <div className='catalog-scrolly-step-head'>
-                      <h3 className='catalog-scrolly-step-title'>{item.title}</h3>
-                    </div>
-                    {detail ? <p className='catalog-scrolly-step-desc'>{detail}</p> : null}
-                  </div>
-                  <span
-                    className='catalog-scrolly-step-marker'
-                    aria-hidden='true'
-                  />
-                </div>
-                <div className='catalog-scrolly-step-mobile-visual'>
-                  <div className='catalog-visual catalog-visual--scrolly'>
-                    <CatalogVisualPanel
-                      item={item}
-                      playKey={item.num}
-                      compact={true}
-                    />
-                  </div>
-                </div>
-              </article>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className='landing-catalog-split hidden md:grid'>
+      <div className='landing-catalog-split'>
         <ol
-          className='catalog-list list-none m-0 p-0'
+          className='catalog-list m-0 list-none p-0'
           aria-label='Product features'>
           {CATALOG_ITEMS.map((item, index) => {
             const isActive = index === activeIndex;
             return (
               <li
                 key={item.num}
-                className='catalog-list-item'>
+                className='catalog-list-item'
+                onMouseEnter={() => setActiveIndex(index)}>
                 <button
                   type='button'
                   aria-pressed={isActive}

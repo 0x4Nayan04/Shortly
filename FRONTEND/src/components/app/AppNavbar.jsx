@@ -132,9 +132,10 @@ const AppNavbar = memo(({ user, onLogout, onShowRegister, onShowProfile }) => {
             role='navigation'
             aria-label='Account'>
             {user ? (
-              <div
-                className='relative min-w-0'
-                ref={dropdownRef}>
+              <>
+                <div
+                  className='relative min-w-0'
+                  ref={dropdownRef}>
                 <button
                   type='button'
                   ref={dropdownButtonRef}
@@ -249,6 +250,7 @@ const AppNavbar = memo(({ user, onLogout, onShowRegister, onShowProfile }) => {
                   </div>
                 )}
               </div>
+              </>
             ) : pathname === '/login' ? (
               <button
                 type='button'

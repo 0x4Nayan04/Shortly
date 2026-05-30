@@ -15,6 +15,17 @@ export function buildPublicShortUrl(slug) {
   return `${base}/${slug}`;
 }
 
+/** Public short link for compact UI (host/slug, no protocol). Falls back to slug alone. */
+export function formatPublicShortUrlForDisplay(slug) {
+  const slugPart = slug?.trim() ?? '';
+  if (!slugPart) return '';
+
+  const full = buildPublicShortUrl(slugPart);
+  if (!full) return slugPart;
+
+  return full.replace(/^https?:\/\//, '');
+}
+
 /** Host + slug parts for compact dashboard / table display (copy still uses full URL). */
 export function getShortLinkDisplayParts(slug) {
   const slugPart = slug?.trim() ?? '';

@@ -1,5 +1,11 @@
-import { memo, useCallback } from 'react';
-import { ChevronDown, SortAsc, SortDesc } from 'lucide-react';
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useRef,
+  useState
+} from 'react';
+import { Check, ChevronDown, SortAsc, SortDesc } from 'lucide-react';
 import { formCompoundClass } from '../utils/designFormClasses';
 
 export const SORT_OPTIONS = [
@@ -14,6 +20,166 @@ const preventEmptyBackspaceNav = (event) => {
   if (event.currentTarget.value !== '') return;
   event.preventDefault();
 };
+
+const SortSelect = memo(
+  ({ value, onChange, options, disabled, id, label }) => {
+    const [open, setOpen] = useState(false);
+    const [focusIdx, setFocusIdx] = useState(-1);
+    const containerRef = useRef(null);
+    const triggerRef = useRef(null);
+
+    const currentLabel =
+      options.find((o) => o.value === value)?.label || '';
+
+    useEffect(() => {
+      if (!open) {
+        setFocusIdx(-1);
+        return;
+      }
+      const idx = options.findIndex((o) => o.value === value);
+      setFocusIdx(idx >= 0 ? idx : 0);
+    }, [open, options, value]);
+
+    useEffect(() => {
+      if (!open) return;
+      const onPointerDown = (e) => {
+        if (
+          containerRef.current &&
+          !containerRef.current.contains(e.target)
+        ) {
+          setOpen(false);
+        }
+      };
+      document.addEventListener('pointerdown', onPointerDown);
+      return () =>
+        document.removeEventListener('pointerdown', onPointerDown);
+    }, [open]);
+
+    const select = useCallback(
+      (nextVal) => {
+        onChange(nextVal);
+        setOpen(false);
+        triggerRef.current?.focus();
+      },
+      [onChange]
+    );
+
+    const onKeyDown = useCallback(
+      (e) => {
+        if (!open) {
+          if (
+            e.key === 'Enter' ||
+            e.key === ' ' ||
+            e.key === 'ArrowDown'
+          ) {
+            e.preventDefault();
+            setOpen(true);
+          }
+          return;
+        }
+
+        switch (e.key) {
+          case 'Escape':
+            e.preventDefault();
+            setOpen(false);
+            triggerRef.current?.focus();
+            break;
+          case 'ArrowDown':
+            e.preventDefault();
+            setFocusIdx((prev) =>
+              prev < options.length - 1 ? prev + 1 : 0
+            );
+            break;
+          case 'ArrowUp':
+            e.preventDefault();
+            setFocusIdx((prev) =>
+              prev > 0 ? prev - 1 : options.length - 1
+            );
+            break;
+          case 'Enter':
+          case ' ':
+            e.preventDefault();
+            if (focusIdx >= 0 && focusIdx < options.length) {
+              select(options[focusIdx].value);
+            }
+            break;
+          case 'Tab':
+            setOpen(false);
+            break;
+        }
+      },
+      [open, focusIdx, options, select]
+    );
+
+    const onTriggerClick = useCallback(() => {
+      if (disabled) return;
+      setOpen((prev) => !prev);
+    }, [disabled]);
+
+    return (
+      <div
+        ref={containerRef}
+        className='sort-select'
+        onKeyDown={onKeyDown}>
+        <label
+          htmlFor={id}
+          className='sr-only'>
+          {label}
+        </label>
+        <button
+          ref={triggerRef}
+          id={id}
+          type='button'
+          role='combobox'
+          aria-haspopup='listbox'
+          aria-expanded={open}
+          aria-controls={`${id}-listbox`}
+          aria-label={label}
+          disabled={disabled}
+          className='dashboard-toolbar-compound__select outline-none'
+          onClick={onTriggerClick}>
+          <span className='sort-select__label'>{currentLabel}</span>
+          <ChevronDown
+            className={`sort-select__chevron${open ? ' sort-select__chevron--open' : ''}`}
+            aria-hidden='true'
+          />
+        </button>
+
+        {open && (
+          <ul
+            id={`${id}-listbox`}
+            role='listbox'
+            aria-label={label}
+            className='sort-select__panel'>
+            {options.map((opt, idx) => (
+              <li
+                key={opt.value}
+                role='option'
+                aria-selected={opt.value === value}
+                className={`sort-select__option${opt.value === value ? ' sort-select__option--selected' : ''}${idx === focusIdx ? ' sort-select__option--focused' : ''}`}
+                onPointerDown={() => select(opt.value)}
+                onMouseEnter={() => setFocusIdx(idx)}>
+                <span className='sort-select__option-check'>
+                  {opt.value === value && (
+                    <Check
+                      className='sort-select__option-check-icon'
+                      aria-hidden='true'
+                    />
+                  )}
+                </span>
+                <span className='sort-select__option-label'>
+                  {opt.label}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    );
+  }
+);
+
+SortSelect.displayName = 'SortSelect';
 
 const DashboardLinksToolbar = memo(
   ({
@@ -65,29 +231,13 @@ const DashboardLinksToolbar = memo(
               className='dashboard-toolbar-compound__sort'
               aria-label='Sort links'>
               <div className='dashboard-toolbar-compound__select-wrap'>
-                <label
-                  htmlFor='dashboard-sort-by'
-                  className='sr-only'>
-                  Sort by
-                </label>
-                <select
+                <SortSelect
                   id='dashboard-sort-by'
                   value={sortBy}
-                  onChange={(e) => onSortByChange(e.target.value)}
+                  onChange={onSortByChange}
+                  options={SORT_OPTIONS}
                   disabled={disabled}
-                  className='dashboard-toolbar-compound__select'
-                  aria-label='Sort by'>
-                  {SORT_OPTIONS.map((option) => (
-                    <option
-                      key={option.value}
-                      value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown
-                  className='dashboard-toolbar-compound__select-chevron'
-                  aria-hidden='true'
+                  label='Sort by'
                 />
               </div>
               <button
@@ -96,7 +246,7 @@ const DashboardLinksToolbar = memo(
                   onSortOrderChange(sortOrder === 'desc' ? 'asc' : 'desc')
                 }
                 disabled={disabled}
-                className='dashboard-toolbar-compound__order'
+                className='dashboard-toolbar-compound__order outline-none'
                 aria-label={
                   sortOrder === 'desc' ? 'Sort descending' : 'Sort ascending'
                 }

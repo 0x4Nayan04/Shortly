@@ -30,14 +30,16 @@ const LandingHero = ({ user }) => {
             <h1
               id='hero-heading'
               className='landing-hero-title max-w-[18ch] text-ink'>
-              The simplest way to share your links
+              The simplest way to{' '}
+              <span className='hero-heading-em'>share your links</span>
               <span className='text-primary'>.</span>
             </h1>
 
             <p className='landing-section-lead landing-section-lead--hero'>
-              Shortly turns long URLs into clean, memorable links. Shorten
-              instantly for free, or sign in to unlock custom aliases and
-              real-time performance analytics.
+              Paste any URL and get a clean, short link you can share
+              everywhere. Sign up free for{' '}
+              <span className='hero-copy-em'>custom aliases</span> and{' '}
+              <span className='hero-copy-em'>real-time analytics</span>.
             </p>
           </div>
 

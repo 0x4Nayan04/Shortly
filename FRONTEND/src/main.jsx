@@ -1,5 +1,25 @@
 if (import.meta.env.DEV) {
-  import("react-grab");
+  void import("react-grab").then((grab) => {
+    const placeMobileToolbar = () => {
+      const api = grab.getGlobalApi?.();
+      if (!api?.setToolbarState) return false;
+      if (window.matchMedia("(max-width: 767px)").matches) {
+        api.setToolbarState({ edge: "bottom", ratio: 0.06 });
+      }
+      return true;
+    };
+
+    if (!placeMobileToolbar()) {
+      const timer = window.setInterval(() => {
+        if (placeMobileToolbar()) window.clearInterval(timer);
+      }, 50);
+      window.setTimeout(() => window.clearInterval(timer), 3000);
+    }
+
+    window
+      .matchMedia("(max-width: 767px)")
+      .addEventListener("change", placeMobileToolbar);
+  });
 }
 
 import { createRoot } from 'react-dom/client';

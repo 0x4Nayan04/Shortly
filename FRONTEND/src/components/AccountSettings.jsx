@@ -73,10 +73,7 @@ const AccountSettings = ({ user, onLogout, onShowAuth, onShowProfile }) => {
         className='flex-1'
         role='main'
         aria-labelledby='settings-heading'>
-        <LandingSectionBlock
-          label='ACCOUNT'
-          index={1}
-          total={1}>
+        <LandingSectionBlock>
           <LandingFrameInner className='landing-section-intro dashboard-workspace-intro'>
             <div className='settings-workspace dashboard-workspace'>
               <div className='dashboard-workspace-head'>
@@ -148,8 +145,8 @@ const AccountSettings = ({ user, onLogout, onShowAuth, onShowProfile }) => {
                         id='settings-name'
                         type='text'
                         value={user.name}
-                        disabled
-                        className={`${getDesignInputClass()} w-full min-w-0 cursor-not-allowed opacity-60`}
+                        readOnly
+                        className={`${getDesignInputClass()} w-full min-w-0 bg-surface-muted border-dashed cursor-default`}
                       />
                     </div>
                     <div className='settings-profile__field settings-profile__field--email min-w-0'>
@@ -182,6 +179,14 @@ const AccountSettings = ({ user, onLogout, onShowAuth, onShowProfile }) => {
                       your Gravatar address.
                     </p>
                   </div>
+
+                  <button
+                    type='button'
+                    disabled
+                    title='Profile editing coming soon'
+                    className='sm-btn sm-btn-secondary w-full cursor-not-allowed opacity-50'>
+                    Save changes
+                  </button>
                 </div>
               </section>
 
@@ -310,7 +315,7 @@ const AccountSettings = ({ user, onLogout, onShowAuth, onShowProfile }) => {
                     type='submit'
                     loading={passwordLoading}
                     loadingText='Updating...'
-                    className='sm-btn sm-btn-primary w-full sm:w-auto'
+                    className='sm-btn sm-btn-primary w-full md:w-auto'
                     disabled={
                       !passwordForm.oldPassword ||
                       !passwordForm.newPassword ||
@@ -329,12 +334,9 @@ const AccountSettings = ({ user, onLogout, onShowAuth, onShowProfile }) => {
                         Extra sign-in protection
                       </p>
                     </div>
-                    <button
-                      type='button'
-                      disabled
-                      className='sm-btn sm-btn-secondary shrink-0 cursor-not-allowed opacity-50'>
+                    <span className='inline-flex items-center border border-border bg-blue-tint px-2 py-0.5 text-[11px] font-medium leading-tight text-primary'>
                       Coming soon
-                    </button>
+                    </span>
                   </div>
                 </div>
               </section>

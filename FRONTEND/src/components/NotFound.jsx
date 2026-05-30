@@ -21,10 +21,7 @@ const NotFound = ({ user, onLogout, onShowAuth, onShowProfile }) => {
         id='main-content'
         className='flex-1'
         role='main'>
-        <LandingSectionBlock
-          label='NOT FOUND'
-          index={1}
-          total={1}>
+        <LandingSectionBlock>
           <LandingFrameInner className='py-12'>
             <div className='mx-auto max-w-md text-center'>
               <div className='mx-auto mb-6 flex h-20 w-20 items-center justify-center border border-border bg-[var(--color-blue-tint)]'>

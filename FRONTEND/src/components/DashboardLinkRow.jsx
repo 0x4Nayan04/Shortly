@@ -23,7 +23,8 @@ const DashboardLinkRow = memo(
       month: 'short',
       year: 'numeric'
     });
-    const clickLabel = `${url.click} click${url.click !== 1 ? 's' : ''}`;
+    const clickNum = url.click;
+    const clickText = `click${url.click !== 1 ? 's' : ''}`;
 
     return (
       <li
@@ -45,18 +46,19 @@ const DashboardLinkRow = memo(
               className='dashboard-link-item__short'
               title={shortUrlFull}
               aria-label={`Open ${shortUrlFull} in a new tab`}>
-              {hostLead ? (
-                <>
-                  <span className='dashboard-link-item__host'>
-                    {hostLead}
-                    {hostTrail ? <span>{hostTrail}</span> : null}
-                    <span className='dashboard-link-item__slash'>/</span>
-                  </span>
-                  <span className='dashboard-link-item__slug'>{slug}</span>
-                </>
-              ) : (
-                <span className='dashboard-link-item__slug'>/{slug}</span>
-              )}
+              <span className='dashboard-link-item__short-inner'>
+                {hostLead ? (
+                  <>
+                    <span className='dashboard-link-item__host dashboard-link-item__host--truncate'>
+                      {hostLead}
+                      {hostTrail ? <span>{hostTrail}</span> : null}
+                    </span>
+                    <span className='dashboard-link-item__slug'>/{slug}</span>
+                  </>
+                ) : (
+                  <span className='dashboard-link-item__slug'>/{slug}</span>
+                )}
+              </span>
             </a>
             <p
               className='dashboard-link-item__dest'
@@ -66,7 +68,10 @@ const DashboardLinkRow = memo(
           </div>
 
           <p className='dashboard-link-item__meta catalog-row-meta'>
-            <span className='tabular-nums'>{clickLabel}</span>
+            <span className='dashboard-link-item__clicks'>
+              <span className='font-semibold'>{clickNum}</span>
+              <span className='text-muted text-xs'>{' '}{clickText}</span>
+            </span>
             <span
               className='dashboard-link-item__meta-sep'
               aria-hidden='true'>
