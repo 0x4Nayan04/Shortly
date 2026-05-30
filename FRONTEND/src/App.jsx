@@ -423,23 +423,31 @@ const App = () => {
           <Route
             path='/login'
             element={
-              <LoginPage
-                user={user}
-                navigate={navigate}
-                onLoginSuccess={handleAuthSuccess}
-                {...shellProps}
-              />
+              authChecked && user ? (
+                <Navigate to='/dashboard' replace />
+              ) : (
+                <LoginPage
+                  user={user}
+                  navigate={navigate}
+                  onLoginSuccess={handleAuthSuccess}
+                  {...shellProps}
+                />
+              )
             }
           />
           <Route
             path='/register'
             element={
-              <RegisterPage
-                user={user}
-                navigate={navigate}
-                onRegisterSuccess={handleAuthSuccess}
-                {...shellProps}
-              />
+              authChecked && user ? (
+                <Navigate to='/dashboard' replace />
+              ) : (
+                <RegisterPage
+                  user={user}
+                  navigate={navigate}
+                  onRegisterSuccess={handleAuthSuccess}
+                  {...shellProps}
+                />
+              )
             }
           />
           <Route
@@ -488,20 +496,28 @@ const App = () => {
           <Route
             path='/forgot-password'
             element={
-              <ForgotPasswordPage
-                user={user}
-                navigate={navigate}
-                {...shellProps}
-              />
+              authChecked && user ? (
+                <Navigate to='/dashboard' replace />
+              ) : (
+                <ForgotPasswordPage
+                  user={user}
+                  navigate={navigate}
+                  {...shellProps}
+                />
+              )
             }
           />
           <Route
             path='/reset-password/:token'
             element={
-              <ResetPasswordPage
-                user={user}
-                {...shellProps}
-              />
+              authChecked && user ? (
+                <Navigate to='/dashboard' replace />
+              ) : (
+                <ResetPasswordPage
+                  user={user}
+                  {...shellProps}
+                />
+              )
             }
           />
           <Route

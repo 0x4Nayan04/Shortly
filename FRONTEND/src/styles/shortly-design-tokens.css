@@ -54,6 +54,9 @@
     var(--color-border)
   );
 
+  --color-success: #22c55e;
+  --color-info: #3b82f6;
+
   /* Error specific colors — light tint and border shade */
   --color-error-tint: color-mix(
     in srgb,
@@ -107,63 +110,8 @@
     -webkit-font-smoothing: antialiased;
     -webkit-tap-highlight-color: transparent;
   }
+ 
 
-  /* Flat focus — design-system controls use shadow ring; no rounded browser outline */
-  :is(.landing-page, .app-page)
-    :is(button, a, [role='button'], input, textarea, select):focus:not(
-      :focus-visible
-    ) {
-    outline: none;
-  }
-  :is(.landing-page, .app-page) :is(button, a, [role='button']):focus-visible {
-    outline: none;
-    border-radius: 0;
-  }
-  :is(.landing-page, .app-page)
-    :is(
-      .sm-btn,
-      .hero-cli-submit,
-      .faq-filter,
-      .faq-item-trigger,
-      .hero-chip,
-      .catalog-row,
-      .landing-icon-btn,
-      .password-toggle,
-      .nav-landing-link,
-      .nav-landing-logo,
-      .nav-user-trigger,
-      .nav-user-menu-row,
-      .landing-text-link
-    ):focus-visible {
-    outline: none;
-    border-radius: 0;
-    box-shadow: var(--shadow-focus);
-  }
-  :is(.landing-page, .app-page)
-    :is(
-      .dashboard-toolbar-compound__select,
-      .dashboard-toolbar-compound__order
-    ):focus-visible {
-    outline: none;
-    border-radius: 0;
-    box-shadow: inset var(--shadow-focus);
-  }
-
-  /* Hero CLI inputs — parent compound/bar owns focus ring */
-  .hero-cli-input:focus,
-  .hero-cli-input:focus-visible {
-    outline: none;
-    box-shadow: none;
-    border-radius: 0;
-    border-color: transparent;
-  }
-
-  /* Standalone app/auth fields — sm-input owns focus ring */
-  :is(.landing-page, .app-page) .sm-input:focus,
-  :is(.landing-page, .app-page) .sm-input:focus-visible {
-    outline: none;
-    border-radius: 0;
-  }
 }
 
 @layer utilities {
@@ -596,6 +544,12 @@
   }
   .sm-btn-block {
     width: 100%;
+  }
+
+    /* Focus ring utility — replaces inline focus-visible:shadow-[var(--shadow-focus)] outline-none */
+  .focus-ring:focus-visible {
+    outline: none;
+    box-shadow: var(--shadow-focus);
   }
 
   /* ── App shell utilities (catalog frame + auth/settings) ── */

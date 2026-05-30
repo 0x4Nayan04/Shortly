@@ -176,8 +176,12 @@ const ClicksChart = ({ data, rangeLabel }) => {
                         <div
                             key={day._id}
                             className="click-analytics__chart-bar-col"
+                            tabIndex={0}
                             onMouseEnter={() => setHoveredIdx(idx)}
                             onMouseLeave={() => setHoveredIdx(null)}
+                            onFocus={() => setHoveredIdx(idx)}
+                            onBlur={() => setHoveredIdx(null)}
+                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { setHoveredIdx(idx); } }}
                         >
                             {isHovered && day.clicks > 0 && (
                                 <div className="click-analytics__chart-tooltip">
@@ -353,7 +357,7 @@ const ClickAnalytics = ({ clickAnalytics }) => {
                                 role="tab"
                                 aria-selected={selectedRange === option.value}
                                 onClick={() => setSelectedRange(option.value)}
-                                className={`faq-filter focus-visible:shadow-[var(--shadow-focus)] outline-none ${
+                                className={`faq-filter focus-ring ${
                                     selectedRange === option.value
                                         ? "faq-filter-active"
                                         : ""

@@ -47,7 +47,7 @@ const FaqItem = ({
       aria-expanded={isOpen}
       aria-controls={panelId}
       onClick={onToggle}
-      className={`faq-item-trigger focus-visible:shadow-[var(--shadow-focus)] outline-none ${
+      className={`faq-item-trigger focus-ring ${
         isOpen ? 'faq-item-trigger-open' : ''
       }`}>
       <span
@@ -131,7 +131,7 @@ const LandingFaq = () => {
                 role='tab'
                 aria-selected={activeCategory === cat.id}
                 onClick={() => handleCategoryChange(cat.id)}
-                className={`faq-filter focus-visible:shadow-[var(--shadow-focus)] outline-none ${
+                className={`faq-filter focus-ring ${
                   activeCategory === cat.id ? 'faq-filter-active' : ''
                 }`}>
                 {cat.label}

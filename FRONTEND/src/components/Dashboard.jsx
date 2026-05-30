@@ -145,8 +145,12 @@ const ActivityChart = memo(({ data }) => {
                 <div
                   key={day._id}
                   className={`activity-chart__col${day.isToday ? ' activity-chart__col--today' : ''}`}
+                  tabIndex={0}
                   onMouseEnter={() => setHoveredIdx(idx)}
-                  onMouseLeave={() => setHoveredIdx(null)}>
+                  onMouseLeave={() => setHoveredIdx(null)}
+                  onFocus={() => setHoveredIdx(idx)}
+                  onBlur={() => setHoveredIdx(null)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { setHoveredIdx(idx); } }}>
                   {/* Tooltip */}
                   {isHovered && (
                     <div className='activity-chart__tooltip'>
@@ -354,6 +358,7 @@ const Dashboard = ({ user, onLogout, onShowAuth, onShowProfile }) => {
   const { copy, isCopied } = useCopyToClipboard();
   const confirmDialog = useConfirmDialog();
   const insightsPanelRef = useRef(null);
+  const linksPanelRef = useRef(null);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -423,7 +428,7 @@ const Dashboard = ({ user, onLogout, onShowAuth, onShowProfile }) => {
 
   const handlePageChange = useCallback((page) => {
     setCurrentPage(page);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    linksPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, []);
 
   const copyToClipboard = useCallback(
@@ -776,6 +781,7 @@ const Dashboard = ({ user, onLogout, onShowAuth, onShowProfile }) => {
             )}
 
             <section
+              ref={linksPanelRef}
               aria-labelledby='links-heading'
               className='dashboard-zone dashboard-zone--divider dashboard-links-panel'>
               <div className='dashboard-links-panel__header'>

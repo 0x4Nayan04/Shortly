@@ -263,7 +263,7 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth, variant = "default" }) => {
                                     type="submit"
                                     disabled={loading}
                                     aria-busy={loading}
-                                    className="hero-cli-submit focus-visible:shadow-[var(--shadow-focus)] outline-none"
+                                    className="hero-cli-submit focus-ring"
                                 >
                                     {loading ? (
                                         <BrandedSpinner size="sm" decorative />
@@ -279,7 +279,7 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth, variant = "default" }) => {
                                     <button
                                         type="button"
                                         onClick={onShowAuth}
-                                        className="flex min-h-[var(--btn-h)] flex-1 items-center gap-1.5 border-0 bg-transparent text-sm font-medium text-muted-strong transition-colors hover:text-ink outline-none focus-visible:shadow-[var(--shadow-focus)] active:scale-[0.99] duration-100"
+                                        className="flex min-h-[var(--btn-h)] flex-1 items-center gap-1.5 border-0 bg-transparent text-sm font-medium text-muted-strong transition-colors hover:text-ink focus-ring active:scale-[0.99] duration-100"
                                     >
                                         <Settings2 size={15} /> Customize link{" "}
                                         <ChevronDown
@@ -314,7 +314,7 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth, variant = "default" }) => {
                                                 }));
                                             }
                                         }}
-                                        className="catalog-row flex w-full items-center gap-1.5 border-0 border-t border-border bg-transparent px-4 text-sm font-medium text-muted-strong transition-colors hover:bg-[color-mix(in_srgb,var(--color-background-alt)_35%,white)] hover:text-ink outline-none focus-visible:shadow-[var(--shadow-focus)] active:scale-[0.99] duration-100"
+                                        className="catalog-row flex w-full items-center gap-1.5 border-0 border-t border-border bg-transparent px-4 text-sm font-medium text-muted-strong transition-colors hover:bg-[color-mix(in_srgb,var(--color-background-alt)_35%,white)] hover:text-ink focus-ring active:scale-[0.99] duration-100"
                                         aria-expanded={useCustomAlias}
                                     >
                                         <Settings2

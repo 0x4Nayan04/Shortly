@@ -17,7 +17,7 @@ const LandingHero = ({ user }) => {
             {!user ? (
               <a
                 href='#features'
-                className='hero-chip focus-visible:shadow-[var(--shadow-focus)] outline-none'>
+                className='hero-chip focus-ring'>
                 <span className='hero-chip-tag'>New</span>
                 <span className='hero-chip-text font-medium'>
                   Custom aliases for members
