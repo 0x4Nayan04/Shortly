@@ -7,7 +7,7 @@ export const ERROR_MESSAGES = {
     REQUIRED_FIELDS: 'Required fields are missing',
     INVALID_EMAIL: 'Please provide a valid email address',
     INVALID_URL: 'Please provide a valid URL',
-    PASSWORD_TOO_SHORT: 'Password must be at least 8 characters long',
+    PASSWORD_TOO_SHORT: 'Password must be at least 6 characters long',
     INVALID_CUSTOM_URL: 'Custom URL must be 3-20 characters, letters and numbers only'
   },
   AUTH: {
@@ -41,7 +41,6 @@ export const SUCCESS_MESSAGES = {
     CREATED: 'Short URL created successfully',
     CUSTOM_CREATED: 'Custom short URL created successfully',
     DELETED: 'URL deleted successfully',
-    UPDATED: 'URL updated successfully'
   },
   USER: {
     PROFILE_UPDATED: 'Profile updated successfully',

@@ -43,6 +43,7 @@ const clickSchema = mongoose.Schema(
 );
 
 clickSchema.index({ timestamp: 1 }, { expireAfterSeconds: 60 * 60 * 24 * 30 });
+clickSchema.index({ short_url_id: 1, timestamp: -1 });
 
 const Click = mongoose.model("Click", clickSchema);
 

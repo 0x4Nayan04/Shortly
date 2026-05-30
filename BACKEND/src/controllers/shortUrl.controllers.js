@@ -17,12 +17,10 @@ import {
 } from '../utils/responseMessages.js';
 import { escapeRegExp } from '../utils/escapeRegExp.js';
 import { logger } from '../utils/logger.js';
-export const createShortUrl = asyncHandler(async (req, res, next) => {
-  const { full_url } = req.body;
-
-  if (!full_url) {
-    return next(new AppError('Full URL is required', 400));
-  }
+import { retryWithBackoff } from '../utils/retry.js';
+import { isSafeRedirectUrl } from '../utils/safeRedirectUrl.js';
+export const createShortUrl = asyncHandler(async (req, res, _next) => {
+  const { full_url } = req.validatedBody;
 
   const userId = req.user ? req.user._id : null;
 
@@ -42,7 +40,7 @@ export const createShortUrl = asyncHandler(async (req, res, next) => {
     checkIfFullUrlExists = await short_urlModel
       .findOne({
         full_url,
-        user: { $exists: false }
+        user: null
       })
       .lean();
   }
@@ -69,85 +67,58 @@ export const createShortUrl = asyncHandler(async (req, res, next) => {
 });
 
 export const redirectFromShortUrl = asyncHandler(async (req, res, next) => {
-  const { short_url } = req.params;
+  const { short_url } = req.validatedParams;
 
-  if (!short_url) {
-    return next(new AppError('Short URL is required', 400));
+  const shortUrlData = await getShortUrl(short_url);
+
+  if (!isSafeRedirectUrl(shortUrlData.full_url)) {
+    logger.warn('Blocked unsafe redirect destination', {
+      short_url,
+      full_url: shortUrlData.full_url
+    });
+    return next(new AppError('Invalid redirect destination', 400));
   }
 
-  const shortUrlData = await getShortUrl(short_url).catch((error) => {
-    if (error.message === 'Short URL not found') {
-      throw new NotFoundError('Short URL not found');
-    }
+  res.redirect(302, shortUrlData.full_url);
 
-    throw error;
-  });
-
-  // Escape HTML entities to prevent XSS from user-supplied short_url
-  const escapeHtml = (str) =>
-    str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
-
-  // Show intermediary redirect page for user context
-  res.status(200).send(`
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-      <meta charset="UTF-8">
-      <meta name="robots" content="noindex">
-      <meta http-equiv="refresh" content="1;url=${shortUrlData.full_url}">
-      <title>Redirecting...</title>
-      <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; background: #f9fafb; }
-        .card { text-align: center; padding: 2rem; max-width: 400px; }
-        .spinner { width: 32px; height: 32px; border: 3px solid #e5e7eb; border-top-color: #6366f1; border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto 1rem; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        p { color: #6b7280; font-size: 14px; margin: 0; }
-      </style>
-    </head>
-    <body>
-      <div class="card">
-        <div class="spinner"></div>
-        <p>Redirecting to <strong>${escapeHtml(short_url)}</strong>...</p>
-      </div>
-    </body>
-    </html>
-  `);
-
-  // Increment the click count asynchronously (don't wait for it)
-  // Using updateOne instead of findByIdAndUpdate for slightly better performance
   const referrer = req.get('referer') || req.get('referrer') || '';
   const country = getCountryFromRequest(req);
   const { user_agent, device_type, browser, os } = parseUserAgent(req);
 
-  setImmediate(() => {
-    short_urlModel
-      .updateOne({ _id: shortUrlData._id }, { $inc: { click: 1 } })
-      .catch((error) => {
-        console.error('Error updating click count:', error);
+  const recordClick = async () => {
+    try {
+      await short_urlModel.updateOne(
+        { _id: shortUrlData._id },
+        { $inc: { click: 1 } }
+      );
+      await Click.create({
+        short_url_id: shortUrlData._id,
+        referrer,
+        country,
+        user_agent,
+        device_type,
+        browser,
+        os,
+        timestamp: new Date()
       });
+    } catch (error) {
+      logger.error('Error recording click', {
+        error: error.message,
+        short_url: shortUrlData.short_url
+      });
+    }
+  };
 
-    Click.create({
-      short_url_id: shortUrlData._id,
-      referrer,
-      country,
-      user_agent,
-      device_type,
-      browser,
-      os,
-      timestamp: new Date()
-    }).catch((error) => {
-      console.error('Error saving click analytics:', error);
-    });
-  });
+  res.once('finish', recordClick);
 });
 
 export const getUserUrls = asyncHandler(async (req, res, _next) => {
   const userId = req.user._id;
-  const query = req.validatedQuery || req.query;
-  const limit = parseInt(query.limit) || 20;
-  const skip = parseInt(query.skip) || 0;
-  const search = query.search || '';
-  const sortBy = query.sortBy || 'createdAt';
+  const query = req.validatedQuery;
+  const limit = query.limit;
+  const skip = query.skip;
+  const search = query.search;
+  const sortBy = query.sortBy;
   const sortOrder = query.sortOrder === 'asc' ? 1 : -1;
 
   // Build base query
@@ -197,18 +168,8 @@ export const getUserUrls = asyncHandler(async (req, res, _next) => {
   );
 });
 
-export const createCustomShortUrl = asyncHandler(async (req, res, next) => {
-  const { full_url, custom_url } = req.body;
-
-  if (!full_url) {
-    return next(new AppError('Full URL is required', 400));
-  }
-
-  if (!custom_url) {
-    return next(new AppError('Custom short URL is required', 400));
-  }
-
-  // This endpoint requires authentication
+export const createCustomShortUrl = asyncHandler(async (req, res, _next) => {
+  const { full_url, custom_url } = req.validatedBody;
   const userId = req.user._id;
 
   const short_url = await createCustomShortUrlService(
@@ -228,15 +189,9 @@ export const createCustomShortUrl = asyncHandler(async (req, res, next) => {
 });
 
 export const deleteShortUrl = asyncHandler(async (req, res, next) => {
-  const params = req.validatedParams || req.params;
-  const { id } = params;
+  const { id } = req.validatedParams;
   const userId = req.user._id;
 
-  if (!id) {
-    return next(new AppError('URL ID is required', 400));
-  }
-
-  // Find the URL and verify ownership - using lean() for performance
   const urlToDelete = await short_urlModel.findById(id).lean();
 
   if (!urlToDelete) {
@@ -244,34 +199,29 @@ export const deleteShortUrl = asyncHandler(async (req, res, next) => {
   }
 
   // Check if the user owns this URL
-  if (urlToDelete.user.toString() !== userId.toString()) {
+  if (!urlToDelete.user || urlToDelete.user.toString() !== userId.toString()) {
     return next(new AppError('You can only delete your own URLs', 403));
   }
 
   // Delete the URL - using deleteOne for slightly better performance
-  await short_urlModel.deleteOne({ _id: id });
+  await short_urlModel.deleteOne({ _id: id, user: userId });
 
-  Click.deleteMany({ short_url_id: id }).catch((error) => {
-    logger.error('Error cleaning up click records', { error: error.message, short_url_id: id });
+  await retryWithBackoff(() => Click.deleteMany({ short_url_id: id }), {
+    onFinalError: (error) => {
+      logger.error('Error cleaning up click records after retries', {
+        error: error.message,
+        short_url_id: id
+      });
+    }
   });
 
   res.json(successResponse(SUCCESS_MESSAGES.URL.DELETED));
 });
 
 export const bulkDeleteUrls = asyncHandler(async (req, res, next) => {
-  const body = req.validatedBody || req.body;
-  const { ids } = body;
+  const { ids } = req.validatedBody;
   const userId = req.user._id;
 
-  if (!ids || !Array.isArray(ids) || ids.length === 0) {
-    return next(new AppError('An array of URL IDs is required', 400));
-  }
-
-  if (ids.length > 50) {
-    return next(new AppError('Cannot delete more than 50 URLs at once', 400));
-  }
-
-  // Verify all URLs belong to the user before deleting
   const urlsToDelete = await short_urlModel
     .find({ _id: { $in: ids }, user: userId })
     .select('_id')
@@ -297,9 +247,17 @@ export const bulkDeleteUrls = asyncHandler(async (req, res, next) => {
     user: userId
   });
 
-  Click.deleteMany({ short_url_id: { $in: ids } }).catch((error) => {
-    logger.error('Error cleaning up click records', { error: error.message, ids });
-  });
+  await retryWithBackoff(
+    () => Click.deleteMany({ short_url_id: { $in: ids } }),
+    {
+      onFinalError: (error) => {
+        logger.error('Error cleaning up click records after retries', {
+          error: error.message,
+          ids
+        });
+      }
+    }
+  );
 
   res.json(
     successResponse(`Successfully deleted ${result.deletedCount} URL(s)`, {

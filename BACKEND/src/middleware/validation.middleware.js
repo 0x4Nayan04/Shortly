@@ -31,6 +31,7 @@ export const validateBody = (schema) => {
 
     // Replace body with validated/sanitized values
     req.body = value;
+    req.validatedBody = value;
     next();
   };
 };

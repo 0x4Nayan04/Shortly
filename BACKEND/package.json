@@ -7,7 +7,9 @@
   "scripts": {
     "dev": "nodemon index.js",
     "start": "node index.js",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test": "node --test tests/",
+    "ci": "npm run lint && npm test"
   },
   "keywords": [],
   "author": "",

@@ -1,5 +1,6 @@
 import RateLimit from '../schema/rateLimit.model.js';
 import { AppError } from '../utils/errorHandler.js';
+import { logger } from '../utils/logger.js';
 
 export const rateLimiter = ({
   windowMs,
@@ -8,6 +9,10 @@ export const rateLimiter = ({
   failClosed = true
 }) => {
   return async (req, res, next) => {
+    if (process.env.NODE_ENV === 'test') {
+      return next();
+    }
+
     try {
       const key = keyGenerator(req);
       const expires_at = new Date(Date.now() + windowMs);
@@ -45,7 +50,7 @@ export const rateLimiter = ({
 
       next();
     } catch (err) {
-      console.error('Rate limit error:', err);
+      logger.error('Rate limit error', { error: err.message });
       if (failClosed) {
         return next(
           new AppError('Service temporarily unavailable. Try again later.', 503)
@@ -57,14 +62,16 @@ export const rateLimiter = ({
 };
 
 function normalizeEmail(email) {
-  return (email || 'unknown').toString().toLowerCase().trim();
+  if (typeof email !== 'string') return 'unknown';
+  return email.toLowerCase().trim().slice(0, 254);
 }
 
 export const keyGenerators = {
   ip: (req) => `ip:${req.ip}`,
-  emailIp: (req) => `login:${normalizeEmail(req.body?.email)}:${req.ip}`,
+  emailIp: (req) =>
+    `login:${normalizeEmail(req.validatedBody?.email ?? req.body?.email)}:${req.ip}`,
   forgotPasswordEmailIp: (req) =>
-    `forgot:${normalizeEmail(req.body?.email)}:${req.ip}`,
+    `forgot:${normalizeEmail(req.validatedBody?.email ?? req.body?.email)}:${req.ip}`,
   userId: (req) => `user:${req.user?._id || 'anon'}`,
   ipPerEndpoint: (endpoint) => (req) => `${endpoint}:${req.ip}`
 };

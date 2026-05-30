@@ -1,16 +1,12 @@
 import QRCode from 'qrcode';
 import short_urlModel from '../schema/shortUrl.model.js';
 import asyncHandler from '../utils/asyncHandler.js';
-import { AppError, NotFoundError } from '../utils/errorHandler.js';
+import { NotFoundError } from '../utils/errorHandler.js';
 import { buildPublicShortUrl } from '../utils/publicShortUrl.js';
 
 export const getQrCode = asyncHandler(async (req, res, next) => {
-  const { short_url } = req.params;
-  const { format } = req.query;
-
-  if (!short_url) {
-    return next(new AppError('Short URL is required', 400));
-  }
+  const { short_url } = req.validatedParams;
+  const { format } = req.validatedQuery;
 
   const exists = await short_urlModel.exists({ short_url });
 

@@ -1,84 +1,100 @@
-import { registerUser, loginUser, changePassword, requestPasswordReset, resetPassword } from "../services/auth.services.js";
-import { findUserById } from "../dao/user.dao.js";
-import { cookieOptions } from "../config/config.js";
-import { AppError, NotFoundError } from "../utils/errorHandler.js";
-import asyncHandler from "../utils/asyncHandler.js";
-import { ERROR_MESSAGES, SUCCESS_MESSAGES, successResponse } from "../utils/responseMessages.js";
+import {
+  registerUser as registerUserService,
+  loginUser as loginUserService,
+  changePassword as changePasswordService,
+  requestPasswordReset as requestPasswordResetService,
+  resetPassword as resetPasswordService
+} from '../services/auth.services.js';
+import { cookieOptions } from '../config/config.js';
+import asyncHandler from '../utils/asyncHandler.js';
+import {
+  SUCCESS_MESSAGES,
+  successResponse
+} from '../utils/responseMessages.js';
+import { findUserById } from '../dao/user.dao.js';
+import { NotFoundError } from '../utils/errorHandler.js';
+import { serializeUser } from '../utils/serializeUser.js';
 
-export const register_user = asyncHandler(async (req, res, next) => {
-  const { name, email, password } = req.body;
+export const registerUser = asyncHandler(async (req, res, _next) => {
+  const { name, email, password } = req.validatedBody;
+  const { token, user } = await registerUserService(name, email, password);
+  res.cookie('token', token, cookieOptions);
+  res.status(201).json(
+    successResponse(SUCCESS_MESSAGES.AUTH.REGISTER_SUCCESS, {
+      user: serializeUser(user)
+    })
+  );
+});
 
-  if (!name || !email || !password) {
-    return next(new AppError(ERROR_MESSAGES.VALIDATION.REQUIRED_FIELDS, 400));
+export const loginUser = asyncHandler(async (req, res, _next) => {
+  const { email, password } = req.validatedBody;
+  const { token, user } = await loginUserService(email, password);
+
+  res
+    .cookie('token', token, cookieOptions)
+    .status(200)
+    .json(
+      successResponse(SUCCESS_MESSAGES.AUTH.LOGIN_SUCCESS, {
+        user: serializeUser(user)
+      })
+    );
+});
+
+export const logoutUser = asyncHandler(async (req, res, _next) => {
+  if (req.user) {
+    req.user.tokenVersion = (req.user.tokenVersion ?? 0) + 1;
+    await req.user.save();
   }
 
-  const { token, user } = await registerUser(name, email, password);
-  res.cookie("token", token, cookieOptions);
-  res
-    .status(201)
-    .json(successResponse(SUCCESS_MESSAGES.AUTH.REGISTER_SUCCESS, { user }));
+  res.clearCookie('token', { ...cookieOptions });
+  res.status(200).json(successResponse(SUCCESS_MESSAGES.AUTH.LOGOUT_SUCCESS));
 });
 
-export const login_user = asyncHandler(async (req, res, next) => {
-  const { email, password } = req.body;
-
-  if (!email || !password) {
-    return next(new AppError(ERROR_MESSAGES.VALIDATION.REQUIRED_FIELDS, 400));
-  }
-
-  const { token, user } = await loginUser(email, password);
-
-  res
-    .cookie("token", token, cookieOptions)
-    .status(200)
-    .json(successResponse(SUCCESS_MESSAGES.AUTH.LOGIN_SUCCESS, { user }));
-});
-
-export const logout_user = asyncHandler((req, res, _next) => {
-  res.clearCookie("token", { ...cookieOptions }); // Ensure secure for production
-  res
-    .status(200)
-    .json(successResponse(SUCCESS_MESSAGES.AUTH.LOGOUT_SUCCESS));
-});
-
-export const get_user_profile = asyncHandler(async (req, res, next) => {
-  const userId = req.user.id; // Assuming 'isLoggedIn' middleware attaches user to req
-
-  const user = await findUserById(userId);
+export const getUserProfile = asyncHandler(async (req, res, next) => {
+  const user = await findUserById(req.user._id);
   if (!user) {
-    return next(new NotFoundError("User not found"));
+    return next(new NotFoundError('User not found'));
   }
-  // Optionally remove password before sending
-  user.password = undefined;
-  res.status(200).json(successResponse("User profile fetched", { user }));
+
+  res.status(200).json(
+    successResponse('User profile fetched', {
+      user: serializeUser(user)
+    })
+  );
 });
 
-export const change_password = asyncHandler(async (req, res, next) => {
-  const body = req.validatedBody || req.body;
-  const { oldPassword, newPassword } = body;
-
-  if (!oldPassword || !newPassword) {
-    return next(new AppError(ERROR_MESSAGES.VALIDATION.REQUIRED_FIELDS, 400));
-  }
-
-  const { token, user } = await changePassword(req.user._id, oldPassword, newPassword);
+export const changePassword = asyncHandler(async (req, res, _next) => {
+  const { oldPassword, newPassword } = req.validatedBody;
+  const { token, user } = await changePasswordService(
+    req.user._id,
+    oldPassword,
+    newPassword
+  );
   res
-    .cookie("token", token, cookieOptions)
+    .cookie('token', token, cookieOptions)
     .status(200)
-    .json(successResponse("Password updated successfully", { user }));
+    .json(
+      successResponse('Password updated successfully', {
+        user: serializeUser(user)
+      })
+    );
 });
 
-export const request_password_reset = asyncHandler(async (req, res, _next) => {
-  const { email } = req.validatedBody || req.body;
-  const result = await requestPasswordReset(email);
+export const requestPasswordReset = asyncHandler(async (req, res, _next) => {
+  const { email } = req.validatedBody;
+  const result = await requestPasswordResetService(email);
   res.status(200).json(successResponse(result.message));
 });
 
-export const reset_password = asyncHandler(async (req, res, _next) => {
-  const { token, password } = req.validatedBody || req.body;
-  const { token: jwtToken, user } = await resetPassword(token, password);
+export const resetPassword = asyncHandler(async (req, res, _next) => {
+  const { token, password } = req.validatedBody;
+  const { token: jwtToken, user } = await resetPasswordService(token, password);
   res
-    .cookie("token", jwtToken, cookieOptions)
+    .cookie('token', jwtToken, cookieOptions)
     .status(200)
-    .json(successResponse("Password reset successfully", { user }));
+    .json(
+      successResponse('Password reset successfully', {
+        user: serializeUser(user)
+      })
+    );
 });

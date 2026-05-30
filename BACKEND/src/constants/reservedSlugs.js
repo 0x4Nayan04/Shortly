@@ -14,7 +14,15 @@ const RESERVED_SLUGS = new Set([
   'privacy',
   'admin',
   'static',
-  'assets'
+  'assets',
+  'reset-password',
+  'forgot-password',
+  'favicon',
+  'robots.txt',
+  'sitemap.xml',
+  'styles',
+  'scripts',
+  'images'
 ]);
 
 export function isReservedSlug(slug) {

@@ -28,6 +28,18 @@ export const errorHandler = (err, req, res, _next) => {
     return res.status(err.statusCode).json(payload);
   }
 
+  if (err.name === 'ValidationError' && err.errors) {
+    const errors = Object.values(err.errors).map((e) => ({
+      field: e.path,
+      message: e.message
+    }));
+    return res.status(400).json({
+      success: false,
+      message: 'Validation failed',
+      errors
+    });
+  }
+
   if (err.name === 'MongoServerError' && err.code === 11000) {
     const field = err.keyPattern ? Object.keys(err.keyPattern)[0] : 'field';
     const message =

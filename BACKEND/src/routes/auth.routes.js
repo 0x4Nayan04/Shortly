@@ -1,12 +1,12 @@
 import express from 'express';
 import {
-  login_user,
-  register_user,
-  logout_user,
-  get_user_profile,
-  change_password,
-  request_password_reset,
-  reset_password
+  loginUser,
+  registerUser,
+  logoutUser,
+  getUserProfile,
+  changePassword,
+  requestPasswordReset,
+  resetPassword
 } from '../controllers/auth.controller.js';
 import { isAuthenticated } from '../middleware/auth.middleware.js';
 import { validateBody } from '../middleware/validation.middleware.js';
@@ -54,34 +54,34 @@ router.post(
   '/register',
   registerLimiter,
   validateBody(registerSchema),
-  register_user
+  registerUser
 );
-router.post('/login', loginLimiter, validateBody(loginSchema), login_user);
+router.post('/login', validateBody(loginSchema), loginLimiter, loginUser);
 
 // Logout should clear cookie even if token expired
-router.post('/logout', logout_user);
+router.post('/logout', logoutUser);
 
 // Public password reset routes
 router.post(
   '/forgot-password',
-  forgotPasswordLimiter,
   validateBody(forgotPasswordSchema),
-  request_password_reset
+  forgotPasswordLimiter,
+  requestPasswordReset
 );
 router.post(
   '/reset-password',
   resetPasswordLimiter,
   validateBody(resetPasswordSchema),
-  reset_password
+  resetPassword
 );
 
 // Protected routes (require authentication)
-router.get('/me', isAuthenticated, get_user_profile);
+router.get('/me', isAuthenticated, getUserProfile);
 router.post(
   '/change-password',
   isAuthenticated,
   validateBody(changePasswordSchema),
-  change_password
+  changePassword
 );
 
 export default router;

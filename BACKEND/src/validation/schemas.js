@@ -8,6 +8,13 @@ import {
 // AUTH VALIDATION SCHEMAS
 // ============================================
 
+const passwordSchema = Joi.string().min(6).max(128).required().messages({
+  'string.empty': 'Password is required',
+  'string.min': 'Password must be at least 6 characters',
+  'string.max': 'Password cannot exceed 128 characters',
+  'any.required': 'Password is required'
+});
+
 export const registerSchema = Joi.object({
   name: Joi.string().trim().min(2).max(50).required().messages({
     'string.empty': 'Name is required',
@@ -20,12 +27,7 @@ export const registerSchema = Joi.object({
     'string.email': 'Please provide a valid email address',
     'any.required': 'Email is required'
   }),
-  password: Joi.string().min(6).max(128).required().messages({
-    'string.empty': 'Password is required',
-    'string.min': 'Password must be at least 6 characters',
-    'string.max': 'Password cannot exceed 128 characters',
-    'any.required': 'Password is required'
-  })
+  password: passwordSchema
 });
 
 export const loginSchema = Joi.object({
@@ -53,10 +55,8 @@ export const resetPasswordSchema = Joi.object({
     'string.empty': 'Reset token is required',
     'any.required': 'Reset token is required'
   }),
-  password: Joi.string().min(6).max(128).required().messages({
+  password: passwordSchema.messages({
     'string.empty': 'New password is required',
-    'string.min': 'Password must be at least 6 characters',
-    'string.max': 'Password cannot exceed 128 characters',
     'any.required': 'New password is required'
   })
 });
@@ -66,10 +66,8 @@ export const changePasswordSchema = Joi.object({
     'string.empty': 'Old password is required',
     'any.required': 'Old password is required'
   }),
-  newPassword: Joi.string().min(6).max(128).required().messages({
+  newPassword: passwordSchema.messages({
     'string.empty': 'New password is required',
-    'string.min': 'New password must be at least 6 characters',
-    'string.max': 'New password cannot exceed 128 characters',
     'any.required': 'New password is required'
   })
 });
@@ -180,4 +178,22 @@ export const bulkDeleteUrlsSchema = Joi.object({
       'array.max': 'Cannot delete more than 50 URLs at once',
       'any.required': 'URL IDs are required'
     })
+});
+
+export const shortUrlParamsSchema = Joi.object({
+  short_url: Joi.string()
+    .trim()
+    .min(1)
+    .max(20)
+    .pattern(/^[a-zA-Z0-9_-]+$/)
+    .required()
+    .messages({
+      'string.empty': 'Short URL is required',
+      'string.pattern.base': 'Invalid short URL format',
+      'any.required': 'Short URL is required'
+    })
+});
+
+export const qrQuerySchema = Joi.object({
+  format: Joi.string().valid('png', 'svg').optional()
 });

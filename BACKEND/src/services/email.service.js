@@ -1,12 +1,15 @@
 import { Resend } from 'resend';
-import { AppError } from '../utils/errorHandler.js';
 import { logger } from '../utils/logger.js';
+import { AppError } from '../utils/errorHandler.js';
 
 let resendClient = null;
 
+export const isPasswordResetEmailConfigured = () =>
+  Boolean(process.env.RESEND_API_KEY?.trim());
+
 const getResendClient = () => {
-  if (!process.env.RESEND_API_KEY) {
-    throw new AppError('Email service is not configured.', 500);
+  if (!isPasswordResetEmailConfigured()) {
+    return null;
   }
 
   if (!resendClient) {
@@ -21,9 +24,20 @@ const FROM_EMAIL =
 
 export const sendPasswordResetEmail = async (email, resetToken) => {
   const resetUrl = `${process.env.FRONT_END_URL}/reset-password/${resetToken}`;
+  const resend = getResendClient();
+
+  if (!resend) {
+    logger.warn('Password reset email skipped: RESEND_API_KEY not configured', {
+      email,
+      ...(process.env.NODE_ENV !== 'production' && { resetUrl })
+    });
+    throw new AppError(
+      'Password reset is unavailable: email service not configured.',
+      503
+    );
+  }
 
   try {
-    const resend = getResendClient();
     await resend.emails.send({
       from: FROM_EMAIL,
       to: email,
@@ -48,7 +62,13 @@ export const sendPasswordResetEmail = async (email, resetToken) => {
       `
     });
   } catch (err) {
-    logger.error('Failed to send password reset email', { error: err.message, email });
-    throw new AppError('Failed to send reset email. Please try again.', 500);
+    logger.error('Failed to send password reset email', {
+      error: err.message,
+      email
+    });
+    throw new AppError(
+      'Failed to send password reset email. Try again later.',
+      500
+    );
   }
 };

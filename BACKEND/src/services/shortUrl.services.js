@@ -5,7 +5,7 @@ import {
 import { saveShortUrl } from '../dao/shortUrl.dao.js';
 import short_urlModel from '../schema/shortUrl.model.js';
 import { generateNanoId } from '../utils/helper.js';
-import { AppError } from '../utils/errorHandler.js';
+import { AppError, NotFoundError } from '../utils/errorHandler.js';
 
 // Helper function to generate a unique short URL
 const generateUniqueShortUrl = async () => {
@@ -18,7 +18,7 @@ const generateUniqueShortUrl = async () => {
     short_url = generateNanoId(7);
 
     if (!short_url) {
-      throw new Error('Failed to generate short URL');
+      throw new AppError('Failed to generate short URL', 500);
     }
 
     // Use lean() and only check for existence (faster than fetching full document)
@@ -31,12 +31,24 @@ const generateUniqueShortUrl = async () => {
   }
 
   if (!isUnique) {
-    throw new Error(
-      'Could not generate unique short URL after multiple attempts'
+    throw new AppError(
+      'Could not generate unique short URL after multiple attempts',
+      500
     );
   }
 
   return short_url;
+};
+
+const findExistingShortUrlForFullUrl = async (full_url, userId) => {
+  const query = userId
+    ? { full_url, user: userId }
+    : { full_url, user: null };
+  const existing = await short_urlModel
+    .findOne(query)
+    .select('short_url')
+    .lean();
+  return existing?.short_url ?? null;
 };
 
 const saveShortUrlWithRetry = async (short_url, full_url, userId) => {
@@ -44,19 +56,31 @@ const saveShortUrlWithRetry = async (short_url, full_url, userId) => {
     await saveShortUrl(short_url, full_url, userId);
     return short_url;
   } catch (err) {
-    if (err.code === 11000 || (err.name === 'MongoServerError' && err.code === 11000)) {
-      const fallback = generateNanoId(7);
-      try {
-        await saveShortUrl(fallback, full_url, userId);
-      } catch (fallbackErr) {
-        if (fallbackErr.code === 11000) {
-          throw new Error('Could not generate unique short URL after collision');
-        }
-        throw fallbackErr;
-      }
-      return fallback;
+    if (err.code !== 11000) {
+      throw err;
     }
-    throw err;
+
+    const keys = err.keyPattern ? Object.keys(err.keyPattern) : [];
+    if (keys.includes('full_url')) {
+      const existing = await findExistingShortUrlForFullUrl(full_url, userId);
+      if (existing) return existing;
+    }
+
+    const fallback = await generateUniqueShortUrl();
+    try {
+      await saveShortUrl(fallback, full_url, userId);
+      return fallback;
+    } catch (fallbackErr) {
+      if (fallbackErr.code === 11000) {
+        const existing = await findExistingShortUrlForFullUrl(full_url, userId);
+        if (existing) return existing;
+        throw new AppError(
+          'Could not generate unique short URL after collision',
+          500
+        );
+      }
+      throw fallbackErr;
+    }
   }
 };
 
@@ -71,24 +95,13 @@ export const createShortUrlWithUser = async (full_url, userId) => {
 };
 
 export const createCustomShortUrl = async (full_url, custom_url, userId) => {
-  // Check if the custom URL already exists - use exists() for faster check
-  const existingShortUrl = await short_urlModel.exists({
-    short_url: custom_url
-  });
-
-  if (existingShortUrl) {
+  if (!custom_url || custom_url.length < 3 || custom_url.length > 20) {
     throw new AppError(
-      'Custom short URL already exists. Please choose a different one.',
-      409
+      'Custom URL must be between 3 and 20 characters long.',
+      400
     );
   }
 
-  // Validate custom URL (basic validation)
-  if (!custom_url || custom_url.length < 3 || custom_url.length > 20) {
-    throw new AppError('Custom URL must be between 3 and 20 characters long.', 400);
-  }
-
-  // Only allow alphanumeric characters and hyphens/underscores
   const validPattern = /^[a-zA-Z0-9_-]+$/;
   if (!validPattern.test(custom_url)) {
     throw new AppError(
@@ -101,7 +114,29 @@ export const createCustomShortUrl = async (full_url, custom_url, userId) => {
     throw new AppError(RESERVED_SLUG_MESSAGE, 400);
   }
 
-  await saveShortUrl(custom_url, full_url, userId);
+  const existingShortUrl = await short_urlModel.exists({
+    short_url: custom_url
+  });
+
+  if (existingShortUrl) {
+    throw new AppError(
+      'Custom short URL already exists. Please choose a different one.',
+      409
+    );
+  }
+
+  try {
+    await saveShortUrl(custom_url, full_url, userId);
+  } catch (err) {
+    if (err.code === 11000) {
+      throw new AppError(
+        'Custom short URL already exists. Please choose a different one.',
+        409
+      );
+    }
+    throw err;
+  }
+
   return custom_url;
 };
 
@@ -114,22 +149,7 @@ export const getShortUrl = async (short_url) => {
     .lean();
 
   if (!shortUrlData) {
-    throw new Error('Short URL not found');
-  }
-  return shortUrlData;
-};
-
-export const getCustomShortUrl = async (short_url, userId) => {
-  // Use lean() for better performance
-  const shortUrlData = await short_urlModel
-    .findOne({
-      short_url,
-      user: userId
-    })
-    .lean();
-
-  if (!shortUrlData) {
-    throw new Error('Custom short URL not found for this user');
+    throw new NotFoundError('Short URL not found');
   }
   return shortUrlData;
 };

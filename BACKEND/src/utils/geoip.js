@@ -22,6 +22,10 @@ export const getCountryFromRequest = (req) => {
     return '';
   }
 
-  const lookup = geoip.lookup(ip);
-  return lookup?.country || '';
+  try {
+    const lookup = geoip.lookup(ip);
+    return lookup?.country || '';
+  } catch {
+    return '';
+  }
 };

@@ -1,10 +1,21 @@
 import { Router } from 'express';
 import mongoose from 'mongoose';
 import { successResponse } from '../utils/responseMessages.js';
+import {
+  rateLimiter,
+  keyGenerators
+} from '../middleware/rateLimit.middleware.js';
 
 const router = Router();
 
-router.get('/', (_req, res) => {
+const healthLimiter = rateLimiter({
+  windowMs: 10 * 1000,
+  max: 10,
+  keyGenerator: keyGenerators.ip,
+  failClosed: false
+});
+
+router.get('/', healthLimiter, (_req, res) => {
   const mongoStates = [
     'disconnected',
     'connected',

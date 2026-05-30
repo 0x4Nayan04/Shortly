@@ -44,6 +44,13 @@ const createLimiter = (req, res, next) => {
   return limiter(req, res, next);
 };
 
+const statsLimiter = rateLimiter({
+  windowMs: 60 * 1000,
+  max: 30,
+  keyGenerator: keyGenerators.userId,
+  failClosed: false
+});
+
 // Public route - creates short URL, no authentication required
 router.post('/', createLimiter, validateBody(createUrlSchema), createShortUrl);
 
@@ -61,9 +68,15 @@ router.get(
   validateQuery(getUserUrlsQuerySchema),
   getUserUrls
 );
-router.get('/stats', isAuthenticated, getUrlStats);
+router.get('/stats', isAuthenticated, statsLimiter, getUrlStats);
 router.delete(
   '/bulk',
+  isAuthenticated,
+  validateBody(bulkDeleteUrlsSchema),
+  bulkDeleteUrls
+);
+router.post(
+  '/bulk-delete',
   isAuthenticated,
   validateBody(bulkDeleteUrlsSchema),
   bulkDeleteUrls

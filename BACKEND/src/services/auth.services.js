@@ -1,8 +1,20 @@
-import crypto from "crypto";
-import { createUser, findUserByEmail, findUserById, findUserByResetToken } from "../dao/user.dao.js";
-import { signToken } from "../utils/helper.js";
-import { AppError } from "../utils/errorHandler.js";
-import { sendPasswordResetEmail } from "./email.service.js";
+import crypto from 'crypto';
+import {
+  createUser,
+  findUserByEmail,
+  findUserById,
+  findUserByResetToken
+} from '../dao/user.dao.js';
+import { signToken } from '../utils/helper.js';
+import { AppError } from '../utils/errorHandler.js';
+import {
+  isPasswordResetEmailConfigured,
+  sendPasswordResetEmail
+} from './email.service.js';
+import { logger } from '../utils/logger.js';
+
+const GENERIC_RESET_MESSAGE =
+  'If an account with that email exists, a reset link has been sent.';
 
 export const registerUser = async (name, email, password) => {
   // Check if user already exists
@@ -10,7 +22,7 @@ export const registerUser = async (name, email, password) => {
 
   if (existingUser) {
     // User already exists, throw error
-    throw new AppError("User already exists with this email", 409);
+    throw new AppError('User already exists with this email', 409);
   }
 
   // User doesn't exist, create new user
@@ -18,7 +30,7 @@ export const registerUser = async (name, email, password) => {
 
   const token = await signToken({
     id: newUser._id,
-    tokenVersion: newUser.tokenVersion ?? 0,
+    tokenVersion: newUser.tokenVersion ?? 0
   });
 
   newUser.password = undefined;
@@ -29,20 +41,19 @@ export const loginUser = async (email, password) => {
   const user = await findUserByEmail(email);
 
   if (!user) {
-    throw new AppError("Invalid Credentials", 401);
+    throw new AppError('Invalid Credentials', 401);
   }
 
   // Assuming you have a comparePassword method on your user model
   const isMatch = await user.comparePassword(password);
 
   if (!isMatch) {
-    throw new AppError("Invalid Credentials", 401);
+    throw new AppError('Invalid Credentials', 401);
   }
 
   const token = await signToken({
     id: user._id,
-    email: user.email,
-    tokenVersion: user.tokenVersion ?? 0,
+    tokenVersion: user.tokenVersion ?? 0
   });
 
   // Remove password from user object before returning
@@ -54,12 +65,12 @@ export const loginUser = async (email, password) => {
 export const changePassword = async (userId, oldPassword, newPassword) => {
   const user = await findUserById(userId);
   if (!user) {
-    throw new AppError("User not found", 404);
+    throw new AppError('User not found', 404);
   }
 
   const isMatch = await user.comparePassword(oldPassword);
   if (!isMatch) {
-    throw new AppError("Old password is incorrect", 401);
+    throw new AppError('Old password is incorrect', 401);
   }
 
   user.password = newPassword;
@@ -68,8 +79,7 @@ export const changePassword = async (userId, oldPassword, newPassword) => {
 
   const token = await signToken({
     id: user._id,
-    email: user.email,
-    tokenVersion: user.tokenVersion ?? 0,
+    tokenVersion: user.tokenVersion ?? 0
   });
 
   user.password = undefined;
@@ -79,22 +89,42 @@ export const changePassword = async (userId, oldPassword, newPassword) => {
 export const requestPasswordReset = async (email) => {
   const user = await findUserByEmail(email);
   if (!user) {
-    return { message: "If an account with that email exists, a reset link has been sent." };
+    return { message: GENERIC_RESET_MESSAGE };
+  }
+
+  if (!isPasswordResetEmailConfigured()) {
+    logger.warn(
+      'Password reset requested but email service is not configured',
+      {
+        email
+      }
+    );
+    throw new AppError(
+      'Password reset is unavailable: email service not configured.',
+      503
+    );
   }
 
   const resetToken = user.generateResetToken();
   await user.save();
 
-  await sendPasswordResetEmail(email, resetToken);
+  try {
+    await sendPasswordResetEmail(email, resetToken);
+  } catch (error) {
+    user.resetPasswordToken = null;
+    user.resetPasswordExpires = null;
+    await user.save();
+    throw error;
+  }
 
-  return { message: "If an account with that email exists, a reset link has been sent." };
+  return { message: GENERIC_RESET_MESSAGE };
 };
 
 export const resetPassword = async (token, newPassword) => {
-  const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+  const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
   const user = await findUserByResetToken(hashedToken);
   if (!user) {
-    throw new AppError("Invalid or expired reset token", 400);
+    throw new AppError('Invalid or expired reset token', 400);
   }
 
   user.password = newPassword;
@@ -105,8 +135,7 @@ export const resetPassword = async (token, newPassword) => {
 
   const jwtToken = await signToken({
     id: user._id,
-    email: user.email,
-    tokenVersion: user.tokenVersion ?? 0,
+    tokenVersion: user.tokenVersion ?? 0
   });
 
   user.password = undefined;
