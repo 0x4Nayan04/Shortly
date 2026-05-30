@@ -90,7 +90,7 @@ const AuthPageShell = ({
   </AppCatalogShell>
 );
 
-const LoginPage = ({ user, navigate, onLoginSuccess, ...shellProps }) => {
+const LoginPage = ({ user, navigate, onLoginSuccess, onLogout, onShowRegister, onShowProfile }) => {
   if (user) {
     return (
       <Navigate
@@ -102,12 +102,14 @@ const LoginPage = ({ user, navigate, onLoginSuccess, ...shellProps }) => {
 
   return (
     <AuthPageShell
-      {...shellProps}
       user={user}
       sectionLabel='SIGN IN'
       headingId='login-heading'
       loadingMessage='Loading sign in form'
-      skeletonVariant='login'>
+      skeletonVariant='login'
+      onLogout={onLogout}
+      onShowRegister={onShowRegister}
+      onShowProfile={onShowProfile}>
       <LoginForm
         onLoginSuccess={onLoginSuccess}
         switchToRegister={() => navigate('/register')}
@@ -117,7 +119,7 @@ const LoginPage = ({ user, navigate, onLoginSuccess, ...shellProps }) => {
   );
 };
 
-const RegisterPage = ({ user, navigate, onRegisterSuccess, ...shellProps }) => {
+const RegisterPage = ({ user, navigate, onRegisterSuccess, onLogout, onShowRegister, onShowProfile }) => {
   if (user) {
     return (
       <Navigate
@@ -129,12 +131,14 @@ const RegisterPage = ({ user, navigate, onRegisterSuccess, ...shellProps }) => {
 
   return (
     <AuthPageShell
-      {...shellProps}
       user={user}
       sectionLabel='REGISTER'
       headingId='register-heading'
       loadingMessage='Loading sign up form'
-      skeletonVariant='register'>
+      skeletonVariant='register'
+      onLogout={onLogout}
+      onShowRegister={onShowRegister}
+      onShowProfile={onShowProfile}>
       <RegisterForm
         onRegisterSuccess={onRegisterSuccess}
         switchToLogin={() => navigate('/login')}
@@ -143,7 +147,7 @@ const RegisterPage = ({ user, navigate, onRegisterSuccess, ...shellProps }) => {
   );
 };
 
-const ForgotPasswordPage = ({ user, navigate, ...shellProps }) => {
+const ForgotPasswordPage = ({ user, navigate, onLogout, onShowRegister, onShowProfile }) => {
   if (user) {
     return (
       <Navigate
@@ -155,18 +159,20 @@ const ForgotPasswordPage = ({ user, navigate, ...shellProps }) => {
 
   return (
     <AuthPageShell
-      {...shellProps}
       user={user}
       sectionLabel='RESET'
       headingId='forgot-heading'
       loadingMessage='Loading password reset form'
-      skeletonVariant='compact'>
+      skeletonVariant='compact'
+      onLogout={onLogout}
+      onShowRegister={onShowRegister}
+      onShowProfile={onShowProfile}>
       <ForgotPassword switchToLogin={() => navigate('/login')} />
     </AuthPageShell>
   );
 };
 
-const ResetPasswordPage = ({ user, ...shellProps }) => {
+const ResetPasswordPage = ({ user, onLogout, onShowRegister, onShowProfile }) => {
   if (user) {
     return (
       <Navigate
@@ -178,13 +184,15 @@ const ResetPasswordPage = ({ user, ...shellProps }) => {
 
   return (
     <AuthPageShell
-      {...shellProps}
       user={user}
       sectionLabel='NEW PASSWORD'
       headingId='reset-heading'
       loadingMessage='Loading new password form'
       skeletonVariant='login'
-      skeletonForgotRow={false}>
+      skeletonForgotRow={false}
+      onLogout={onLogout}
+      onShowRegister={onShowRegister}
+      onShowProfile={onShowProfile}>
       <ResetPassword />
     </AuthPageShell>
   );
@@ -196,11 +204,14 @@ const PROTECTED_ROUTE_PRELOADS = {
   '/settings': () => import('./components/AccountSettings')
 };
 
-const CatalogPageLoader = ({ user, message, ...shellProps }) => (
+const CatalogPageLoader = ({ user, message, onLogout, onShowAuth, onShowRegister, onShowProfile }) => (
   <AppCatalogShell>
     <AppNavbar
       user={user}
-      {...shellProps}
+      onLogout={onLogout}
+      onShowAuth={onShowAuth}
+      onShowRegister={onShowRegister}
+      onShowProfile={onShowProfile}
     />
     <main
       id='main-content'
@@ -223,13 +234,16 @@ const CatalogPageLoader = ({ user, message, ...shellProps }) => (
   </AppCatalogShell>
 );
 
-const ProtectedRoute = ({ user, authChecked, component, shellProps }) => {
+const ProtectedRoute = ({ user, authChecked, component, onLogout, onShowAuth, onShowRegister, onShowProfile }) => {
   if (!authChecked) {
     return (
       <CatalogPageLoader
         user={user}
         message='Checking authentication...'
-        {...shellProps}
+        onLogout={onLogout}
+        onShowAuth={onShowAuth}
+        onShowRegister={onShowRegister}
+        onShowProfile={onShowProfile}
       />
     );
   }
@@ -302,7 +316,6 @@ const App = () => {
           location.pathname === '/dashboard' ||
           location.pathname === '/settings'
         ) {
-          showToast.error('Session expired. Please sign in again.');
           navigate('/login');
         }
       } finally {
@@ -319,6 +332,15 @@ const App = () => {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    const handler = () => {
+      showToast.error('Session expired. Please sign in again.');
+      navigate('/login');
+    };
+    window.addEventListener('auth:expired', handler);
+    return () => window.removeEventListener('auth:expired', handler);
+  }, [navigate]);
 
   const handleAuthSuccess = useCallback(
     async (response) => {
@@ -385,13 +407,6 @@ const App = () => {
 
   const handleCloseProfile = useCallback(() => setShowProfileModal(false), []);
 
-  const shellProps = {
-    onLogout: handleLogout,
-    onShowAuth: showAuth,
-    onShowRegister: showRegister,
-    onShowProfile: handleShowProfile
-  };
-
   return (
     <div className='min-h-screen'>
       <SkipLink targetId='main-content' />
@@ -406,7 +421,10 @@ const App = () => {
           <CatalogPageLoader
             user={user}
             message='Loading page...'
-            {...shellProps}
+            onLogout={handleLogout}
+            onShowAuth={showAuth}
+            onShowRegister={showRegister}
+            onShowProfile={handleShowProfile}
           />
         }>
         <Routes>
@@ -427,7 +445,10 @@ const App = () => {
                 user={user}
                 navigate={navigate}
                 onLoginSuccess={handleAuthSuccess}
-                {...shellProps}
+                onLogout={handleLogout}
+                onShowAuth={showAuth}
+                onShowRegister={showRegister}
+                onShowProfile={handleShowProfile}
               />
             }
           />
@@ -438,7 +459,10 @@ const App = () => {
                 user={user}
                 navigate={navigate}
                 onRegisterSuccess={handleAuthSuccess}
-                {...shellProps}
+                onLogout={handleLogout}
+                onShowAuth={showAuth}
+                onShowRegister={showRegister}
+                onShowProfile={handleShowProfile}
               />
             }
           />
@@ -448,7 +472,10 @@ const App = () => {
               <ProtectedRoute
                 user={user}
                 authChecked={authChecked}
-                shellProps={shellProps}
+                onLogout={handleLogout}
+                onShowAuth={showAuth}
+                onShowRegister={showRegister}
+                onShowProfile={handleShowProfile}
                 component={
                   <Dashboard
                     user={user}
@@ -466,11 +493,17 @@ const App = () => {
               <ProtectedRoute
                 user={user}
                 authChecked={authChecked}
-                shellProps={shellProps}
+                onLogout={handleLogout}
+                onShowAuth={showAuth}
+                onShowRegister={showRegister}
+                onShowProfile={handleShowProfile}
                 component={
                   <AccountSettings
                     user={user}
-                    {...shellProps}
+                    onLogout={handleLogout}
+                    onShowAuth={showAuth}
+                    onShowRegister={showRegister}
+                    onShowProfile={handleShowProfile}
                   />
                 }
               />
@@ -481,7 +514,10 @@ const App = () => {
             element={
               <PrivacyPage
                 user={user}
-                {...shellProps}
+                onLogout={handleLogout}
+                onShowAuth={showAuth}
+                onShowRegister={showRegister}
+                onShowProfile={handleShowProfile}
               />
             }
           />
@@ -491,7 +527,10 @@ const App = () => {
               <ForgotPasswordPage
                 user={user}
                 navigate={navigate}
-                {...shellProps}
+                onLogout={handleLogout}
+                onShowAuth={showAuth}
+                onShowRegister={showRegister}
+                onShowProfile={handleShowProfile}
               />
             }
           />
@@ -500,7 +539,10 @@ const App = () => {
             element={
               <ResetPasswordPage
                 user={user}
-                {...shellProps}
+                onLogout={handleLogout}
+                onShowAuth={showAuth}
+                onShowRegister={showRegister}
+                onShowProfile={handleShowProfile}
               />
             }
           />
@@ -509,7 +551,10 @@ const App = () => {
             element={
               <NotFound
                 user={user}
-                {...shellProps}
+                onLogout={handleLogout}
+                onShowAuth={showAuth}
+                onShowRegister={showRegister}
+                onShowProfile={handleShowProfile}
               />
             }
           />
