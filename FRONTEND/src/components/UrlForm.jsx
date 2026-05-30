@@ -25,7 +25,7 @@ import {
     useCopyToClipboard,
 } from "./UxEnhancements";
 
-const UrlInputBar = ({ url, setUrl, loading, error, fieldErrors, touched, handleChange, handleBlur, handleSubmit, showPrefix, shortUrl, children }) => {
+const UrlInputBar = ({ url, setUrl, loading, fieldErrors, touched, handleChange, handleBlur, showPrefix, shortUrl, children }) => {
     const urlHasError = touched.url && fieldErrors.url;
 
     return (
@@ -256,7 +256,6 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth, variant = "default" }) => {
         announce("Short URL copied to clipboard");
     };
 
-    const urlHasError = touched.url && fieldErrors.url;
     const aliasHasError = touched.customAlias && fieldErrors.customAlias;
 
     return (

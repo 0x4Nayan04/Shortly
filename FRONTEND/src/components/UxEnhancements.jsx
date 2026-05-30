@@ -667,7 +667,7 @@ export const useConfirmDialog = () => {
  * Confirmation Dialog Component
  */
 
-const scrollLockCount = useRef(0);
+const scrollLockCount = { current: 0 };
 
 export function useBodyScrollLock(isLocked) {
   useEffect(() => {
