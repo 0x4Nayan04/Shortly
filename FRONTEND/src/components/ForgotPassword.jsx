@@ -1,6 +1,10 @@
 import { useState } from 'react';
-import { Mail } from 'lucide-react';
+import { Loader2, Mail } from 'lucide-react';
 import { forgotPassword } from '../api/user.api';
+import {
+  formSuccessIconWrapClass,
+  getDesignInputClass
+} from '../utils/designFormClasses';
 import { validators } from '../utils/validation';
 import { showToast } from './UxEnhancements';
 
@@ -47,23 +51,24 @@ const ForgotPassword = ({ switchToLogin }) => {
 
   if (sent) {
     return (
-      <div className='max-w-md mx-auto mt-6 sm:mt-8 p-4 sm:p-6 bg-white rounded-lg shadow-md border border-gray-200 text-center'>
-        <div className='w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4'>
+      <div className='app-panel text-center'>
+        <div className={formSuccessIconWrapClass}>
           <Mail
-            className='w-8 h-8 text-green-600'
+            className='h-8 w-8 text-primary'
             aria-hidden='true'
           />
         </div>
-        <h2 className='text-xl font-bold text-gray-800 mb-2'>
+        <h2 className='font-display text-xl font-medium tracking-display text-ink mb-2'>
           Check your email
         </h2>
-        <p className='text-gray-600 mb-6'>
-          If an account exists for <strong>{email}</strong>, you&apos;ll receive
-          a password reset link shortly.
+        <p className='text-muted-strong mb-6'>
+          If an account exists for <strong className='text-ink'>{email}</strong>
+          , you&apos;ll receive a password reset link shortly.
         </p>
         <button
+          type='button'
           onClick={switchToLogin}
-          className='text-blue-600 hover:text-blue-800 font-medium hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded'>
+          className='landing-text-link font-medium'>
           Back to sign in
         </button>
       </div>
@@ -71,24 +76,27 @@ const ForgotPassword = ({ switchToLogin }) => {
   }
 
   return (
-    <div className='max-w-md mx-auto mt-6 sm:mt-8 p-4 sm:p-6 bg-white rounded-lg shadow-md border border-gray-200'>
-      <div className='text-center mb-6'>
-        <h2 className='text-xl sm:text-2xl font-bold text-gray-800'>
+    <div className='app-panel'>
+      <div className='mb-6 text-center'>
+        <h2
+          id='forgot-heading'
+          className='font-display text-xl font-medium tracking-display text-ink sm:text-2xl'>
           Reset your password
         </h2>
-        <p className='text-gray-600 mt-2'>
+        <p className='mt-2 text-muted-strong'>
           Enter your email and we&apos;ll send you a reset link.
         </p>
       </div>
 
       <form
         onSubmit={handleSubmit}
-        className='space-y-4'>
+        className='space-y-4'
+        aria-labelledby='forgot-heading'>
         <div>
           <label
             htmlFor='forgot-email'
-            className='block text-sm font-medium text-gray-700 mb-1'>
-            Email Address
+            className='sm-label'>
+            Email address
           </label>
           <input
             id='forgot-email'
@@ -100,11 +108,9 @@ const ForgotPassword = ({ switchToLogin }) => {
             }}
             onBlur={handleBlur}
             placeholder='Enter your email'
-            className={`w-full px-4 py-3 border rounded-lg text-base focus:outline-none focus-visible:ring-2 transition-colors ${
-              touched && error
-                ? 'border-red-300 focus-visible:ring-red-500'
-                : 'border-gray-300 focus-visible:ring-blue-500'
-            }`}
+            className={getDesignInputClass({
+              hasError: touched && !!error
+            })}
             aria-invalid={touched && !!error}
             aria-describedby={error ? 'forgot-email-error' : undefined}
             autoComplete='email'
@@ -112,7 +118,7 @@ const ForgotPassword = ({ switchToLogin }) => {
           {touched && error && (
             <p
               id='forgot-email-error'
-              className='mt-1 text-sm text-red-600'
+              className='sm-field-error'
               role='alert'>
               {error}
             </p>
@@ -123,25 +129,28 @@ const ForgotPassword = ({ switchToLogin }) => {
           type='submit'
           disabled={loading}
           aria-busy={loading}
-          className='w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white font-medium rounded-lg text-base transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2'>
-          {loading ? 'Sending...' : 'Send reset link'}
+          className='sm-btn sm-btn-primary sm-btn-block'>
+          {loading ? (
+            <>
+              <Loader2
+                className='h-5 w-5 animate-spin'
+                aria-hidden='true'
+              />
+              Sending...
+            </>
+          ) : (
+            'Send reset link'
+          )}
         </button>
       </form>
 
-      {error && (
-        <div
-          className='mt-4 p-3 bg-red-100 border border-red-300 text-red-700 rounded-lg text-sm'
-          role='alert'>
-          {error}
-        </div>
-      )}
-
       <div className='mt-6 text-center'>
-        <p className='text-sm text-gray-600'>
+        <p className='text-sm text-muted-strong'>
           Remember your password?{' '}
           <button
+            type='button'
             onClick={switchToLogin}
-            className='text-blue-600 hover:text-blue-800 font-medium hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded'>
+            className='landing-text-link font-medium'>
             Sign in
           </button>
         </p>

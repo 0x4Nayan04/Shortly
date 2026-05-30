@@ -1,74 +1,36 @@
-import UrlForm from '../components/UrlForm';
-import { useNavigate } from 'react-router-dom';
+import LandingFaq from './landing/LandingFaq';
+import LandingFeaturesCatalog from './landing/LandingFeaturesCatalog';
+import SiteFooterBar from './landing/SiteFooterBar';
+import LandingFrame, { LandingSectionBlock } from './landing/LandingFrame';
+import LandingHero from './landing/LandingHero';
+import LandingNavbar from './landing/LandingNavbar';
 
-const LandingPage = ({ onShowAuth, user }) => {
-	const navigate = useNavigate();
-	return (
-		<main id="main-content" className='min-h-[calc(100vh-4rem)] bg-gradient-to-br from-blue-50 to-indigo-100' role="main">
-			{/* Hero Section */}
-			<div className='max-w-4xl mx-auto px-4 pt-12 sm:pt-20 pb-12 sm:pb-16 text-center'>
-				<h1 className='text-4xl sm:text-5xl md:text-6xl font-bold text-gray-900 mb-6'>
-					Shorten URLs.
-					<br />
-					<span className='text-blue-600'>Share Everywhere.</span>
-				</h1>
-				<p className='text-sm sm:text-base md:text-xl text-gray-600 mb-8 sm:mb-12 max-w-2xl mx-auto'>
-					Transform long, complex URLs into short, memorable links that are easy
-					to share and track.
-				</p>
-
-				{/* URL Shortener Card */}
-				<section 
-					className='max-w-2xl mx-auto'
-					aria-labelledby="url-shortener-heading"
-				>
-					<h2 id="url-shortener-heading" className="sr-only">URL Shortener</h2>
-					<div className='bg-white rounded-2xl shadow-xl p-4 sm:p-6 md:p-8 border border-gray-100'>
-						<UrlForm
-							user={user}
-							onShowAuth={() => navigate('/login')}
-						/>
-
-						{/* Call to Action - Only show if user is not logged in */}
-						{!user && (
-							<div className='mt-6 sm:mt-8 p-4 sm:p-6 bg-blue-50 rounded-xl border border-blue-100'>
-								<h3 className='text-lg font-semibold text-blue-900 mb-2'>
-									Want to track and manage your links?
-								</h3>
-								<p className='text-blue-700 mb-4'>
-									Create an account to save your URLs and create custom short
-									links.
-								</p>
-								<button
-									onClick={onShowAuth}
-									className='bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2'>
-									Get Started Free
-								</button>
-							</div>
-						)}
-
-						{/* Logged in user message */}
-						{user && (
-							<div className='mt-6 sm:mt-8 p-4 sm:p-6 bg-green-50 rounded-xl border border-green-100'>
-								<h3 className='text-lg font-semibold text-green-900 mb-2'>
-									Welcome back, {user.name}!
-								</h3>
-								<p className='text-green-700 mb-4'>
-									You're logged in and ready to create short URLs. Visit your
-									dashboard to manage all your links.
-								</p>
-								<button
-									onClick={() => navigate('/dashboard')}
-									className='bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2'>
-									Go to Dashboard
-								</button>
-							</div>
-						)}
-					</div>
-				</section>
-			</div>
-		</main>
-	);
-};
+const LandingPage = ({ onLogout, user }) => (
+  <div className='landing-page flex min-h-screen flex-col'>
+    <LandingFrame>
+      <LandingNavbar
+        user={user}
+        onLogout={onLogout}
+      />
+      <main
+        id='main-content'
+        className='flex-1'
+        role='main'>
+        <LandingSectionBlock>
+          <LandingHero user={user} />
+        </LandingSectionBlock>
+        <LandingSectionBlock>
+          <LandingFeaturesCatalog />
+        </LandingSectionBlock>
+        <LandingSectionBlock>
+          <LandingFaq />
+        </LandingSectionBlock>
+      </main>
+      <LandingSectionBlock>
+        <SiteFooterBar />
+      </LandingSectionBlock>
+    </LandingFrame>
+  </div>
+);
 
 export default LandingPage;

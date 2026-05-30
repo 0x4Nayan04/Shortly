@@ -1,32 +1,19 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Info } from 'lucide-react';
-import { getUrlStats } from '../api/shortUrl.api';
 import { changePassword } from '../api/user.api';
-import { showToast, LoadingButton } from './UxEnhancements';
+import { getDesignInputClass } from '../utils/designFormClasses';
 import {
   validators,
   validateForm,
   hasErrors,
   getFirstError
 } from '../utils/validation';
+import AppCatalogShell, { LandingFrameInner, LandingSectionBlock } from './app/AppCatalogShell';
+import AppNavbar from './app/AppNavbar';
+import PasswordVisibilityToggle from './PasswordVisibilityToggle';
+import { showToast, LoadingButton } from './UxEnhancements';
 
-const accountLoadingSkeleton = (
-  <div className='space-y-4'>
-    <div className='animate-pulse'>
-      <div className='h-8 bg-gray-200 rounded'></div>
-    </div>
-    <div className='animate-pulse'>
-      <div className='h-8 bg-gray-200 rounded'></div>
-    </div>
-  </div>
-);
-
-const AccountSettings = ({ user }) => {
-  const [userStats, setUserStats] = useState({
-    totalUrls: 0,
-    totalClicks: 0
-  });
-  const [loading, setLoading] = useState(true);
+const AccountSettings = ({ user, onLogout, onShowAuth, onShowProfile }) => {
   const [passwordForm, setPasswordForm] = useState({
     oldPassword: '',
     newPassword: '',
@@ -34,27 +21,9 @@ const AccountSettings = ({ user }) => {
   });
   const [passwordErrors, setPasswordErrors] = useState({});
   const [passwordLoading, setPasswordLoading] = useState(false);
-
-  useEffect(() => {
-    const fetchUserStats = async () => {
-      try {
-        const response = await getUrlStats();
-        const payload = response?.data;
-        if (payload?.stats) {
-          setUserStats({
-            totalUrls: payload.stats.totalUrls || 0,
-            totalClicks: payload.stats.totalClicks || 0
-          });
-        }
-      } catch (error) {
-        console.error('Error fetching user stats:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUserStats();
-  }, []);
+  const [showOldPassword, setShowOldPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handlePasswordChange = async (event) => {
     event.preventDefault();
@@ -81,6 +50,7 @@ const AccountSettings = ({ user }) => {
         newPassword: '',
         confirmPassword: ''
       });
+      setPasswordErrors({});
     } catch (error) {
       const apiMessage =
         error?.response?.data?.message || 'Failed to update password';
@@ -91,124 +61,163 @@ const AccountSettings = ({ user }) => {
   };
 
   return (
-    <div className='min-h-[calc(100vh-4rem)] bg-gray-50'>
-      <div className='max-w-4xl mx-auto px-4 py-6 sm:py-8'>
-        <div className='mb-6 sm:mb-8'>
-          <h1 className='text-2xl sm:text-3xl font-bold text-gray-900 mb-2'>
-            Account Settings
-          </h1>
-          <p className='text-gray-600'>
-            Manage your account information and preferences
-          </p>
-        </div>
-
-        <div className='grid grid-cols-1 lg:grid-cols-3 gap-8'>
-          {/* Profile Section */}
-          <div className='lg:col-span-2 space-y-6'>
-            {/* Profile Information */}
-            <div className='bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6'>
-              <h2 className='text-xl font-semibold text-gray-900 mb-6'>
-                Profile Information
-              </h2>
-
-              <div className='flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 mb-6'>
-                <div className='relative'>
-                  <img
-                    src={user.avatar}
-                    alt={user.name}
-                    className='w-20 h-20 rounded-full shadow-lg'
-                    onError={(e) => {
-                      e.target.style.display = 'none';
-                      e.target.nextElementSibling.style.display = 'flex';
-                    }}
-                  />
-                  <div className='w-20 h-20 bg-blue-100 rounded-full items-center justify-center shadow-lg hidden'>
-                    <span className='text-2xl font-bold text-blue-600'>
-                      {(user.name || user.email || 'U').charAt(0).toUpperCase()}
-                    </span>
-                  </div>
-                </div>
-                <div className='flex-1 min-w-0'>
-                  <h3 className='text-lg font-medium text-gray-900'>
-                    {user.name}
-                  </h3>
-                  <p className='text-gray-600 break-all'>{user.email}</p>
-                  <p className='text-sm text-gray-500 mt-1'>
-                    Avatar powered by Gravatar
+    <AppCatalogShell>
+      <AppNavbar
+        user={user}
+        onLogout={onLogout}
+        onShowAuth={onShowAuth}
+        onShowProfile={onShowProfile}
+      />
+      <main
+        id='main-content'
+        className='flex-1'
+        role='main'
+        aria-labelledby='settings-heading'>
+        <LandingSectionBlock>
+          <LandingFrameInner className='landing-section-intro dashboard-workspace-intro'>
+            <div className='settings-workspace dashboard-workspace'>
+              <div className='dashboard-workspace-head'>
+                <header className='dashboard-workspace-hero'>
+                  <h1
+                    id='settings-heading'
+                    className='landing-section-title text-ink'>
+                    Account settings
+                    <span className='text-primary'>.</span>
+                  </h1>
+                  <p className='landing-section-lead'>
+                    Profile, security, and usage for your Shortly account
                   </p>
-                </div>
+                </header>
               </div>
 
-              <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-                <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-2'>
-                    Full Name
-                  </label>
-                  <input
-                    type='text'
-                    value={user.name}
-                    disabled
-                    className='w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed'
-                  />
-                </div>
-                <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-2'>
-                    Email Address
-                  </label>
-                  <input
-                    type='email'
-                    value={user.email}
-                    disabled
-                    className='w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed'
-                  />
-                </div>
-              </div>
+              <div className='settings-workspace__grid'>
+                <section
+                  aria-labelledby='settings-profile-heading'
+                  className='app-panel settings-workspace__panel settings-workspace__panel--profile'>
+                  <h2
+                    id='settings-profile-heading'
+                    className='dashboard-shorten-panel__heading'>
+                    Profile
+                  </h2>
 
-              <div className='mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg'>
-                <div className='flex items-start'>
-                  <Info
-                    className='w-5 h-5 text-blue-600 mt-0.5 mr-3 shrink-0'
-                    aria-hidden='true'
-                  />
-                  <div>
-                    <h4 className='text-sm font-medium text-blue-900'>
-                      Profile Editing Coming Soon
-                    </h4>
-                    <p className='text-sm text-blue-700 mt-1'>
-                      Profile editing features will be available in a future
-                      update. Your avatar is automatically generated from your
-                      email using Gravatar.
-                    </p>
+                <div className='settings-workspace__panel-body'>
+                  <div className='settings-profile__identity'>
+                    <div className='relative shrink-0'>
+                      <img
+                        src={user.avatar}
+                        alt=''
+                        className='settings-profile__avatar'
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.nextElementSibling.style.display = 'flex';
+                        }}
+                      />
+                      <div
+                        className='settings-profile__avatar settings-profile__avatar--fallback'
+                        style={{ display: 'none' }}
+                        aria-hidden='true'>
+                        <span className='font-display text-lg font-medium text-primary'>
+                          {(user.name || user.email || 'U')
+                            .charAt(0)
+                            .toUpperCase()}
+                        </span>
+                      </div>
+                    </div>
+                    <div className='min-w-0 flex-1'>
+                      <p className='font-medium text-ink'>{user.name}</p>
+                      <p className='settings-profile__email font-mono text-sm text-muted-strong'>
+                        {user.email}
+                      </p>
+                      <p className='mt-0.5 text-xs text-muted'>
+                        Avatar from Gravatar
+                      </p>
+                    </div>
                   </div>
-                </div>
-              </div>
-            </div>
 
-            {/* Security Section */}
-            <div className='bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6'>
-              <h2 className='text-xl font-semibold text-gray-900 mb-6'>
-                Security
-              </h2>
-
-              <div className='space-y-4'>
-                <div className='p-4 border border-gray-200 rounded-lg'>
-                  <div className='mb-4'>
-                    <h3 className='text-sm font-medium text-gray-900'>
-                      Password
-                    </h3>
-                    <p className='text-sm text-gray-600'>
-                      Update your password to keep your account secure
-                    </p>
-                  </div>
-                  <form
-                    className='space-y-4'
-                    onSubmit={handlePasswordChange}>
-                    <div>
-                      <label className='block text-sm font-medium text-gray-700 mb-2'>
-                        Current Password
+                  <div className='settings-profile__fields'>
+                    <div className='settings-profile__field settings-profile__field--name min-w-0'>
+                      <label
+                        htmlFor='settings-name'
+                        className='sm-label'>
+                        Full name
                       </label>
                       <input
-                        type='password'
+                        id='settings-name'
+                        type='text'
+                        value={user.name}
+                        readOnly
+                        className={`${getDesignInputClass()} w-full min-w-0 bg-surface-muted border-dashed cursor-default`}
+                      />
+                    </div>
+                    <div className='settings-profile__field settings-profile__field--email min-w-0'>
+                      <span
+                        id='settings-email-label'
+                        className='sm-label'>
+                        Email
+                      </span>
+                      <p
+                        id='settings-email'
+                        className='settings-profile__field-value settings-profile__email font-mono text-sm text-ink'
+                        aria-labelledby='settings-email-label'>
+                        {user.email}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div
+                    className='settings-profile__notice'
+                    role='note'>
+                    <Info
+                      className='settings-profile__notice-icon'
+                      aria-hidden='true'
+                    />
+                    <p className='text-sm text-muted-strong'>
+                      <span className='font-medium text-ink'>
+                        Profile editing coming soon.
+                      </span>{' '}
+                      Name and email are read-only for now; your avatar follows
+                      your Gravatar address.
+                    </p>
+                  </div>
+
+                  <button
+                    type='button'
+                    disabled
+                    title='Profile editing coming soon'
+                    className='sm-btn sm-btn-secondary w-full cursor-not-allowed opacity-50'>
+                    Save changes
+                  </button>
+                </div>
+              </section>
+
+              <section
+                aria-labelledby='settings-security-heading'
+                className='app-panel settings-workspace__panel settings-workspace__panel--security'>
+                <h2
+                  id='settings-security-heading'
+                  className='dashboard-shorten-panel__heading'>
+                  Security
+                </h2>
+                <div className='settings-workspace__panel-body'>
+                  <p className='settings-security__lead'>
+                    Update your password to keep your account secure.
+                  </p>
+
+                  <form
+                    className='settings-security__form'
+                    onSubmit={handlePasswordChange}
+                    noValidate>
+                  <div>
+                    <label
+                      htmlFor='settings-old-password'
+                      className='sm-label'>
+                      Current password
+                    </label>
+                    <div className='relative'>
+                      <input
+                        id='settings-old-password'
+                        type={showOldPassword ? 'text' : 'password'}
+                        autoComplete='current-password'
                         value={passwordForm.oldPassword}
                         onChange={(e) =>
                           setPasswordForm((prev) => ({
@@ -216,121 +225,127 @@ const AccountSettings = ({ user }) => {
                             oldPassword: e.target.value
                           }))
                         }
-                        className='w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500'
+                        className={getDesignInputClass({
+                          hasError: Boolean(passwordErrors.oldPassword),
+                          className: 'pr-12'
+                        })}
                       />
-                      {passwordErrors.oldPassword && (
-                        <p className='text-sm text-red-600 mt-1'>
-                          {passwordErrors.oldPassword}
-                        </p>
-                      )}
+                      <PasswordVisibilityToggle
+                        visible={showOldPassword}
+                        onToggle={() => setShowOldPassword((v) => !v)}
+                      />
                     </div>
+                    {passwordErrors.oldPassword && (
+                      <p className='sm-field-error'>
+                        {passwordErrors.oldPassword}
+                      </p>
+                    )}
+                  </div>
+                  <div className='settings-security__password-row'>
                     <div>
-                      <label className='block text-sm font-medium text-gray-700 mb-2'>
-                        New Password
+                      <label
+                        htmlFor='settings-new-password'
+                        className='sm-label'>
+                        New password
                       </label>
-                      <input
-                        type='password'
-                        value={passwordForm.newPassword}
-                        onChange={(e) =>
-                          setPasswordForm((prev) => ({
-                            ...prev,
-                            newPassword: e.target.value
-                          }))
-                        }
-                        className='w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500'
-                      />
+                      <div className='relative'>
+                        <input
+                          id='settings-new-password'
+                          type={showNewPassword ? 'text' : 'password'}
+                          autoComplete='new-password'
+                          value={passwordForm.newPassword}
+                          onChange={(e) =>
+                            setPasswordForm((prev) => ({
+                              ...prev,
+                              newPassword: e.target.value
+                            }))
+                          }
+                          className={getDesignInputClass({
+                            hasError: Boolean(passwordErrors.newPassword),
+                            className: 'pr-12'
+                          })}
+                        />
+                        <PasswordVisibilityToggle
+                          visible={showNewPassword}
+                          onToggle={() => setShowNewPassword((v) => !v)}
+                        />
+                      </div>
                       {passwordErrors.newPassword && (
-                        <p className='text-sm text-red-600 mt-1'>
+                        <p className='sm-field-error'>
                           {passwordErrors.newPassword}
                         </p>
                       )}
                     </div>
                     <div>
-                      <label className='block text-sm font-medium text-gray-700 mb-2'>
-                        Confirm New Password
+                      <label
+                        htmlFor='settings-confirm-password'
+                        className='sm-label'>
+                        Confirm password
                       </label>
-                      <input
-                        type='password'
-                        value={passwordForm.confirmPassword}
-                        onChange={(e) =>
-                          setPasswordForm((prev) => ({
-                            ...prev,
-                            confirmPassword: e.target.value
-                          }))
-                        }
-                        className='w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500'
-                      />
+                      <div className='relative'>
+                        <input
+                          id='settings-confirm-password'
+                          type={showConfirmPassword ? 'text' : 'password'}
+                          autoComplete='new-password'
+                          value={passwordForm.confirmPassword}
+                          onChange={(e) =>
+                            setPasswordForm((prev) => ({
+                              ...prev,
+                              confirmPassword: e.target.value
+                            }))
+                          }
+                          className={getDesignInputClass({
+                            hasError: Boolean(passwordErrors.confirmPassword),
+                            className: 'pr-12'
+                          })}
+                        />
+                        <PasswordVisibilityToggle
+                          visible={showConfirmPassword}
+                          onToggle={() => setShowConfirmPassword((v) => !v)}
+                        />
+                      </div>
                       {passwordErrors.confirmPassword && (
-                        <p className='text-sm text-red-600 mt-1'>
+                        <p className='sm-field-error'>
                           {passwordErrors.confirmPassword}
                         </p>
                       )}
                     </div>
-                    <LoadingButton
-                      type='submit'
-                      loading={passwordLoading}
-                      loadingText='Updating...'
-                      className='w-full sm:w-auto px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg'
-                      disabled={
-                        !passwordForm.oldPassword ||
-                        !passwordForm.newPassword ||
-                        !passwordForm.confirmPassword
-                      }>
-                      Update Password
-                    </LoadingButton>
-                  </form>
-                </div>
-
-                <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 border border-gray-200 rounded-lg'>
-                  <div className='min-w-0'>
-                    <h3 className='text-sm font-medium text-gray-900'>
-                      Two-Factor Authentication
-                    </h3>
-                    <p className='text-sm text-gray-600'>
-                      Add an extra layer of security to your account
-                    </p>
                   </div>
-                  <button
-                    disabled
-                    className='w-full sm:w-auto shrink-0 px-4 py-2 text-sm font-medium text-gray-400 bg-gray-100 rounded-lg cursor-not-allowed'>
-                    Coming Soon
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
+                  <LoadingButton
+                    type='submit'
+                    loading={passwordLoading}
+                    loadingText='Updating...'
+                    className='sm-btn sm-btn-primary w-full md:w-auto'
+                    disabled={
+                      !passwordForm.oldPassword ||
+                      !passwordForm.newPassword ||
+                      !passwordForm.confirmPassword
+                    }>
+                    Update password
+                  </LoadingButton>
+                </form>
 
-          {/* Sidebar */}
-          <div className='space-y-6'>
-            {/* Account Stats */}
-            <div className='bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6'>
-              <h3 className='text-lg font-semibold text-gray-900 mb-4'>
-                Account Statistics
-              </h3>
-
-              {loading ? (
-                accountLoadingSkeleton
-              ) : (
-                <div className='space-y-4'>
-                  <div className='flex items-center justify-between'>
-                    <span className='text-sm text-gray-600'>URLs Created</span>
-                    <span className='text-2xl font-bold text-blue-600'>
-                      {userStats.totalUrls}
-                    </span>
-                  </div>
-                  <div className='flex items-center justify-between'>
-                    <span className='text-sm text-gray-600'>Total Clicks</span>
-                    <span className='text-2xl font-bold text-green-600'>
-                      {userStats.totalClicks}
+                  <div className='settings-security__2fa'>
+                    <div className='min-w-0'>
+                      <p className='settings-security__2fa-title'>
+                        Two-factor authentication
+                      </p>
+                      <p className='text-sm text-muted'>
+                        Extra sign-in protection
+                      </p>
+                    </div>
+                    <span className='inline-flex items-center border border-border bg-blue-tint px-2 py-0.5 text-[11px] font-medium leading-tight text-primary'>
+                      Coming soon
                     </span>
                   </div>
                 </div>
-              )}
+              </section>
             </div>
-          </div>
-        </div>
-      </div>
-    </div>
+            </div>
+          </LandingFrameInner>
+        </LandingSectionBlock>
+      </main>
+    </AppCatalogShell>
   );
 };
 

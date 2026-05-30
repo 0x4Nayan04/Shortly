@@ -1,37 +1,52 @@
-@import url("https://fonts.googleapis.com/css2?family=Geist:wght@100..900&display=swap");
-@import "tailwindcss";
+@import './styles/shortly-design-tokens.css';
+@import 'tailwindcss';
 
 /* Reset and base styles */
 * {
   box-sizing: border-box;
 }
 
-/* body {
-  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
-    sans-serif;
-  background-color: #fafafa;
-  color: #111827;
-  line-height: 1.6;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-} */
-
-html,
+/* Only clip horizontal overflow on body — overflow-x on html breaks position:sticky section bars */
 body {
   overflow-x: hidden;
 }
 
 body {
-  font-family: "Geist", sans-serif;
+  font-family: var(--font-sans, system-ui, sans-serif);
+  background-color: var(--color-background, #f5f9ff);
+  color: var(--color-ink, #0b1015);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 button,
 a[href],
-[role="button"],
-input[type="checkbox"],
-input[type="radio"],
+[role='button'],
+input[type='checkbox'],
+input[type='radio'],
 select {
   cursor: pointer;
+}
+
+/* Catalog row labels should never render an underline or pseudo underline. */
+.catalog-list .catalog-row-label,
+.catalog-list .catalog-row-label::before,
+.catalog-list .catalog-row-label::after,
+.catalog-list .catalog-row--active .catalog-row-label,
+.catalog-list .catalog-row--active .catalog-row-label::before,
+.catalog-list .catalog-row--active .catalog-row-label::after {
+  text-decoration: none !important;
+  border-bottom: 0 !important;
+  box-shadow: none !important;
+}
+
+.catalog-list .catalog-row-label::before,
+.catalog-list .catalog-row-label::after,
+.catalog-list .catalog-row--active .catalog-row-label::before,
+.catalog-list .catalog-row--active .catalog-row-label::after {
+  content: none !important;
+  display: none !important;
 }
 
 /* ============================================
@@ -64,46 +79,108 @@ select {
   white-space: normal;
 }
 
-/* Focus visible styles for better keyboard navigation */
-/* Fallback for browsers that don't support :focus-visible */
-:focus {
-  outline: 3px solid #4f46e5;
-  outline-offset: 2px;
-  border-radius: 4px;
-}
+/* ═══════════════════════════════════════════════════════════════════════════
+   Design-system focus policy — flat material, no rounded browser blue rings.
+   Applies app-wide (landing + catalog routes).
+   ═══════════════════════════════════════════════════════════════════════════ */
 
-/* Remove default focus outline when using mouse */
 :focus:not(:focus-visible) {
   outline: none;
 }
 
-/* Enhanced keyboard focus for browsers that support :focus-visible */
-:focus-visible {
-  outline: 3px solid #4f46e5;
-  outline-offset: 2px;
-  border-radius: 4px;
-  box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.15);
+/* ── sm-input: flat border tint on focus ── */
+.sm-input:focus,
+.sm-input:focus-visible {
+  outline: none;
+  border-radius: 0;
+}
+.sm-input:focus-visible {
+  border-color: var(--color-primary, #0562ef);
+  box-shadow: var(--shadow-focus, rgba(5, 98, 239, 0.1) 0px 0px 0px 4px);
+}
+.sm-input--error:focus-visible,
+.sm-input[aria-invalid='true']:focus-visible {
+  border-color: #dc2626;
+  box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.1);
 }
 
-/* High contrast focus for buttons and interactive elements */
-button:focus-visible,
-a:focus-visible,
-[role="button"]:focus-visible,
-[tabindex]:focus-visible {
-  outline: 3px solid #4f46e5;
-  outline-offset: 2px;
-  border-radius: 4px;
-  box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.15);
+/* ── hero-cli-input: parent compound/bar owns focus ── */
+.hero-cli-input:focus,
+.hero-cli-input:focus-visible {
+  outline: none;
+  box-shadow: none;
+  border-radius: 0;
+  border-color: transparent;
 }
 
-/* Focus styles for form inputs */
-input:focus-visible,
-textarea:focus-visible,
-select:focus-visible {
-  outline: 3px solid #4f46e5;
-  outline-offset: 0;
-  border-color: #4f46e5;
-  box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.15);
+/* ── Checkboxes / radios: subtle flat ring ── */
+input[type='checkbox']:focus-visible,
+input[type='radio']:focus-visible {
+  outline: none;
+  border-radius: 0;
+  box-shadow: var(--shadow-focus, rgba(5, 98, 239, 0.1) 0px 0px 0px 4px);
+}
+
+/* ── Design-system controls: flat shadow focus ── */
+:where(
+  .sm-btn,
+  .hero-cli-submit,
+  .faq-filter,
+  .faq-item-trigger,
+  .hero-chip,
+  .catalog-row,
+  .landing-icon-btn,
+  .password-toggle,
+  .nav-landing-link,
+  .nav-landing-logo,
+  .nav-user-trigger,
+  .nav-user-menu-row,
+  .landing-text-link
+):focus-visible {
+  outline: none;
+  border-radius: 0;
+  box-shadow: var(--shadow-focus, rgba(5, 98, 239, 0.1) 0px 0px 0px 4px);
+}
+
+/* ── Native controls not yet on design-system classes ── */
+input:not(.sm-input):not(.hero-cli-input):not([type='checkbox']):not(
+    [type='radio']
+  ):focus-visible,
+textarea:not(.sm-input):not(.hero-cli-input):focus-visible,
+select:not(.sm-input):not(.dashboard-toolbar-compound__select):focus-visible {
+  outline: none;
+  border-radius: 0;
+  border-color: var(--color-primary, #0562ef);
+  box-shadow: var(--shadow-focus, rgba(5, 98, 239, 0.1) 0px 0px 0px 4px);
+}
+
+/* ── Generic buttons/links without design-system classes ── */
+button:not(
+    .sm-btn,
+    .hero-cli-submit,
+    .faq-filter,
+  .faq-item,
+    .hero-chip,
+    .catalog-row,
+    .landing-icon-btn,
+    .password-toggle,
+    .nav-landing-link,
+    .nav-user-trigger,
+    .nav-user-menu-row,
+    .landing-text-link,
+    .dashboard-toolbar-compound__order,
+    .dashboard-toolbar-compound__select
+  ):focus-visible,
+a:not(
+    .sm-btn,
+    .nav-landing-link,
+    .landing-text-link,
+    .nav-landing-logo
+  ):focus-visible,
+[role='button']:not(.sm-btn):focus-visible {
+  outline: none;
+  border-radius: 0;
+  box-shadow: var(--shadow-focus, rgba(5, 98, 239, 0.1) 0px 0px 0px 4px);
 }
 
 /* Reduce motion for users who prefer it */
@@ -131,16 +208,16 @@ select:focus-visible {
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: var(--color-surface-muted);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: var(--color-border);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: var(--color-muted);
 }
 
 .scrollbar-hide {
@@ -226,17 +303,24 @@ select:focus-visible {
 
 .animate-shimmer {
   animation: shimmer 1.5s ease-in-out infinite;
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background: linear-gradient(
+    90deg,
+    var(--color-surface-muted) 25%,
+    var(--color-border) 50%,
+    var(--color-surface-muted) 75%
+  );
   background-size: 200% 100%;
 }
 
 /* Smooth content transitions */
 .transition-content {
-  transition: opacity 0.3s ease, transform 0.3s ease;
+  transition:
+    opacity 0.3s ease,
+    transform 0.3s ease;
 }
 
 /* Toast animation overrides */
-[data-sonner-toaster] [data-visible="true"] {
+[data-sonner-toaster] [data-visible='true'] {
   animation: slideDown 0.3s ease-out;
 }
 
@@ -256,7 +340,8 @@ select:focus-visible {
 
 /* Pulse animation for loading dots */
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
     transform: scale(1);
   }
@@ -272,7 +357,8 @@ select:focus-visible {
 
 /* Bounce animation for attention */
 @keyframes bounce {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0);
   }
   50% {

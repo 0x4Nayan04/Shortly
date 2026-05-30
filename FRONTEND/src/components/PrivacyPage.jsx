@@ -1,4 +1,88 @@
-import { CheckCircle, FileText, Info, Trash2, X } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import {
+  ArrowLeft,
+  Archive,
+  Bell,
+  CheckCircle,
+  Clock,
+  FileText,
+  Info,
+  ScrollText,
+  Trash2,
+  X
+} from 'lucide-react';
+import AppCatalogShell, {
+  LandingFrameInner,
+  LandingSectionBlock
+} from './app/AppCatalogShell';
+import AppNavbar from './app/AppNavbar';
+
+const privacyExclusions = [
+  'Full IP addresses',
+  'Fingerprints',
+  'Cookies for tracking',
+  'GPS or exact location',
+  'Personal information about visitors'
+];
+
+const privacyPolicySections = [
+  {
+    id: 'control',
+    title: 'Your control',
+    headingId: 'privacy-control-heading',
+    items: [
+      {
+        id: 'delete-analytics',
+        icon: CheckCircle,
+        text: 'If you delete a short URL, its analytics are deleted along with it.'
+      },
+      {
+        id: 'account-deletion',
+        icon: Trash2,
+        text: 'Request deletion of your account and associated data at any time.'
+      }
+    ]
+  },
+  {
+    id: 'retention',
+    title: 'Data retention',
+    headingId: 'privacy-retention-heading',
+    items: [
+      {
+        id: 'raw-events',
+        icon: Clock,
+        text: (
+          <>
+            Raw click events are retained for{' '}
+            <strong className='text-ink'>30 days</strong>.
+          </>
+        )
+      },
+      {
+        id: 'aggregated',
+        icon: Archive,
+        text: 'Aggregated analytics may be kept longer for historical insights.'
+      }
+    ]
+  },
+  {
+    id: 'transparency',
+    title: 'Transparency',
+    headingId: 'privacy-transparency-heading',
+    items: [
+      {
+        id: 'policy-updates',
+        icon: Bell,
+        text: 'Policy updates when analytics practices change.'
+      },
+      {
+        id: 'change-log',
+        icon: ScrollText,
+        text: 'We will always document what changes and why.'
+      }
+    ]
+  }
+];
 
 const privacyHighlights = [
   {
@@ -18,213 +102,206 @@ const privacyHighlights = [
   }
 ];
 
-const PrivacyPage = () => {
+const PrivacyPage = ({ user, onLogout, onShowAuth, onShowProfile }) => {
   return (
-    <main
-      id='main-content'
-      className='min-h-[calc(100vh-4rem)] bg-gray-50 py-8 px-4'
-      role='main'>
-      <div className='max-w-5xl mx-auto space-y-6'>
-        {/* Header - Structured product feel */}
-        <header className='pb-4 border-b border-gray-200'>
-          <div className='inline-flex items-center gap-2 rounded bg-indigo-50 px-2.5 py-1 text-xs font-semibold uppercase tracking-wider text-indigo-700 ring-1 ring-inset ring-indigo-200/50 mb-4'>
-            Privacy Promise
-          </div>
-          <h1 className='text-2xl sm:text-3xl font-bold text-gray-900'>
-            Privacy Manifesto
-          </h1>
-          <p className='mt-2 text-sm sm:text-base text-gray-600 max-w-2xl'>
-            Shortly is built as a privacy-first URL shortener. We collect the
-            smallest amount of data needed to provide useful analytics, and we
-            never sell or share that data with third parties.
-          </p>
-        </header>
-
-        {/* Highlights Grid - Compact stats style */}
-        <div className='grid sm:grid-cols-3 gap-4'>
-          {privacyHighlights.map((item) => (
-            <article
-              key={item.label}
-              className='rounded-xl border border-gray-200 bg-white p-5 shadow-sm'>
-              <p className='text-xs font-semibold uppercase tracking-wider text-gray-500'>
-                {item.label}
+    <AppCatalogShell>
+      <AppNavbar
+        user={user}
+        onLogout={onLogout}
+        onShowAuth={onShowAuth}
+        onShowProfile={onShowProfile}
+      />
+      <main
+        id='main-content'
+        className='flex-1'
+        role='main'
+        aria-labelledby='privacy-heading'>
+        <LandingSectionBlock>
+          <LandingFrameInner className='py-8'>
+            <header className='mb-8 border-b border-border pb-6'>
+              <Link
+                to='/'
+                className='mb-4 inline-flex items-center gap-1 text-[13px] text-muted-strong transition-colors duration-150 hover:text-primary'>
+                <ArrowLeft
+                  className='h-3.5 w-3.5'
+                  aria-hidden='true'
+                />
+                Back to home
+              </Link>
+              <p className='mb-4 font-mono text-[11px] font-medium uppercase tracking-[0.08em] text-primary'>
+                Privacy promise
               </p>
-              <h2 className='mt-1 text-base font-semibold text-gray-900'>
-                {item.value}
-              </h2>
-              <p className='mt-2 text-sm text-gray-600'>{item.description}</p>
-            </article>
-          ))}
-        </div>
-
-        {/* Structured Content Panel - Unified Surface */}
-        <div className='rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden'>
-          {/* Collection Section */}
-          <div className='p-6 sm:p-8 border-b border-gray-100'>
-            <div className='flex items-center gap-3 mb-6'>
-              <FileText
-                className='h-5 w-5 text-indigo-600'
-                aria-hidden='true'
-              />
-              <h2 className='text-lg font-semibold text-gray-900'>
-                What we collect
-              </h2>
-            </div>
-
-            <p className='text-sm text-gray-600 mb-4'>
-              For each redirect, we record:
-            </p>
-
-            <div className='grid sm:grid-cols-2 gap-4'>
-              <div className='flex flex-col rounded-lg border border-gray-100 bg-gray-50 px-4 py-3'>
-                <strong className='text-sm text-gray-900'>Timestamp</strong>
-                <span className='text-xs text-gray-600 mt-1'>
-                  When the redirect occurred.
-                </span>
-              </div>
-              <div className='flex flex-col rounded-lg border border-gray-100 bg-gray-50 px-4 py-3'>
-                <strong className='text-sm text-gray-900'>Country</strong>
-                <span className='text-xs text-gray-600 mt-1'>
-                  Derived from the request IP at lookup.
-                </span>
-              </div>
-              <div className='flex flex-col rounded-lg border border-gray-100 bg-gray-50 px-4 py-3'>
-                <strong className='text-sm text-gray-900'>
-                  Referrer domain
-                </strong>
-                <span className='text-xs text-gray-600 mt-1'>
-                  Captured when the browser sends it.
-                </span>
-              </div>
-              <div className='flex flex-col rounded-lg border border-gray-100 bg-gray-50 px-4 py-3'>
-                <strong className='text-sm text-gray-900'>
-                  User agent details
-                </strong>
-                <span className='text-xs text-gray-600 mt-1'>
-                  Device type, browser, and OS.
-                </span>
-              </div>
-            </div>
-
-            <div className='mt-5 rounded-lg bg-blue-50 px-4 py-3 text-sm text-blue-800 flex gap-3 items-center'>
-              <Info
-                className='w-5 h-5 shrink-0 text-blue-600'
-                aria-hidden='true'
-              />
-              <span>
-                We do not store raw IP addresses. We use the IP address only at
-                request time to derive a country and discard it immediately.
-              </span>
-            </div>
-          </div>
-
-          {/* Do Not Collect Section */}
-          <div className='p-6 sm:p-8 bg-gray-50 border-b border-gray-100 md:grid md:grid-cols-12 gap-6'>
-            <div className='md:col-span-4 mb-4 md:mb-0'>
-              <h2 className='text-lg font-semibold text-gray-900 mb-1'>
-                What we don't collect
-              </h2>
-              <p className='text-sm text-gray-500'>
-                Strict boundaries on your data.
+              <h1
+                id='privacy-heading'
+                className='font-display text-2xl font-medium tracking-display text-ink sm:text-3xl'>
+                Privacy manifesto
+              </h1>
+              <p className='mt-2 max-w-2xl text-sm text-muted-strong sm:text-base'>
+                Shortly is built as a privacy-first URL shortener. We collect
+                the smallest amount of data needed to provide useful analytics,
+                and we never sell or share that data with third parties.
               </p>
-            </div>
-            <div className='md:col-span-8'>
-              <ul className='grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-700'>
-                <li className='flex items-center gap-3 bg-white px-4 py-3 rounded-lg border border-gray-200 shadow-sm'>
-                  <X
-                    className='w-4 h-4 text-red-500 shrink-0'
-                    aria-hidden='true'
-                  />
-                  Full IP addresses
-                </li>
-                <li className='flex items-center gap-3 bg-white px-4 py-3 rounded-lg border border-gray-200 shadow-sm'>
-                  <X
-                    className='w-4 h-4 text-red-500 shrink-0'
-                    aria-hidden='true'
-                  />
-                  Fingerprints
-                </li>
-                <li className='flex items-center gap-3 bg-white px-4 py-3 rounded-lg border border-gray-200 shadow-sm'>
-                  <X
-                    className='w-4 h-4 text-red-500 shrink-0'
-                    aria-hidden='true'
-                  />
-                  Cookies for tracking
-                </li>
-                <li className='flex items-center gap-3 bg-white px-4 py-3 rounded-lg border border-gray-200 shadow-sm'>
-                  <X
-                    className='w-4 h-4 text-red-500 shrink-0'
-                    aria-hidden='true'
-                  />
-                  GPS or exact location
-                </li>
-                <li className='flex items-center gap-3 bg-white px-4 py-3 rounded-lg border border-gray-200 shadow-sm sm:col-span-2'>
-                  <X
-                    className='w-4 h-4 text-red-500 shrink-0'
-                    aria-hidden='true'
-                  />
-                  Personal information about visitors
-                </li>
-              </ul>
-            </div>
-          </div>
 
-          {/* Operations & Control (Inline strips) */}
-          <div className='p-6 sm:p-8 block sm:grid sm:grid-cols-2 gap-8'>
-            <div>
-              <h2 className='text-base font-semibold text-gray-900 mb-4'>
-                Your Control
-              </h2>
-              <div className='space-y-3'>
-                <div className='text-sm p-3 bg-green-50 border border-green-100 rounded-lg text-green-900 flex gap-2'>
-                  <CheckCircle
-                    className='w-5 h-5 shrink-0 text-green-600'
+            </header>
+
+            <div className='grid gap-4 sm:grid-cols-3'>
+              {privacyHighlights.map((item) => (
+                <article
+                  key={item.label}
+                  className='app-panel'>
+                  <p className='text-xs font-semibold uppercase tracking-wider text-muted'>
+                    {item.label}
+                  </p>
+                  <h2 className='mt-1 text-base font-semibold text-ink'>
+                    {item.value}
+                  </h2>
+                  <p className='mt-2 text-sm text-muted-strong'>
+                    {item.description}
+                  </p>
+                </article>
+              ))}
+            </div>
+          </LandingFrameInner>
+        </LandingSectionBlock>
+
+        <LandingSectionBlock>
+          <LandingFrameInner className='py-8'>
+            <div className='app-panel !p-0 overflow-hidden'>
+              <div className='border-b border-border p-6 sm:p-8'>
+                <div className='mb-6 flex items-center gap-3'>
+                  <FileText
+                    className='h-5 w-5 text-primary'
                     aria-hidden='true'
                   />
-                  If you delete a short URL, its analytics are deleted along
-                  with it.
+                  <h2 className='text-lg font-semibold text-ink'>
+                    What we collect
+                  </h2>
                 </div>
-                <div className='text-sm p-3 bg-green-50 border border-green-100 rounded-lg text-green-900 flex gap-2'>
-                  <Trash2
-                    className='w-5 h-5 shrink-0 text-green-600'
+
+                <p className='mb-4 text-sm text-muted-strong'>
+                  For each redirect, we record:
+                </p>
+
+                <div className='grid gap-4 sm:grid-cols-2'>
+                  {[
+                    {
+                      title: 'Timestamp',
+                      detail: 'When the redirect occurred.'
+                    },
+                    {
+                      title: 'Country',
+                      detail: 'Derived from the request IP at lookup.'
+                    },
+                    {
+                      title: 'Referrer domain',
+                      detail: 'Captured when the browser sends it.'
+                    },
+                    {
+                      title: 'User agent details',
+                      detail: 'Device type, browser, and OS.'
+                    }
+                  ].map((field) => (
+                    <div
+                      key={field.title}
+                      className='flex flex-col border border-border bg-[var(--color-surface-muted)] px-4 py-3'>
+                      <strong className='text-sm text-ink'>
+                        {field.title}
+                      </strong>
+                      <span className='mt-1 text-xs text-muted'>
+                        {field.detail}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className='mt-5 flex items-center gap-3 border-t border-border bg-[var(--color-blue-tint)] px-4 py-3 text-sm text-muted-strong'>
+                  <Info
+                    className='h-5 w-5 shrink-0 text-primary'
                     aria-hidden='true'
                   />
-                  Request deletion of your account and associated data at any
-                  time.
+                  <span>
+                    We do not store raw IP addresses. We use the IP address only
+                    at request time to derive a country and discard it
+                    immediately.
+                  </span>
                 </div>
               </div>
-            </div>
 
-            <div className='mt-8 sm:mt-0 space-y-6'>
-              <div>
-                <h2 className='text-base font-semibold text-gray-900 mb-3'>
-                  Data Retention
-                </h2>
-                <ul className='text-sm text-gray-600 space-y-2 list-inside list-disc'>
-                  <li>
-                    Raw click events are retained for{' '}
-                    <strong className='text-gray-900'>30 days</strong>.
-                  </li>
-                  <li>
-                    Aggregated analytics may be kept longer for historical
-                    insights.
-                  </li>
-                </ul>
-              </div>
-              <div>
-                <h2 className='text-base font-semibold text-gray-900 mb-3'>
-                  Transparency
-                </h2>
-                <ul className='text-sm text-gray-600 space-y-2 list-inside list-disc'>
-                  <li>Policy updates when analytics practices change.</li>
-                  <li>We will always document what changes and why.</li>
+              <div className='border-b border-border bg-[var(--color-surface-muted)] p-6 sm:p-8'>
+                <header className='mb-6 max-w-xl'>
+                  <h2 className='text-lg font-semibold text-ink'>
+                    What we don't collect
+                  </h2>
+                  <p className='mt-1.5 text-sm leading-relaxed text-muted'>
+                    Strict boundaries on your data.
+                  </p>
+                </header>
+                <ul
+                  className='grid grid-cols-1 gap-3 lg:grid-cols-3 lg:gap-4'
+                  role='list'>
+                  {privacyExclusions.map((item, index) => (
+                    <li
+                      key={item}
+                      className={`flex items-start gap-3 border border-border bg-surface px-4 py-3.5 ${
+                        index === 4 ? 'lg:col-span-3' : ''
+                      }`}>
+                      <X
+                        className='mt-0.5 h-4 w-4 shrink-0 text-[#dc2626]'
+                        aria-hidden='true'
+                      />
+                      <span className='text-sm leading-snug text-muted-strong'>
+                        {item}
+                      </span>
+                    </li>
+                  ))}
                 </ul>
               </div>
             </div>
-          </div>
-        </div>
-      </div>
-    </main>
+          </LandingFrameInner>
+        </LandingSectionBlock>
+
+        <LandingSectionBlock>
+          <LandingFrameInner className='py-8'>
+            <div className='app-panel privacy-panel'>
+              <div className='privacy-panel__grid'>
+                {privacyPolicySections.map((section) => (
+                  <section
+                    key={section.id}
+                    className='privacy-section'
+                    aria-labelledby={section.headingId}>
+                    <h2
+                      id={section.headingId}
+                      className='privacy-section__title'>
+                      {section.title}
+                    </h2>
+                    <ul
+                      className='privacy-section__tiles'
+                      role='list'>
+                      {section.items.map((item) => {
+                        const Icon = item.icon;
+                        return (
+                          <li
+                            key={item.id}
+                            className='privacy-tile'>
+                            <Icon
+                              className='privacy-tile__icon'
+                              aria-hidden='true'
+                            />
+                            <span className='privacy-tile__text'>
+                              {item.text}
+                            </span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </section>
+                ))}
+              </div>
+            </div>
+          </LandingFrameInner>
+        </LandingSectionBlock>
+      </main>
+    </AppCatalogShell>
   );
 };
 

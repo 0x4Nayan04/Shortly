@@ -2,14 +2,21 @@ import { useEffect } from 'react';
 import { X } from 'lucide-react';
 import { useFocusTrap } from './Accessibility';
 
+const formatMemberSince = (createdAt) => {
+  if (!createdAt) return 'Recently joined';
+  return new Date(createdAt).toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric'
+  });
+};
+
 const UserProfileModal = ({ isOpen, onClose, user, userStats }) => {
-  // Focus trap for modal
   const focusTrapRef = useFocusTrap(isOpen, {
     onEscape: onClose,
     restoreFocus: true
   });
 
-  // Prevent body scroll when modal is open
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -21,6 +28,9 @@ const UserProfileModal = ({ isOpen, onClose, user, userStats }) => {
 
   if (!isOpen) return null;
 
+  const totalUrls = userStats?.totalUrls ?? 0;
+  const totalClicks = userStats?.totalClicks ?? 0;
+
   return (
     <div
       className='fixed inset-0 z-50 flex items-center justify-center p-4'
@@ -28,146 +38,97 @@ const UserProfileModal = ({ isOpen, onClose, user, userStats }) => {
       aria-modal='true'
       aria-labelledby='profile-modal-title'>
       <div
-        className='absolute inset-0 bg-black/50 backdrop-blur-sm'
+        className='absolute inset-0 bg-[color-mix(in_srgb,var(--color-ink)_45%,transparent)] backdrop-blur-sm'
         aria-hidden='true'
         onClick={onClose}
       />
       <div
         ref={focusTrapRef}
-        className='relative bg-white rounded-2xl shadow-xl border border-gray-100/50 max-w-md w-full max-h-[90vh] overflow-y-auto scrollbar-hide animate-scale-in'
+        className='user-profile-modal relative app-panel max-h-[90dvh] sm:max-h-[90vh] w-full max-w-md overflow-y-auto scrollbar-hide animate-scale-in !p-0'
         role='document'
         onClick={(e) => e.stopPropagation()}>
-        <div className='flex items-center justify-between p-6 border-b border-gray-100/60'>
+        <div className='user-profile-modal__header flex items-center justify-between border-b border-border'>
           <h2
             id='profile-modal-title'
-            className='text-xl font-semibold text-gray-900'>
-            User Profile
+            className='font-display text-lg font-medium tracking-display text-ink'>
+            User profile
           </h2>
           <button
+            type='button'
             onClick={onClose}
-            className='p-2 hover:bg-gray-50/80 rounded-xl transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2'
+            className='landing-icon-btn'
             aria-label='Close profile modal'>
             <X
-              className='w-5 h-5 text-gray-500'
+              className='h-5 w-5'
               aria-hidden='true'
             />
           </button>
         </div>
 
-        <div className='p-6'>
-          <div className='flex flex-col items-center text-center mb-6'>
-            <div className='relative mb-4'>
+        <div className='user-profile-modal__body'>
+          <div className='user-profile-modal__profile'>
+            <div className='relative shrink-0'>
               <img
                 src={user.avatar}
-                alt={`${user.name}'s profile picture`}
-                className='w-24 h-24 rounded-full ring-2 ring-gray-100 shadow-lg'
+                alt=''
+                className='user-profile-modal__avatar'
                 onError={(e) => {
                   e.target.style.display = 'none';
                   e.target.nextElementSibling.style.display = 'flex';
                 }}
               />
               <div
-                className='w-24 h-24 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-full flex items-center justify-center ring-2 ring-gray-100 shadow-lg'
+                className='user-profile-modal__avatar user-profile-modal__avatar--fallback'
                 style={{ display: 'none' }}
-                role='img'
-                aria-label={`${user.name}'s profile picture placeholder`}>
-                <span
-                  className='text-2xl font-bold text-indigo-700'
-                  aria-hidden='true'>
+                aria-hidden='true'>
+                <span className='font-display text-base font-medium text-primary'>
                   {(user.name || user.email || 'U').charAt(0).toUpperCase()}
                 </span>
               </div>
             </div>
-            <h3 className='text-xl font-semibold text-gray-900 mb-1'>
-              {user.name}
-            </h3>
-            <p className='text-gray-600 text-sm'>{user.email}</p>
-            <span className='inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 mt-2'>
-              <span className='sr-only'>Account status: </span>
-              Active Account
+            <div className='user-profile-modal__identity min-w-0 flex-1'>
+              <p className='text-sm font-medium leading-snug text-ink'>
+                {user.name}
+              </p>
+              <p
+                className='font-mono text-xs leading-snug text-muted-strong sm:truncate'
+                title={user.email}>
+                {user.email}
+              </p>
+            </div>
+            <span
+              className='user-profile-modal__status shrink-0'
+              role='status'>
+              Active account
             </span>
           </div>
 
-          <div
-            className='grid grid-cols-2 gap-4 mb-6'
-            role='group'
-            aria-label='Account statistics'>
-            <div className='bg-gray-50/80 rounded-xl p-4 text-center border border-gray-100/50'>
-              <div
-                className='text-2xl font-bold text-indigo-600 mb-1'
-                aria-hidden='true'>
-                {userStats?.totalUrls || 0}
-              </div>
-              <div className='text-sm text-gray-600'>URLs Created</div>
-              <span className='sr-only'>
-                {userStats?.totalUrls || 0} URLs created
-              </span>
-            </div>
-            <div className='bg-gray-50/80 rounded-xl p-4 text-center border border-gray-100/50'>
-              <div
-                className='text-2xl font-bold text-indigo-600 mb-1'
-                aria-hidden='true'>
-                {userStats?.totalClicks || 0}
-              </div>
-              <div className='text-sm text-gray-600'>Total Clicks</div>
-              <span className='sr-only'>
-                {userStats?.totalClicks || 0} total clicks
-              </span>
-            </div>
-          </div>
-
-          <div className='space-y-4'>
-            <div>
-              <label
-                id='profile-name-label'
-                className='text-sm font-medium text-gray-700 mb-1 block'>
-                Full Name
-              </label>
-              <div
-                className='bg-gray-50/80 rounded-xl p-3 text-gray-900 border border-gray-100/50'
-                aria-labelledby='profile-name-label'>
-                {user.name}
-              </div>
-            </div>
-            <div>
-              <label
-                id='profile-email-label'
-                className='text-sm font-medium text-gray-700 mb-1 block'>
-                Email Address
-              </label>
-              <div
-                className='bg-gray-50/80 rounded-xl p-3 text-gray-900 border border-gray-100/50'
-                aria-labelledby='profile-email-label'>
-                {user.email}
-              </div>
-            </div>
-            <div>
-              <label
-                id='profile-member-label'
-                className='text-sm font-medium text-gray-700 mb-1 block'>
-                Member Since
-              </label>
-              <div
-                className='bg-gray-50/80 rounded-xl p-3 text-gray-900 border border-gray-100/50'
-                aria-labelledby='profile-member-label'>
-                <time dateTime={user.createdAt}>
-                  {user.createdAt
-                    ? new Date(user.createdAt).toLocaleDateString('en-GB', {
-                        day: '2-digit',
-                        month: '2-digit',
-                        year: 'numeric'
-                      })
-                    : 'Recently joined'}
-                </time>
-              </div>
-            </div>
-          </div>
+          <p
+            className='user-profile-modal__stats dashboard-workspace-stats-line tabular-nums'
+            aria-label={`${totalUrls} URLs created, ${totalClicks} total clicks`}>
+            <span>
+              <span className='font-mono text-ink'>{totalUrls}</span> URLs created
+            </span>
+            <span
+              className='dashboard-workspace-stats-line__sep'
+              aria-hidden='true'>
+              ·
+            </span>
+            <span>
+              <span className='font-mono text-ink'>{totalClicks}</span> total clicks
+            </span>
+          </p>
         </div>
 
-        <div className='p-6 border-t border-gray-100/60 bg-gray-50/30 rounded-b-2xl'>
+        <div className='user-profile-modal__footer border-t border-border'>
+          <p className='user-profile-modal__member-since'>
+            Member since{' '}
+            <time dateTime={user.createdAt}>{formatMemberSince(user.createdAt)}</time>
+          </p>
           <button
+            type='button'
             onClick={onClose}
-            className='w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 px-4 rounded-xl font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2'>
+            className='sm-btn sm-btn-primary sm-btn-block'>
             Close
           </button>
         </div>
