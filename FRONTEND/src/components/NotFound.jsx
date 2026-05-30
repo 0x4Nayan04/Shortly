@@ -24,12 +24,12 @@ const NotFound = ({ user, onLogout, onShowAuth, onShowProfile }) => {
         <LandingSectionBlock>
           <LandingFrameInner className='py-12'>
             <div className='mx-auto max-w-md text-center'>
-              <div className='mx-auto mb-6 flex h-20 w-20 items-center justify-center border border-border bg-[var(--color-blue-tint)]'>
+              <div className='mx-auto mb-6 w-20 h-20 bg-[var(--color-blue-tint)] border border-border flex items-center justify-center'>
                 <span className='font-display text-4xl font-medium tracking-display text-primary'>
                   404
                 </span>
               </div>
-              <h1 className='font-display text-2xl font-medium tracking-display text-ink mb-2'>
+              <h1 className='font-display text-2xl font-medium text-ink mb-2'>
                 Page not found
               </h1>
               <p className='text-muted-strong mb-1'>

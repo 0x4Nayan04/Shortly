@@ -14,7 +14,7 @@ import {
   memo
 } from 'react';
 import { createPortal } from 'react-dom';
-import { AlertTriangle, Inbox } from 'lucide-react';
+import { AlertTriangle, Inbox, RotateCw } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 
 // ============================================
@@ -506,17 +506,19 @@ export const ErrorRecovery = memo(
 
     return (
       <div
-        className='app-panel border-[color-mix(in_srgb,#dc2626_22%,var(--color-border))] bg-[color-mix(in_srgb,#dc2626_6%,var(--color-surface))] text-center'
+        className='bg-surface border border-border text-center p-8'
+        style={{ boxShadow: 'rgba(11,16,21,0.06) 0px 1px 0px 0px, rgba(11,16,21,0.18) 0px 6px 16px -10px', backgroundImage: 'var(--grad-dot)', backgroundSize: '24px 24px' }}
         role='alert'>
-        <div className='w-12 h-12 border border-[color-mix(in_srgb,#dc2626_25%,var(--color-border))] bg-[color-mix(in_srgb,#dc2626_10%,var(--color-surface))] flex items-center justify-center mx-auto mb-4'>
+        <div className='w-12 h-12 mx-auto mb-5 rounded-full flex items-center justify-center'
+          style={{ backgroundColor: 'color-mix(in srgb, var(--color-error) 10%, var(--color-surface))', borderColor: 'color-mix(in srgb, var(--color-error) 30%, var(--color-border))' }}>
           <AlertTriangle
-            className='w-6 h-6 text-[#dc2626]'
+            className='w-6 h-6 text-error'
             aria-hidden='true'
           />
         </div>
 
-        <h3 className='text-lg font-semibold text-ink mb-2'>{title}</h3>
-        <p className='text-sm text-muted-strong mb-4'>
+        <h3 className='font-display text-lg font-medium text-ink mb-2'>{title}</h3>
+        <p className='text-sm text-muted leading-relaxed mb-6 max-w-sm mx-auto'>
           {description ||
             error?.message ||
             'An unexpected error occurred. Please try again.'}
@@ -525,13 +527,14 @@ export const ErrorRecovery = memo(
         {canRetry && onRetry && (
           <button
             onClick={onRetry}
-            className='sm-btn sm-btn-primary'>
+            className='inline-flex items-center gap-2 px-4 py-2 bg-error text-white text-sm font-medium border border-error transition-all duration-150 hover:opacity-90'>
+            <RotateCw className='w-3.5 h-3.5' />
             Try Again {retryCount > 0 && `(${retryCount}/${maxRetries})`}
           </button>
         )}
 
         {!canRetry && (
-          <p className='text-sm text-[#dc2626]'>
+          <p className='text-sm text-error'>
             Maximum retry attempts reached. Please refresh the page or contact
             support.
           </p>

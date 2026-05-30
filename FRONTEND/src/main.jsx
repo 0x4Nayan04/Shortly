@@ -1,10 +1,10 @@
 if (import.meta.env.DEV) {
-  void import("react-grab").then((grab) => {
+  void import('react-grab').then((grab) => {
     const placeMobileToolbar = () => {
       const api = grab.getGlobalApi?.();
       if (!api?.setToolbarState) return false;
-      if (window.matchMedia("(max-width: 767px)").matches) {
-        api.setToolbarState({ edge: "bottom", ratio: 0.06 });
+      if (window.matchMedia('(max-width: 767px)').matches) {
+        api.setToolbarState({ edge: 'bottom', ratio: 0.06 });
       }
       return true;
     };
@@ -17,8 +17,8 @@ if (import.meta.env.DEV) {
     }
 
     window
-      .matchMedia("(max-width: 767px)")
-      .addEventListener("change", placeMobileToolbar);
+      .matchMedia('(max-width: 767px)')
+      .addEventListener('change', placeMobileToolbar);
   });
 }
 
