@@ -8,7 +8,7 @@ export const SkipLink = ({
   return (
     <a
       href={`#${targetId}`}
-      className='sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] sm-btn sm-btn-primary focus-visible:shadow-[var(--shadow-focus)] focus-visible:outline-none'>
+      className='sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] sm-btn sm-btn-primary focus-ring'>
       {children}
     </a>
   );
