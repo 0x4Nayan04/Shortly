@@ -2,6 +2,7 @@ import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowRight, LogOut, Menu, X } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useFocusTrap } from '../Accessibility';
+import ShortlyLogo from '../ShortlyLogo';
 import { LandingFrameInner } from './LandingFrame';
 
 const NAV_LINKS = [
@@ -67,12 +68,7 @@ const LandingNavbar = memo(({ user, onLogout }) => {
             onClick={goHome}
             className='nav-landing-logo justify-self-start outline-none'
             aria-label='Shortly — home'>
-            <span
-              className='flex h-7 w-7 items-center justify-center bg-primary text-white'
-              aria-hidden='true'>
-              <span className='font-display text-xs font-semibold'>S</span>
-            </span>
-            <span className='nav-landing-logo-text'>shortly</span>
+            <ShortlyLogo className='shortly-logo--header' />
           </a>
 
           <nav
@@ -149,16 +145,24 @@ const LandingNavbar = memo(({ user, onLogout }) => {
               aria-controls='landing-mobile-menu'
               onClick={() => setIsMobileMenuOpen((prev) => !prev)}>
               {isMobileMenuOpen ? (
-                <X className='h-4 w-4' aria-hidden='true' />
+                <X
+                  className='h-4 w-4'
+                  aria-hidden='true'
+                />
               ) : (
-                <Menu className='h-4 w-4' aria-hidden='true' />
+                <Menu
+                  className='h-4 w-4'
+                  aria-hidden='true'
+                />
               )}
             </button>
           </div>
         </div>
       </LandingFrameInner>
       {isMobileMenuOpen ? (
-        <div className='landing-mobile-menu-overlay md:hidden' onClick={closeMobileMenu}>
+        <div
+          className='landing-mobile-menu-overlay md:hidden'
+          onClick={closeMobileMenu}>
           <div
             id='landing-mobile-menu'
             className='landing-mobile-menu-panel'
@@ -167,7 +171,9 @@ const LandingNavbar = memo(({ user, onLogout }) => {
             aria-modal='true'
             aria-label='Site navigation'
             onClick={(e) => e.stopPropagation()}>
-            <nav className='landing-mobile-menu-links' aria-label='Page sections'>
+            <nav
+              className='landing-mobile-menu-links'
+              aria-label='Page sections'>
               {NAV_LINKS.map((item) =>
                 item.to ? (
                   <Link
@@ -207,7 +213,10 @@ const LandingNavbar = memo(({ user, onLogout }) => {
                       handleMobileNavClick();
                     }}
                     className='sm-btn sm-btn-secondary w-full inline-flex items-center justify-center gap-1.5'>
-                    <LogOut className='h-3.5 w-3.5' aria-hidden='true' />
+                    <LogOut
+                      className='h-3.5 w-3.5'
+                      aria-hidden='true'
+                    />
                     <span>Sign out</span>
                   </button>
                 </>
@@ -220,7 +229,10 @@ const LandingNavbar = memo(({ user, onLogout }) => {
                   }}
                   className='sm-btn sm-btn-primary w-full inline-flex items-center justify-center gap-1.5'>
                   <span>Sign in</span>
-                  <ArrowRight className='h-3.5 w-3.5' aria-hidden='true' />
+                  <ArrowRight
+                    className='h-3.5 w-3.5'
+                    aria-hidden='true'
+                  />
                 </button>
               )}
             </div>

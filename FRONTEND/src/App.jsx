@@ -6,6 +6,7 @@ import {
   useLocation,
   useNavigate
 } from 'react-router-dom';
+import { useDocumentMeta } from './hooks/useDocumentMeta';
 import { getUrlStats } from './api/shortUrl.api';
 import { getCurrentUser, logoutUser } from './api/user.api';
 import {
@@ -257,6 +258,8 @@ const App = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  useDocumentMeta(location.pathname);
+
   const fetchUserStats = useCallback(async () => {
     try {
       const response = await getUrlStats();
@@ -273,6 +276,7 @@ const App = () => {
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
     const routePreload =
       PROTECTED_ROUTE_PRELOADS[location.pathname]?.() ?? Promise.resolve();
 
@@ -280,6 +284,7 @@ const App = () => {
       try {
         const response = await getCurrentUser();
         const userData = response?.data?.user || response?.user;
+        if (cancelled) return;
         if (userData) {
           setUser(userData);
           if (
@@ -292,6 +297,7 @@ const App = () => {
           }
         }
       } catch {
+        if (cancelled) return;
         if (
           location.pathname === '/dashboard' ||
           location.pathname === '/settings'
@@ -301,12 +307,18 @@ const App = () => {
         }
       } finally {
         await routePreload;
-        setAuthChecked(true);
+        if (!cancelled) {
+          setAuthChecked(true);
+        }
       }
     };
 
     checkAuthStatus();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleAuthSuccess = useCallback(
     async (response) => {

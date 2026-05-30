@@ -1,6 +1,6 @@
 import LandingFaq from './landing/LandingFaq';
 import LandingFeaturesCatalog from './landing/LandingFeaturesCatalog';
-import SiteFooterBar from './landing/SiteFooterBar';
+import LandingFooter from './landing/LandingFooter';
 import LandingFrame, { LandingSectionBlock } from './landing/LandingFrame';
 import LandingHero from './landing/LandingHero';
 import LandingNavbar from './landing/LandingNavbar';
@@ -26,8 +26,8 @@ const LandingPage = ({ onLogout, user }) => (
           <LandingFaq />
         </LandingSectionBlock>
       </main>
-      <LandingSectionBlock>
-        <SiteFooterBar />
+      <LandingSectionBlock className='site-footer-block'>
+        <LandingFooter user={user} />
       </LandingSectionBlock>
     </LandingFrame>
   </div>

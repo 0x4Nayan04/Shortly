@@ -19,7 +19,9 @@ const LandingHero = ({ user }) => {
                 href='#features'
                 className='hero-chip focus-visible:shadow-[var(--shadow-focus)] outline-none'>
                 <span className='hero-chip-tag'>New</span>
-                <span className='hero-chip-text font-medium'>Custom aliases for members</span>
+                <span className='hero-chip-text font-medium'>
+                  Custom aliases for members
+                </span>
                 <ArrowRight
                   className='hero-chip-arrow h-3.5 w-3.5 text-muted'
                   aria-hidden='true'
@@ -30,16 +32,15 @@ const LandingHero = ({ user }) => {
             <h1
               id='hero-heading'
               className='landing-hero-title max-w-[18ch] text-ink'>
-              The simplest way to{' '}
-              <span className='hero-heading-em'>share your links</span>
+              Long links, <span className='hero-heading-em'>shortened</span>
               <span className='text-primary'>.</span>
             </h1>
 
             <p className='landing-section-lead landing-section-lead--hero'>
-              Paste any URL and get a clean, short link you can share
-              everywhere. Sign up free for{' '}
-              <span className='hero-copy-em'>custom aliases</span> and{' '}
-              <span className='hero-copy-em'>real-time analytics</span>.
+              Paste any URL and get a clean link you can share everywhere. Sign
+              up free for <span className='hero-copy-em'>custom aliases</span>{' '}
+              and <span className='hero-copy-em'>real-time analytics</span> —
+              privacy-first, with no visitor tracking cookies.
             </p>
           </div>
 

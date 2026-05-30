@@ -649,6 +649,12 @@ const Dashboard = ({ user, onLogout, onShowAuth, onShowProfile }) => {
           politeness='polite'
         />
 
+        <h1
+          id='dashboard-heading'
+          className='sr-only'>
+          Dashboard
+        </h1>
+
         <LandingSectionBlock>
           <LandingFrameInner className='dashboard-overview-inner dashboard-layout-grid'>
             <section
