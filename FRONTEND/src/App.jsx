@@ -9,6 +9,7 @@ import {
 import { useDocumentMeta } from './hooks/useDocumentMeta';
 import { getUrlStats } from './api/shortUrl.api';
 import { getCurrentUser, logoutUser } from './api/user.api';
+import { getApiPayload } from './utils/axiosInstance';
 import {
   LiveRegion,
   SkipLink,
@@ -90,7 +91,14 @@ const AuthPageShell = ({
   </AppCatalogShell>
 );
 
-const LoginPage = ({ user, navigate, onLoginSuccess, onLogout, onShowRegister, onShowProfile }) => {
+const LoginPage = ({
+  user,
+  navigate,
+  onLoginSuccess,
+  onLogout,
+  onShowRegister,
+  onShowProfile
+}) => {
   if (user) {
     return (
       <Navigate
@@ -119,7 +127,14 @@ const LoginPage = ({ user, navigate, onLoginSuccess, onLogout, onShowRegister, o
   );
 };
 
-const RegisterPage = ({ user, navigate, onRegisterSuccess, onLogout, onShowRegister, onShowProfile }) => {
+const RegisterPage = ({
+  user,
+  navigate,
+  onRegisterSuccess,
+  onLogout,
+  onShowRegister,
+  onShowProfile
+}) => {
   if (user) {
     return (
       <Navigate
@@ -147,7 +162,13 @@ const RegisterPage = ({ user, navigate, onRegisterSuccess, onLogout, onShowRegis
   );
 };
 
-const ForgotPasswordPage = ({ user, navigate, onLogout, onShowRegister, onShowProfile }) => {
+const ForgotPasswordPage = ({
+  user,
+  navigate,
+  onLogout,
+  onShowRegister,
+  onShowProfile
+}) => {
   if (user) {
     return (
       <Navigate
@@ -172,7 +193,12 @@ const ForgotPasswordPage = ({ user, navigate, onLogout, onShowRegister, onShowPr
   );
 };
 
-const ResetPasswordPage = ({ user, onLogout, onShowRegister, onShowProfile }) => {
+const ResetPasswordPage = ({
+  user,
+  onLogout,
+  onShowRegister,
+  onShowProfile
+}) => {
   if (user) {
     return (
       <Navigate
@@ -204,7 +230,14 @@ const PROTECTED_ROUTE_PRELOADS = {
   '/settings': () => import('./components/AccountSettings')
 };
 
-const CatalogPageLoader = ({ user, message, onLogout, onShowAuth, onShowRegister, onShowProfile }) => (
+const CatalogPageLoader = ({
+  user,
+  message,
+  onLogout,
+  onShowAuth,
+  onShowRegister,
+  onShowProfile
+}) => (
   <AppCatalogShell>
     <AppNavbar
       user={user}
@@ -234,7 +267,15 @@ const CatalogPageLoader = ({ user, message, onLogout, onShowAuth, onShowRegister
   </AppCatalogShell>
 );
 
-const ProtectedRoute = ({ user, authChecked, component, onLogout, onShowAuth, onShowRegister, onShowProfile }) => {
+const ProtectedRoute = ({
+  user,
+  authChecked,
+  component,
+  onLogout,
+  onShowAuth,
+  onShowRegister,
+  onShowProfile
+}) => {
   if (!authChecked) {
     return (
       <CatalogPageLoader
@@ -277,7 +318,7 @@ const App = () => {
   const fetchUserStats = useCallback(async () => {
     try {
       const response = await getUrlStats();
-      const payload = response?.data;
+      const payload = getApiPayload(response);
       if (payload?.stats) {
         setUserStats({
           totalUrls: payload.stats.totalUrls || 0,
@@ -297,7 +338,7 @@ const App = () => {
     const checkAuthStatus = async () => {
       try {
         const response = await getCurrentUser();
-        const userData = response?.data?.user || response?.user;
+        const userData = getApiPayload(response)?.user;
         if (cancelled) return;
         if (userData) {
           setUser(userData);
@@ -344,13 +385,13 @@ const App = () => {
 
   const handleAuthSuccess = useCallback(
     async (response) => {
-      const userData = response?.data?.user || response?.user;
+      const userData = getApiPayload(response)?.user;
       if (userData) {
         setUser(userData);
       } else {
         try {
           const current = await getCurrentUser();
-          const currentUser = current?.data?.user || current?.user;
+          const currentUser = getApiPayload(current)?.user;
           if (currentUser) {
             setUser(currentUser);
           } else {
@@ -442,7 +483,10 @@ const App = () => {
             path='/login'
             element={
               authChecked && user ? (
-                <Navigate to='/dashboard' replace />
+                <Navigate
+                  to='/dashboard'
+                  replace
+                />
               ) : (
                 <LoginPage
                   user={user}
@@ -460,7 +504,10 @@ const App = () => {
             path='/register'
             element={
               authChecked && user ? (
-                <Navigate to='/dashboard' replace />
+                <Navigate
+                  to='/dashboard'
+                  replace
+                />
               ) : (
                 <RegisterPage
                   user={user}
@@ -533,7 +580,10 @@ const App = () => {
             path='/forgot-password'
             element={
               authChecked && user ? (
-                <Navigate to='/dashboard' replace />
+                <Navigate
+                  to='/dashboard'
+                  replace
+                />
               ) : (
                 <ForgotPasswordPage
                   user={user}
@@ -550,7 +600,10 @@ const App = () => {
             path='/reset-password/:token'
             element={
               authChecked && user ? (
-                <Navigate to='/dashboard' replace />
+                <Navigate
+                  to='/dashboard'
+                  replace
+                />
               ) : (
                 <ResetPasswordPage
                   user={user}

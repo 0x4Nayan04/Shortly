@@ -236,55 +236,13 @@ const VARIANT_PATHS = {
   manage: ManagePaths
 };
 
-const CatalogLinkVisual = ({ variant = 'shorten', playKey = '0', staticMode = false }) => {
-  // If staticMode is requested, render a simplified static SVG without
-  // intersection observers, motion detection, or SMIL animations. This
-  // keeps the right-hand showcase panel purely static and performant.
+const CatalogLinkVisual = ({
+  variant = 'shorten',
+  playKey = '0',
+  staticMode = false
+}) => {
   const gradId = `catalog-flow-grad-${variant}`;
   const Paths = VARIANT_PATHS[variant] ?? VARIANT_PATHS.shorten;
-
-  if (staticMode) {
-    return (
-      <svg
-        key={playKey}
-        className={`catalog-visual-svg catalog-visual-svg--static`}
-        viewBox='0 0 480 280'
-        fill='none'
-        xmlns='http://www.w3.org/2000/svg'
-        aria-hidden='true'
-        focusable='false'>
-        <defs>
-          <linearGradient
-            id={gradId}
-            x1='0%'
-            y1='0%'
-            x2='100%'
-            y2='0%'>
-            <stop offset='0%' stopColor='rgba(255,255,255,0)' />
-            <stop offset='50%' stopColor='rgba(255,255,255,0.7)' />
-            <stop offset='100%' stopColor='rgba(255,255,255,0)' />
-          </linearGradient>
-        </defs>
-
-        {CORNER_PATHS}
-        <Paths gradId={gradId} motion={false} />
-
-        {variant === 'shorten' && [120, 240, 360].map((cx) => (
-          <circle
-            key={cx}
-            cx={cx}
-            cy='168'
-            r='4'
-            fill='rgba(255,255,255,0.15)'
-            stroke='rgba(255,255,255,0.55)'
-            strokeWidth='1'
-          />
-        ))}
-
-      </svg>
-    );
-  }
-
   const svgRef = useRef(null);
   const [visible, setVisible] = useState(false);
   const [reduceMotion, setReduceMotion] = useState(false);
@@ -298,6 +256,7 @@ const CatalogLinkVisual = ({ variant = 'shorten', playKey = '0', staticMode = fa
   }, []);
 
   useEffect(() => {
+    if (staticMode) return undefined;
     const root = svgRef.current;
     if (!root) return undefined;
 
@@ -308,17 +267,18 @@ const CatalogLinkVisual = ({ variant = 'shorten', playKey = '0', staticMode = fa
 
     observer.observe(root);
     return () => observer.disconnect();
-  }, []);
+  }, [staticMode]);
 
   useEffect(() => {
+    if (staticMode) return undefined;
     const panel = svgRef.current?.closest('.catalog-visual');
     if (!panel) return undefined;
     panel.classList.toggle('catalog-visual--active', visible);
     return () => panel.classList.remove('catalog-visual--active');
-  }, [visible]);
+  }, [visible, staticMode]);
 
   useEffect(() => {
-    if (!visible || reduceMotion) return;
+    if (staticMode || !visible || reduceMotion) return;
     const root = svgRef.current;
     if (!root) return;
 
@@ -332,9 +292,63 @@ const CatalogLinkVisual = ({ variant = 'shorten', playKey = '0', staticMode = fa
       void path.getBoundingClientRect();
       path.classList.add('catalog-visual-draw-run');
     });
-  }, [visible, reduceMotion, variant, playKey]);
+  }, [visible, reduceMotion, variant, playKey, staticMode]);
 
   const motion = !reduceMotion;
+
+  if (staticMode) {
+    return (
+      <svg
+        key={playKey}
+        className='catalog-visual-svg catalog-visual-svg--static'
+        viewBox='0 0 480 280'
+        fill='none'
+        xmlns='http://www.w3.org/2000/svg'
+        aria-hidden='true'
+        focusable='false'>
+        <defs>
+          <linearGradient
+            id={gradId}
+            x1='0%'
+            y1='0%'
+            x2='100%'
+            y2='0%'>
+            <stop
+              offset='0%'
+              stopColor='rgba(255,255,255,0)'
+            />
+            <stop
+              offset='50%'
+              stopColor='rgba(255,255,255,0.7)'
+            />
+            <stop
+              offset='100%'
+              stopColor='rgba(255,255,255,0)'
+            />
+          </linearGradient>
+        </defs>
+
+        {CORNER_PATHS}
+        <Paths
+          gradId={gradId}
+          motion={false}
+        />
+
+        {variant === 'shorten' &&
+          [120, 240, 360].map((cx) => (
+            <circle
+              key={cx}
+              cx={cx}
+              cy='168'
+              r='4'
+              fill='rgba(255,255,255,0.15)'
+              stroke='rgba(255,255,255,0.55)'
+              strokeWidth='1'
+            />
+          ))}
+      </svg>
+    );
+  }
 
   return (
     <svg
@@ -353,14 +367,26 @@ const CatalogLinkVisual = ({ variant = 'shorten', playKey = '0', staticMode = fa
           y1='0%'
           x2='100%'
           y2='0%'>
-          <stop offset='0%' stopColor='rgba(255,255,255,0)' />
-          <stop offset='50%' stopColor='rgba(255,255,255,0.7)' />
-          <stop offset='100%' stopColor='rgba(255,255,255,0)' />
+          <stop
+            offset='0%'
+            stopColor='rgba(255,255,255,0)'
+          />
+          <stop
+            offset='50%'
+            stopColor='rgba(255,255,255,0.7)'
+          />
+          <stop
+            offset='100%'
+            stopColor='rgba(255,255,255,0)'
+          />
         </linearGradient>
       </defs>
 
       {CORNER_PATHS}
-      <Paths gradId={gradId} motion={motion} />
+      <Paths
+        gradId={gradId}
+        motion={motion}
+      />
 
       {variant === 'shorten' &&
         [

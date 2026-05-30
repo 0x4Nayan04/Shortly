@@ -37,9 +37,7 @@ const LoadingSpinner = memo(
           size={size}
           label={message || 'Loading'}
         />
-        {message ? (
-          <p className='page-loader__caption'>{message}</p>
-        ) : null}
+        {message ? <p className='page-loader__caption'>{message}</p> : null}
       </div>
     );
 
@@ -208,7 +206,7 @@ export const UrlTableSkeletonRow = memo(() => (
     aria-hidden='true'>
     <div className='dashboard-link-item__main'>
       <div className='sm-skeleton sm-skeleton--shimmer dashboard-url-skeleton-row__check' />
-      <div className='dashboard-url-skeleton-row__body'>
+      <div className='dashboard-link-item__body'>
         <div className='sm-skeleton sm-skeleton--shimmer dashboard-url-skeleton-row__short' />
         <div className='sm-skeleton sm-skeleton--shimmer dashboard-url-skeleton-row__dest' />
       </div>

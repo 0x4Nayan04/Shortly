@@ -1,5 +1,6 @@
 import { memo } from 'react';
 import { Check, Copy, Loader2, Share2, Trash2 } from 'lucide-react';
+import { useMediaQuery } from '../hooks/useMediaQuery';
 import {
   buildPublicShortUrl,
   getShortLinkDisplayParts
@@ -16,13 +17,18 @@ const DashboardLinkRow = memo(
     onSelect,
     onShare
   }) => {
+    const showMeta = !useMediaQuery('(max-width: 767px)');
     const shortUrlFull = buildPublicShortUrl(url.short_url);
-    const { hostLead, hostTrail, slug } = getShortLinkDisplayParts(url.short_url);
-    const createdLabel = new Date(url.createdAt).toLocaleDateString('en-GB', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric'
-    });
+    const { hostLead, hostTrail, slug } = getShortLinkDisplayParts(
+      url.short_url
+    );
+    const createdLabel = showMeta
+      ? new Date(url.createdAt).toLocaleDateString('en-GB', {
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric'
+        })
+      : '';
     const clickNum = url.click;
     const clickText = `click${url.click !== 1 ? 's' : ''}`;
 
@@ -67,22 +73,24 @@ const DashboardLinkRow = memo(
             </p>
           </div>
 
-          <p className='dashboard-link-item__meta catalog-row-meta'>
-            <span className='dashboard-link-item__clicks'>
-              <span className='font-semibold'>{clickNum}</span>
-              <span className='text-muted text-xs'>{' '}{clickText}</span>
-            </span>
-            <span
-              className='dashboard-link-item__meta-sep'
-              aria-hidden='true'>
-              ·
-            </span>
-            <time
-              className='tabular-nums'
-              dateTime={url.createdAt}>
-              {createdLabel}
-            </time>
-          </p>
+          {showMeta && (
+            <p className='dashboard-link-item__meta catalog-row-meta'>
+              <span className='dashboard-link-item__clicks'>
+                <span className='font-semibold'>{clickNum}</span>
+                <span className='text-muted text-xs'> {clickText}</span>
+              </span>
+              <span
+                className='dashboard-link-item__meta-sep'
+                aria-hidden='true'>
+                ·
+              </span>
+              <time
+                className='tabular-nums'
+                dateTime={url.createdAt}>
+                {createdLabel}
+              </time>
+            </p>
+          )}
 
           <div className='dashboard-link-item__actions'>
             <button

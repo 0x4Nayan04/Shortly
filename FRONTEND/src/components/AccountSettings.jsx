@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Info } from 'lucide-react';
 import { changePassword } from '../api/user.api';
+import { getApiErrorMessage } from '../utils/axiosInstance';
 import { getDesignInputClass } from '../utils/designFormClasses';
 import {
   validators,
@@ -8,7 +9,10 @@ import {
   hasErrors,
   getFirstError
 } from '../utils/validation';
-import AppCatalogShell, { LandingFrameInner, LandingSectionBlock } from './app/AppCatalogShell';
+import AppCatalogShell, {
+  LandingFrameInner,
+  LandingSectionBlock
+} from './app/AppCatalogShell';
 import AppNavbar from './app/AppNavbar';
 import PasswordVisibilityToggle from './PasswordVisibilityToggle';
 import { showToast, LoadingButton } from './UxEnhancements';
@@ -52,9 +56,7 @@ const AccountSettings = ({ user, onLogout, onShowAuth, onShowProfile }) => {
       });
       setPasswordErrors({});
     } catch (error) {
-      const apiMessage =
-        error?.response?.data?.message || 'Failed to update password';
-      showToast.error(apiMessage);
+      showToast.error(getApiErrorMessage(error, 'Failed to update password'));
     } finally {
       setPasswordLoading(false);
     }
@@ -100,247 +102,249 @@ const AccountSettings = ({ user, onLogout, onShowAuth, onShowProfile }) => {
                     Profile
                   </h2>
 
-                <div className='settings-workspace__panel-body'>
-                  <div className='settings-profile__identity'>
-                    <div className='relative shrink-0'>
-                      <img
-                        src={user.avatar}
-                        alt=''
-                        className='settings-profile__avatar'
-                        onError={(e) => {
-                          e.target.style.display = 'none';
-                          e.target.nextElementSibling.style.display = 'flex';
-                        }}
-                      />
-                      <div
-                        className='settings-profile__avatar settings-profile__avatar--fallback'
-                        style={{ display: 'none' }}
-                        aria-hidden='true'>
-                        <span className='font-display text-lg font-medium text-primary'>
-                          {(user.name || user.email || 'U')
-                            .charAt(0)
-                            .toUpperCase()}
+                  <div className='settings-workspace__panel-body'>
+                    <div className='settings-profile__identity'>
+                      <div className='relative shrink-0'>
+                        <img
+                          src={user.avatar}
+                          alt=''
+                          className='settings-profile__avatar'
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                            e.target.nextElementSibling.style.display = 'flex';
+                          }}
+                        />
+                        <div
+                          className='settings-profile__avatar settings-profile__avatar--fallback'
+                          style={{ display: 'none' }}
+                          aria-hidden='true'>
+                          <span className='font-display text-lg font-medium text-primary'>
+                            {(user.name || user.email || 'U')
+                              .charAt(0)
+                              .toUpperCase()}
+                          </span>
+                        </div>
+                      </div>
+                      <div className='min-w-0 flex-1'>
+                        <p className='font-medium text-ink'>{user.name}</p>
+                        <p className='settings-profile__email font-mono text-sm text-muted-strong'>
+                          {user.email}
+                        </p>
+                        <p className='mt-0.5 text-xs text-muted'>
+                          Avatar from Gravatar
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className='settings-profile__fields'>
+                      <div className='settings-profile__field settings-profile__field--name min-w-0'>
+                        <label
+                          htmlFor='settings-name'
+                          className='sm-label'>
+                          Full name
+                        </label>
+                        <input
+                          id='settings-name'
+                          type='text'
+                          value={user.name}
+                          readOnly
+                          className={`${getDesignInputClass()} w-full min-w-0 bg-surface-muted border-dashed cursor-default`}
+                        />
+                      </div>
+                      <div className='settings-profile__field settings-profile__field--email min-w-0'>
+                        <span
+                          id='settings-email-label'
+                          className='sm-label'>
+                          Email
                         </span>
+                        <p
+                          id='settings-email'
+                          className='settings-profile__field-value settings-profile__email font-mono text-sm text-ink'
+                          aria-labelledby='settings-email-label'>
+                          {user.email}
+                        </p>
                       </div>
                     </div>
-                    <div className='min-w-0 flex-1'>
-                      <p className='font-medium text-ink'>{user.name}</p>
-                      <p className='settings-profile__email font-mono text-sm text-muted-strong'>
-                        {user.email}
-                      </p>
-                      <p className='mt-0.5 text-xs text-muted'>
-                        Avatar from Gravatar
-                      </p>
-                    </div>
-                  </div>
 
-                  <div className='settings-profile__fields'>
-                    <div className='settings-profile__field settings-profile__field--name min-w-0'>
-                      <label
-                        htmlFor='settings-name'
-                        className='sm-label'>
-                        Full name
-                      </label>
-                      <input
-                        id='settings-name'
-                        type='text'
-                        value={user.name}
-                        readOnly
-                        className={`${getDesignInputClass()} w-full min-w-0 bg-surface-muted border-dashed cursor-default`}
+                    <div
+                      className='settings-profile__notice'
+                      role='note'>
+                      <Info
+                        className='settings-profile__notice-icon'
+                        aria-hidden='true'
                       />
-                    </div>
-                    <div className='settings-profile__field settings-profile__field--email min-w-0'>
-                      <span
-                        id='settings-email-label'
-                        className='sm-label'>
-                        Email
-                      </span>
-                      <p
-                        id='settings-email'
-                        className='settings-profile__field-value settings-profile__email font-mono text-sm text-ink'
-                        aria-labelledby='settings-email-label'>
-                        {user.email}
+                      <p className='text-sm text-muted-strong'>
+                        <span className='font-medium text-ink'>
+                          Profile editing coming soon.
+                        </span>{' '}
+                        Name and email are read-only for now; your avatar
+                        follows your Gravatar address.
                       </p>
                     </div>
-                  </div>
 
-                  <div
-                    className='settings-profile__notice'
-                    role='note'>
-                    <Info
-                      className='settings-profile__notice-icon'
-                      aria-hidden='true'
-                    />
-                    <p className='text-sm text-muted-strong'>
-                      <span className='font-medium text-ink'>
-                        Profile editing coming soon.
-                      </span>{' '}
-                      Name and email are read-only for now; your avatar follows
-                      your Gravatar address.
+                    <button
+                      type='button'
+                      disabled
+                      title='Profile editing coming soon'
+                      className='sm-btn sm-btn-secondary w-full cursor-not-allowed opacity-50'>
+                      Save changes
+                    </button>
+                  </div>
+                </section>
+
+                <section
+                  aria-labelledby='settings-security-heading'
+                  className='app-panel settings-workspace__panel settings-workspace__panel--security'>
+                  <h2
+                    id='settings-security-heading'
+                    className='dashboard-shorten-panel__heading'>
+                    Security
+                  </h2>
+                  <div className='settings-workspace__panel-body'>
+                    <p className='settings-security__lead'>
+                      Update your password to keep your account secure.
                     </p>
-                  </div>
 
-                  <button
-                    type='button'
-                    disabled
-                    title='Profile editing coming soon'
-                    className='sm-btn sm-btn-secondary w-full cursor-not-allowed opacity-50'>
-                    Save changes
-                  </button>
-                </div>
-              </section>
-
-              <section
-                aria-labelledby='settings-security-heading'
-                className='app-panel settings-workspace__panel settings-workspace__panel--security'>
-                <h2
-                  id='settings-security-heading'
-                  className='dashboard-shorten-panel__heading'>
-                  Security
-                </h2>
-                <div className='settings-workspace__panel-body'>
-                  <p className='settings-security__lead'>
-                    Update your password to keep your account secure.
-                  </p>
-
-                  <form
-                    className='settings-security__form'
-                    onSubmit={handlePasswordChange}
-                    noValidate>
-                  <div>
-                    <label
-                      htmlFor='settings-old-password'
-                      className='sm-label'>
-                      Current password
-                    </label>
-                    <div className='relative'>
-                      <input
-                        id='settings-old-password'
-                        type={showOldPassword ? 'text' : 'password'}
-                        autoComplete='current-password'
-                        value={passwordForm.oldPassword}
-                        onChange={(e) =>
-                          setPasswordForm((prev) => ({
-                            ...prev,
-                            oldPassword: e.target.value
-                          }))
-                        }
-                        className={getDesignInputClass({
-                          hasError: Boolean(passwordErrors.oldPassword),
-                          className: 'pr-12'
-                        })}
-                      />
-                      <PasswordVisibilityToggle
-                        visible={showOldPassword}
-                        onToggle={() => setShowOldPassword((v) => !v)}
-                      />
-                    </div>
-                    {passwordErrors.oldPassword && (
-                      <p className='sm-field-error'>
-                        {passwordErrors.oldPassword}
-                      </p>
-                    )}
-                  </div>
-                  <div className='settings-security__password-row'>
-                    <div>
-                      <label
-                        htmlFor='settings-new-password'
-                        className='sm-label'>
-                        New password
-                      </label>
-                      <div className='relative'>
-                        <input
-                          id='settings-new-password'
-                          type={showNewPassword ? 'text' : 'password'}
-                          autoComplete='new-password'
-                          value={passwordForm.newPassword}
-                          onChange={(e) =>
-                            setPasswordForm((prev) => ({
-                              ...prev,
-                              newPassword: e.target.value
-                            }))
-                          }
-                          className={getDesignInputClass({
-                            hasError: Boolean(passwordErrors.newPassword),
-                            className: 'pr-12'
-                          })}
-                        />
-                        <PasswordVisibilityToggle
-                          visible={showNewPassword}
-                          onToggle={() => setShowNewPassword((v) => !v)}
-                        />
+                    <form
+                      className='settings-security__form'
+                      onSubmit={handlePasswordChange}
+                      noValidate>
+                      <div>
+                        <label
+                          htmlFor='settings-old-password'
+                          className='sm-label'>
+                          Current password
+                        </label>
+                        <div className='relative'>
+                          <input
+                            id='settings-old-password'
+                            type={showOldPassword ? 'text' : 'password'}
+                            autoComplete='current-password'
+                            value={passwordForm.oldPassword}
+                            onChange={(e) =>
+                              setPasswordForm((prev) => ({
+                                ...prev,
+                                oldPassword: e.target.value
+                              }))
+                            }
+                            className={getDesignInputClass({
+                              hasError: Boolean(passwordErrors.oldPassword),
+                              className: 'pr-12'
+                            })}
+                          />
+                          <PasswordVisibilityToggle
+                            visible={showOldPassword}
+                            onToggle={() => setShowOldPassword((v) => !v)}
+                          />
+                        </div>
+                        {passwordErrors.oldPassword && (
+                          <p className='sm-field-error'>
+                            {passwordErrors.oldPassword}
+                          </p>
+                        )}
                       </div>
-                      {passwordErrors.newPassword && (
-                        <p className='sm-field-error'>
-                          {passwordErrors.newPassword}
-                        </p>
-                      )}
-                    </div>
-                    <div>
-                      <label
-                        htmlFor='settings-confirm-password'
-                        className='sm-label'>
-                        Confirm password
-                      </label>
-                      <div className='relative'>
-                        <input
-                          id='settings-confirm-password'
-                          type={showConfirmPassword ? 'text' : 'password'}
-                          autoComplete='new-password'
-                          value={passwordForm.confirmPassword}
-                          onChange={(e) =>
-                            setPasswordForm((prev) => ({
-                              ...prev,
-                              confirmPassword: e.target.value
-                            }))
-                          }
-                          className={getDesignInputClass({
-                            hasError: Boolean(passwordErrors.confirmPassword),
-                            className: 'pr-12'
-                          })}
-                        />
-                        <PasswordVisibilityToggle
-                          visible={showConfirmPassword}
-                          onToggle={() => setShowConfirmPassword((v) => !v)}
-                        />
+                      <div className='settings-security__password-row'>
+                        <div>
+                          <label
+                            htmlFor='settings-new-password'
+                            className='sm-label'>
+                            New password
+                          </label>
+                          <div className='relative'>
+                            <input
+                              id='settings-new-password'
+                              type={showNewPassword ? 'text' : 'password'}
+                              autoComplete='new-password'
+                              value={passwordForm.newPassword}
+                              onChange={(e) =>
+                                setPasswordForm((prev) => ({
+                                  ...prev,
+                                  newPassword: e.target.value
+                                }))
+                              }
+                              className={getDesignInputClass({
+                                hasError: Boolean(passwordErrors.newPassword),
+                                className: 'pr-12'
+                              })}
+                            />
+                            <PasswordVisibilityToggle
+                              visible={showNewPassword}
+                              onToggle={() => setShowNewPassword((v) => !v)}
+                            />
+                          </div>
+                          {passwordErrors.newPassword && (
+                            <p className='sm-field-error'>
+                              {passwordErrors.newPassword}
+                            </p>
+                          )}
+                        </div>
+                        <div>
+                          <label
+                            htmlFor='settings-confirm-password'
+                            className='sm-label'>
+                            Confirm password
+                          </label>
+                          <div className='relative'>
+                            <input
+                              id='settings-confirm-password'
+                              type={showConfirmPassword ? 'text' : 'password'}
+                              autoComplete='new-password'
+                              value={passwordForm.confirmPassword}
+                              onChange={(e) =>
+                                setPasswordForm((prev) => ({
+                                  ...prev,
+                                  confirmPassword: e.target.value
+                                }))
+                              }
+                              className={getDesignInputClass({
+                                hasError: Boolean(
+                                  passwordErrors.confirmPassword
+                                ),
+                                className: 'pr-12'
+                              })}
+                            />
+                            <PasswordVisibilityToggle
+                              visible={showConfirmPassword}
+                              onToggle={() => setShowConfirmPassword((v) => !v)}
+                            />
+                          </div>
+                          {passwordErrors.confirmPassword && (
+                            <p className='sm-field-error'>
+                              {passwordErrors.confirmPassword}
+                            </p>
+                          )}
+                        </div>
                       </div>
-                      {passwordErrors.confirmPassword && (
-                        <p className='sm-field-error'>
-                          {passwordErrors.confirmPassword}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  <LoadingButton
-                    type='submit'
-                    loading={passwordLoading}
-                    loadingText='Updating...'
-                    className='sm-btn sm-btn-primary w-full md:w-auto'
-                    disabled={
-                      !passwordForm.oldPassword ||
-                      !passwordForm.newPassword ||
-                      !passwordForm.confirmPassword
-                    }>
-                    Update password
-                  </LoadingButton>
-                </form>
+                      <LoadingButton
+                        type='submit'
+                        loading={passwordLoading}
+                        loadingText='Updating...'
+                        className='sm-btn sm-btn-primary w-full md:w-auto'
+                        disabled={
+                          !passwordForm.oldPassword ||
+                          !passwordForm.newPassword ||
+                          !passwordForm.confirmPassword
+                        }>
+                        Update password
+                      </LoadingButton>
+                    </form>
 
-                  <div className='settings-security__2fa'>
-                    <div className='min-w-0'>
-                      <p className='settings-security__2fa-title'>
-                        Two-factor authentication
-                      </p>
-                      <p className='text-sm text-muted'>
-                        Extra sign-in protection
-                      </p>
+                    <div className='settings-security__2fa'>
+                      <div className='min-w-0'>
+                        <p className='settings-security__2fa-title'>
+                          Two-factor authentication
+                        </p>
+                        <p className='text-sm text-muted'>
+                          Extra sign-in protection
+                        </p>
+                      </div>
+                      <span className='inline-flex items-center border border-border bg-blue-tint px-2 py-0.5 text-[11px] font-medium leading-tight text-primary'>
+                        Coming soon
+                      </span>
                     </div>
-                    <span className='inline-flex items-center border border-border bg-blue-tint px-2 py-0.5 text-[11px] font-medium leading-tight text-primary'>
-                      Coming soon
-                    </span>
                   </div>
-                </div>
-              </section>
-            </div>
+                </section>
+              </div>
             </div>
           </LandingFrameInner>
         </LandingSectionBlock>

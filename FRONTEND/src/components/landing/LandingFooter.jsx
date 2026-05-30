@@ -1,3 +1,4 @@
+import { createElement } from 'react';
 import { Link } from 'react-router-dom';
 import { LANDING_SECTION_LINKS } from '../../constants/landingNav';
 import { SOCIAL_LINKS } from '../../constants/social';
@@ -101,7 +102,7 @@ const LandingFooter = ({ user }) => {
             <div
               className='landing-footer-social'
               aria-label='Social links'>
-              {SOCIAL_ICON_LINKS.map(({ label, href, icon: Icon }) => (
+              {SOCIAL_ICON_LINKS.map(({ label, href, icon }) => (
                 <a
                   key={label}
                   href={href}
@@ -109,7 +110,10 @@ const LandingFooter = ({ user }) => {
                   rel='noopener noreferrer'
                   className='landing-icon-btn outline-none'
                   aria-label={label}>
-                  <Icon className='h-4 w-4' />
+                  {createElement(icon, {
+                    className: 'h-4 w-4',
+                    'aria-hidden': true
+                  })}
                 </a>
               ))}
             </div>

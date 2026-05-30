@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Check, Loader2 } from 'lucide-react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { resetPassword } from '../api/user.api';
+import { getApiErrorMessage } from '../utils/axiosInstance';
 import {
   formAlertClass,
   formSuccessIconWrapClass,
@@ -80,8 +81,7 @@ const ResetPassword = () => {
       setDone(true);
       showToast.success('Password reset successfully!');
     } catch (err) {
-      const msg =
-        err?.response?.data?.message || 'Invalid or expired reset link.';
+      const msg = getApiErrorMessage(err, 'Invalid or expired reset link.');
       setError(msg);
       showToast.error(msg);
     } finally {

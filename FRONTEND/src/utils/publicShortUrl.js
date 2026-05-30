@@ -6,7 +6,12 @@ export function getPublicShortBaseUrl() {
   const configured =
     import.meta.env.VITE_PUBLIC_SHORT_URL?.trim() ||
     import.meta.env.VITE_APP_URL?.trim();
-  return configured ? configured.replace(/\/$/, '') : '';
+  if (configured) return configured.replace(/\/$/, '');
+  // Dev: same origin as SPA — Vite proxies slug paths to the backend redirect handler
+  if (import.meta.env.DEV && typeof window !== 'undefined') {
+    return window.location.origin;
+  }
+  return '';
 }
 
 export function buildPublicShortUrl(slug) {

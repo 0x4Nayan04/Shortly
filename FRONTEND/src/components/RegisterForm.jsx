@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import AuthSubmitButton from './AuthSubmitButton';
 import { useBlocker } from 'react-router-dom';
 import { registerUser } from '../api/user.api';
+import { getApiErrorMessage } from '../utils/axiosInstance';
 import {
   formAlertClass,
   getDesignInputClass
@@ -149,7 +150,7 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
     try {
       const response = await registerUser(name, email, password);
 
-      if (response.success) {
+      if (response.success !== false && response.user) {
         showToast.success('Account created successfully!');
         if (onRegisterSuccess) {
           onRegisterSuccess(response);
@@ -185,10 +186,7 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
         setFieldErrors((prev) => ({ ...prev, ...backendErrors }));
         showToast.error('Please check the form for errors.');
       } else {
-        const errorMsg =
-          typeof data === 'string'
-            ? data
-            : data?.message || 'Registration failed';
+        const errorMsg = getApiErrorMessage(err, 'Registration failed');
         setError(errorMsg);
         showToast.error(errorMsg);
       }

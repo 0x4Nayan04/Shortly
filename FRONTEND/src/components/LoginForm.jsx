@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useBlocker } from 'react-router-dom';
 import AuthSubmitButton from './AuthSubmitButton';
 import { loginUser } from '../api/user.api';
+import { getApiErrorMessage } from '../utils/axiosInstance';
 import {
   formAlertClass,
   getDesignInputClass
@@ -131,7 +132,7 @@ const LoginForm = ({
     try {
       const response = await loginUser(email, password);
 
-      if (response.success) {
+      if (response.success !== false && response.user) {
         if (onLoginSuccess) {
           onLoginSuccess(response);
         }
@@ -154,10 +155,7 @@ const LoginForm = ({
         setFieldErrors((prev) => ({ ...prev, ...backendErrors }));
         showToast.error('Please check your credentials.');
       } else {
-        const errorMsg =
-          typeof data === 'string'
-            ? data
-            : data?.message || 'Invalid email or password';
+        const errorMsg = getApiErrorMessage(err, 'Invalid email or password');
         setError(errorMsg);
         showToast.error(errorMsg);
       }

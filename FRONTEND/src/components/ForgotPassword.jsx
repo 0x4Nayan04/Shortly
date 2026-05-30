@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Loader2, Mail } from 'lucide-react';
 import { forgotPassword } from '../api/user.api';
+import { getApiErrorMessage } from '../utils/axiosInstance';
 import {
   formSuccessIconWrapClass,
   getDesignInputClass
@@ -40,8 +41,7 @@ const ForgotPassword = ({ switchToLogin }) => {
       setSent(true);
       showToast.success('Reset link sent if account exists.');
     } catch (err) {
-      const msg =
-        err?.response?.data?.message || 'Something went wrong. Try again.';
+      const msg = getApiErrorMessage(err, 'Something went wrong. Try again.');
       setError(msg);
       showToast.error(msg);
     } finally {

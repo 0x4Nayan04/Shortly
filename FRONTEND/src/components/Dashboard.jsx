@@ -12,6 +12,7 @@ import {
   getMyUrls,
   getUrlStats
 } from '../api/shortUrl.api';
+import { getApiPayload } from '../utils/axiosInstance';
 import UrlForm from './UrlForm';
 import { LiveRegion, useAnnouncement } from './Accessibility';
 import {
@@ -104,16 +105,16 @@ const ActivityChart = memo(({ data }) => {
           </span>
         </div>
         {todayCount > 0 && (
-          <div className='activity-chart__today-badge'>
-            {todayCount} today
-          </div>
+          <div className='activity-chart__today-badge'>{todayCount} today</div>
         )}
       </div>
 
       {/* Chart area */}
       <div className='activity-chart__body'>
         {/* Y-axis scale */}
-        <div className='activity-chart__yaxis' aria-hidden='true'>
+        <div
+          className='activity-chart__yaxis'
+          aria-hidden='true'>
           <span>{maxCount}</span>
           <span>{Math.round(maxCount / 2)}</span>
           <span>0</span>
@@ -122,7 +123,9 @@ const ActivityChart = memo(({ data }) => {
         {/* Bars + grid */}
         <div className='activity-chart__plot'>
           {/* Grid lines */}
-          <div className='activity-chart__grid' aria-hidden='true'>
+          <div
+            className='activity-chart__grid'
+            aria-hidden='true'>
             {Array.from({ length: GRID_LINES + 1 }, (_, i) => (
               <div
                 key={i}
@@ -136,8 +139,13 @@ const ActivityChart = memo(({ data }) => {
           <div className='activity-chart__bars'>
             {chartData.map((day, idx) => {
               const date = new Date(day._id + 'T00:00:00');
-              const dayLabel = date.toLocaleDateString('en-US', { weekday: 'short' });
-              const dateLabel = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+              const dayLabel = date.toLocaleDateString('en-US', {
+                weekday: 'short'
+              });
+              const dateLabel = date.toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric'
+              });
               const barPct = day.count === 0 ? 0 : (day.count / maxCount) * 100;
               const isHovered = hoveredIdx === idx;
 
@@ -150,18 +158,25 @@ const ActivityChart = memo(({ data }) => {
                   onMouseLeave={() => setHoveredIdx(null)}
                   onFocus={() => setHoveredIdx(idx)}
                   onBlur={() => setHoveredIdx(null)}
-                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { setHoveredIdx(idx); } }}>
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      setHoveredIdx(idx);
+                    }
+                  }}>
                   {/* Tooltip */}
                   {isHovered && (
                     <div className='activity-chart__tooltip'>
-                      <strong>{day.count} link{day.count !== 1 ? 's' : ''}</strong>
+                      <strong>
+                        {day.count} link{day.count !== 1 ? 's' : ''}
+                      </strong>
                       <span>{dateLabel}</span>
                     </div>
                   )}
 
                   {/* Value label above bar */}
                   {day.count > 0 && (
-                    <span className={`activity-chart__value${isHovered ? ' activity-chart__value--visible' : ''}`}>
+                    <span
+                      className={`activity-chart__value${isHovered ? ' activity-chart__value--visible' : ''}`}>
                       {day.count}
                     </span>
                   )}
@@ -170,12 +185,15 @@ const ActivityChart = memo(({ data }) => {
                   <div className='activity-chart__bar-track'>
                     <div
                       className={`activity-chart__bar${day.count === 0 ? ' activity-chart__bar--empty' : ''}${day.isToday ? ' activity-chart__bar--today' : ''}`}
-                      style={{ height: barPct ? `${Math.max(barPct, 4)}%` : '3px' }}
+                      style={{
+                        height: barPct ? `${Math.max(barPct, 4)}%` : '3px'
+                      }}
                     />
                   </div>
 
                   {/* Day label */}
-                  <span className={`activity-chart__day${day.isToday ? ' activity-chart__day--today' : ''}`}>
+                  <span
+                    className={`activity-chart__day${day.isToday ? ' activity-chart__day--today' : ''}`}>
                     {dayLabel}
                   </span>
                 </div>
@@ -200,7 +218,9 @@ const TopUrls = memo(({ urls }) => {
           aria-hidden='true'
         />
         <p className='top-urls-empty__text'>No links yet</p>
-        <p className='top-urls-empty__hint'>Create links to see top performers</p>
+        <p className='top-urls-empty__hint'>
+          Create links to see top performers
+        </p>
       </div>
     );
   }
@@ -209,41 +229,47 @@ const TopUrls = memo(({ urls }) => {
     <ul className='top-urls-list'>
       {urls.map((url, index) => {
         const shortUrlFull = buildPublicShortUrl(url.short_url);
-        const { hostLead, hostTrail, slug } = getShortLinkDisplayParts(url.short_url);
+        const { hostLead, hostTrail, slug } = getShortLinkDisplayParts(
+          url.short_url
+        );
 
         return (
-        <li
-          key={url._id}
-          className='top-url-item'>
-          <span className='top-url-item__rank'>
-            {index + 1}
-          </span>
-          <div className='top-url-item__body'>
-            <div
-              className='top-url-item__short'
-              title={shortUrlFull}>
-              {hostLead ? (
-                <span className='top-url-item__short-inner'>
-                  <span className='top-url-item__host top-url-item__host--truncate'>{hostLead}</span>
-                  {hostTrail ? <span className='top-url-item__host'>{hostTrail}</span> : null}
-                  <span className='top-url-item__slug'>/</span>
-                  <span className='top-url-item__slug'>{slug}</span>
-                </span>
-              ) : (
-                <span className='top-url-item__short-fallback'>/{slug}</span>
-              )}
+          <li
+            key={url._id}
+            className='top-url-item'>
+            <span className='top-url-item__rank'>{index + 1}</span>
+            <div className='top-url-item__body'>
+              <div
+                className='top-url-item__short'
+                title={shortUrlFull}>
+                {hostLead ? (
+                  <span className='top-url-item__short-inner'>
+                    <span className='top-url-item__host top-url-item__host--truncate'>
+                      {hostLead}
+                    </span>
+                    {hostTrail ? (
+                      <span className='top-url-item__host'>{hostTrail}</span>
+                    ) : null}
+                    <span className='top-url-item__slug'>/</span>
+                    <span className='top-url-item__slug'>{slug}</span>
+                  </span>
+                ) : (
+                  <span className='top-url-item__short-fallback'>/{slug}</span>
+                )}
+              </div>
+              <p
+                className='top-url-item__dest'
+                title={url.full_url}>
+                {url.full_url}
+              </p>
             </div>
-            <p
-              className='top-url-item__dest'
-              title={url.full_url}>
-              {url.full_url}
+            <p className='top-url-item__clicks'>
+              <span className='top-url-item__clicks-value'>{url.click}</span>
+              <span className='top-url-item__clicks-label'>
+                {url.click === 1 ? 'click' : 'clicks'}
+              </span>
             </p>
-          </div>
-          <p className='top-url-item__clicks'>
-            <span className='top-url-item__clicks-value'>{url.click}</span>
-            <span className='top-url-item__clicks-label'>{url.click === 1 ? 'click' : 'clicks'}</span>
-          </p>
-        </li>
+          </li>
         );
       })}
     </ul>
@@ -385,7 +411,7 @@ const Dashboard = ({ user, onLogout, onShowAuth, onShowProfile }) => {
         sortBy,
         sortOrder
       });
-      const payload = response?.data;
+      const payload = getApiPayload(response);
       if (payload) {
         const { urls, totalCount: total, totalPages: pages } = payload;
         setMyUrls(urls || []);
@@ -409,7 +435,7 @@ const Dashboard = ({ user, onLogout, onShowAuth, onShowProfile }) => {
     setStatsLoading(true);
     try {
       const response = await getUrlStats();
-      const payload = response?.data;
+      const payload = getApiPayload(response);
       if (payload) setStats(payload);
     } catch (err) {
       console.error('Error fetching stats:', err);
@@ -428,7 +454,10 @@ const Dashboard = ({ user, onLogout, onShowAuth, onShowProfile }) => {
 
   const handlePageChange = useCallback((page) => {
     setCurrentPage(page);
-    linksPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    linksPanelRef.current?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start'
+    });
   }, []);
 
   const copyToClipboard = useCallback(
@@ -460,6 +489,7 @@ const Dashboard = ({ user, onLogout, onShowAuth, onShowProfile }) => {
       const deleteToast = showToast.loading('Deleting link…');
       try {
         await deleteShortUrl(urlId);
+        setTotalCount((prev) => Math.max(0, prev - 1));
         setMyUrls((prev) => prev.filter((url) => url._id !== urlId));
         setSelectedIds((prev) => {
           const next = new Set(prev);
@@ -544,7 +574,8 @@ const Dashboard = ({ user, onLogout, onShowAuth, onShowProfile }) => {
   const showInsightsGrid =
     !statsLoading &&
     !!stats &&
-    ((stats.recentActivity?.length ?? 0) > 0 || (stats.topUrls?.length ?? 0) > 0);
+    ((stats.recentActivity?.length ?? 0) > 0 ||
+      (stats.topUrls?.length ?? 0) > 0);
   const showClickAnalytics = !statsLoading && !!stats?.clickAnalytics;
   const hasLinksTab = linkTab === 'links';
 
@@ -689,7 +720,11 @@ const Dashboard = ({ user, onLogout, onShowAuth, onShowProfile }) => {
                   <>
                     <div className='app-panel dashboard-stat-card dashboard-stat-card--links'>
                       <div className='dashboard-stat__header'>
-                        <Link2 className='dashboard-stat__icon' aria-hidden='true' strokeWidth={2} />
+                        <Link2
+                          className='dashboard-stat__icon'
+                          aria-hidden='true'
+                          strokeWidth={2}
+                        />
                         <p className='dashboard-stat__label'>Total links</p>
                       </div>
                       <p className='dashboard-stat__value tabular-nums'>
@@ -698,8 +733,14 @@ const Dashboard = ({ user, onLogout, onShowAuth, onShowProfile }) => {
                     </div>
                     <div className='app-panel dashboard-stat-card dashboard-stat-card--clicks'>
                       <div className='dashboard-stat__header'>
-                        <MousePointerClick className='dashboard-stat__icon' aria-hidden='true' strokeWidth={2} />
-                        <p className='dashboard-stat__label'>Total clicks (all time)</p>
+                        <MousePointerClick
+                          className='dashboard-stat__icon'
+                          aria-hidden='true'
+                          strokeWidth={2}
+                        />
+                        <p className='dashboard-stat__label'>
+                          Total clicks (all time)
+                        </p>
                       </div>
                       <p className='dashboard-stat__value tabular-nums'>
                         {userStats.totalClicks.toLocaleString()}
@@ -707,7 +748,11 @@ const Dashboard = ({ user, onLogout, onShowAuth, onShowProfile }) => {
                     </div>
                     <div className='app-panel dashboard-stat-card dashboard-stat-card--avg'>
                       <div className='dashboard-stat__header'>
-                        <Activity className='dashboard-stat__icon' aria-hidden='true' strokeWidth={2} />
+                        <Activity
+                          className='dashboard-stat__icon'
+                          aria-hidden='true'
+                          strokeWidth={2}
+                        />
                         <p className='dashboard-stat__label'>Avg clicks/link</p>
                       </div>
                       <p className='dashboard-stat__value tabular-nums'>
@@ -717,7 +762,6 @@ const Dashboard = ({ user, onLogout, onShowAuth, onShowProfile }) => {
                   </>
                 )}
               </div>
-
             </section>
 
             {(statsLoading || showInsightsGrid) && (
@@ -791,7 +835,10 @@ const Dashboard = ({ user, onLogout, onShowAuth, onShowProfile }) => {
                     className='dashboard-links-panel__heading'>
                     Your links
                   </h2>
-                  <div className='dashboard-links-tabs' role='tablist' aria-label='View mode'>
+                  <div
+                    className='dashboard-links-tabs'
+                    role='tablist'
+                    aria-label='View mode'>
                     <button
                       type='button'
                       role='tab'
@@ -819,7 +866,9 @@ const Dashboard = ({ user, onLogout, onShowAuth, onShowProfile }) => {
                         type='checkbox'
                         checked={isAllSelected}
                         onChange={(e) =>
-                          e.target.checked ? handleSelectAll() : handleDeselectAll()
+                          e.target.checked
+                            ? handleSelectAll()
+                            : handleDeselectAll()
                         }
                         disabled={loading || isBulkDeleting}
                         className='dashboard-links-toolbar__checkbox'
@@ -892,7 +941,6 @@ const Dashboard = ({ user, onLogout, onShowAuth, onShowProfile }) => {
             </section>
           </LandingFrameInner>
         </LandingSectionBlock>
-
       </main>
 
       <ConfirmDialog {...confirmDialog} />
