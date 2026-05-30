@@ -25,6 +25,58 @@ import {
     useCopyToClipboard,
 } from "./UxEnhancements";
 
+const UrlInputBar = ({ url, setUrl, loading, error, fieldErrors, touched, handleChange, handleBlur, handleSubmit, showPrefix, shortUrl, children }) => {
+    const urlHasError = touched.url && fieldErrors.url;
+
+    return (
+        <div className={showPrefix
+            ? `hero-form-compound${urlHasError ? " hero-form-compound-error" : ""}`
+            : formCompoundClass(urlHasError)
+        }>
+            <label htmlFor="url-input" className="sr-only">
+                {showPrefix ? "Long URL" : "Enter your long URL"}
+            </label>
+            <div className="hero-cli-bar">
+                {showPrefix && (
+                    <span className="hero-cli-prefix" aria-hidden="true">url</span>
+                )}
+                <input
+                    id="url-input"
+                    type="url"
+                    value={url}
+                    onChange={(e) => handleChange("url", e.target.value, setUrl)}
+                    onBlur={(e) => handleBlur("url", e.target.value)}
+                    placeholder={showPrefix ? "https://example.com/your-long-link" : "Enter your long URL here..."}
+                    className="hero-cli-input"
+                    aria-invalid={urlHasError ? "true" : "false"}
+                    aria-describedby={fieldErrors.url ? "url-error" : undefined}
+                    autoComplete="url"
+                />
+                <button
+                    type="submit"
+                    disabled={loading}
+                    aria-busy={loading}
+                    className={`hero-cli-submit${showPrefix ? " focus-ring" : ""}`}
+                >
+                    {loading ? <BrandedSpinner size="sm" decorative /> : "Shorten"}
+                </button>
+            </div>
+            {showPrefix && children}
+            {urlHasError && (
+                <p id="url-error" className={`hero-form-error${showPrefix ? "" : " px-4 pb-3"}`} role="alert">
+                    {fieldErrors.url}
+                </p>
+            )}
+            {url && !fieldErrors.url && !loading && !shortUrl && (
+                <p className="truncate px-4 pb-3 font-mono text-xs text-muted" title={url}>
+                    {showPrefix ? null : <span aria-hidden="true">→ </span>}
+                    {url}
+                </p>
+            )}
+        </div>
+    );
+};
+
 const UrlForm = ({ onUrlCreated, user, onShowAuth, variant = "default" }) => {
     const isLanding = variant === "landing";
     const [url, setUrl] = useState("");
@@ -206,7 +258,6 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth, variant = "default" }) => {
 
     const urlHasError = touched.url && fieldErrors.url;
     const aliasHasError = touched.customAlias && fieldErrors.customAlias;
-    const compoundHasError = urlHasError || aliasHasError;
 
     return (
         <div className={isLanding ? "" : "space-y-6"}>
@@ -218,62 +269,21 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth, variant = "default" }) => {
                 className={isLanding ? "pt-0" : "space-y-4"}
                 aria-label="URL shortener form"
             >
-                {isLanding ? (
-                    <>
-                        <div
-                            className={`hero-form-compound${compoundHasError ? " hero-form-compound-error" : ""}`}
-                        >
-                            <label htmlFor="url-input" className="sr-only">
-                                Long URL
-                            </label>
-                            <div className="hero-cli-bar">
-                                <span
-                                    className="hero-cli-prefix"
-                                    aria-hidden="true"
-                                >
-                                    url
-                                </span>
-                                <input
-                                    id="url-input"
-                                    type="url"
-                                    value={url}
-                                    onChange={(e) =>
-                                        handleChange(
-                                            "url",
-                                            e.target.value,
-                                            setUrl,
-                                        )
-                                    }
-                                    onBlur={(e) =>
-                                        handleBlur("url", e.target.value)
-                                    }
-                                    placeholder="https://example.com/your-long-link"
-                                    className="hero-cli-input"
-                                    aria-invalid={
-                                        urlHasError ? "true" : "false"
-                                    }
-                                    aria-describedby={
-                                        fieldErrors.url
-                                            ? "url-error"
-                                            : undefined
-                                    }
-                                    autoComplete="url"
-                                />
-                                <button
-                                    type="submit"
-                                    disabled={loading}
-                                    aria-busy={loading}
-                                    className="hero-cli-submit focus-ring"
-                                >
-                                    {loading ? (
-                                        <BrandedSpinner size="sm" decorative />
-                                    ) : (
-                                        "Shorten"
-                                    )}
-                                </button>
-                            </div>
-
-                            {/* Progressive Customization Drawer */}
+                <UrlInputBar
+                    url={url}
+                    setUrl={setUrl}
+                    loading={loading}
+                    error={error}
+                    fieldErrors={fieldErrors}
+                    touched={touched}
+                    handleChange={handleChange}
+                    handleBlur={handleBlur}
+                    handleSubmit={handleSubmit}
+                    showPrefix={isLanding}
+                    shortUrl={shortUrl}
+                >
+                    {isLanding && (
+                        <>
                             {!user ? (
                                 <div className="catalog-row flex w-full items-center justify-between gap-2 px-4">
                                     <button
@@ -423,222 +433,135 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth, variant = "default" }) => {
                                     )}
                                 </div>
                             )}
-                            {urlHasError && (
-                                <p
-                                    id="url-error"
-                                    className="hero-form-error"
-                                    role="alert"
-                                >
-                                    {fieldErrors.url}
-                                </p>
-                            )}
-                            {url &&
-                                !fieldErrors.url &&
-                                !loading &&
-                                !shortUrl && (
-                                    <p
-                                        className="truncate px-4 pb-3 font-mono text-xs text-muted"
-                                        title={url}
-                                    >
-                                        → {url}
-                                    </p>
-                                )}
-                        </div>
-                    </>
-                ) : (
-                    <div className="space-y-4">
-                        <div className={formCompoundClass(urlHasError)}>
-                            <label htmlFor="url-input" className="sr-only">
-                                Enter your long URL
-                            </label>
-                            <div className="hero-cli-bar">
-                                <input
-                                    id="url-input"
-                                    type="url"
-                                    value={url}
-                                    onChange={(e) =>
-                                        handleChange(
-                                            "url",
-                                            e.target.value,
-                                            setUrl,
-                                        )
-                                    }
-                                    onBlur={(e) =>
-                                        handleBlur("url", e.target.value)
-                                    }
-                                    placeholder="Enter your long URL here..."
-                                    className="hero-cli-input"
-                                    aria-invalid={
-                                        urlHasError ? "true" : "false"
-                                    }
-                                    aria-describedby={
-                                        fieldErrors.url
-                                            ? "url-error"
-                                            : undefined
-                                    }
-                                    autoComplete="url"
-                                />
-                                <button
-                                    type="submit"
-                                    disabled={loading}
-                                    aria-busy={loading}
-                                    className="hero-cli-submit"
-                                >
-                                    {loading ? (
-                                        <BrandedSpinner size="sm" decorative />
-                                    ) : (
-                                        "Shorten"
-                                    )}
-                                </button>
-                            </div>
-                            {urlHasError && (
-                                <p
-                                    id="url-error"
-                                    className="hero-form-error px-4 pb-3"
-                                    role="alert"
-                                >
-                                    {fieldErrors.url}
-                                </p>
-                            )}
-                            {url &&
-                                !fieldErrors.url &&
-                                !loading &&
-                                !shortUrl && (
-                                    <p
-                                        className="truncate px-4 pb-3 font-mono text-xs text-muted"
-                                        title={url}
-                                    >
-                                        <span aria-hidden="true">→ </span>
-                                        {url}
-                                    </p>
-                                )}
-                        </div>
-
-                        <>
-                            <div className="flex items-center gap-3">
-                                <label
-                                    htmlFor="custom-alias-checkbox"
-                                    className={`flex items-center gap-3 ${!user ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
-                                >
-                                    <input
-                                        id="custom-alias-checkbox"
-                                        type="checkbox"
-                                        checked={useCustomAlias}
-                                        disabled={!user}
-                                        onChange={(e) => {
-                                            if (!user && e.target.checked) {
-                                                setError(
-                                                    "Please sign in to use custom aliases",
-                                                );
-                                                if (onShowAuth) {
-                                                    onShowAuth();
-                                                }
-                                                return;
-                                            }
-                                            setUseCustomAlias(e.target.checked);
-                                            setError("");
-                                            if (!e.target.checked) {
-                                                setFieldErrors((prev) => ({
-                                                    ...prev,
-                                                    customAlias: null,
-                                                }));
-                                                setTouched((prev) => ({
-                                                    ...prev,
-                                                    customAlias: false,
-                                                }));
-                                            }
-                                        }}
-                                        className="h-4 w-4 shrink-0 min-w-0 min-h-0 accent-[var(--color-primary)] cursor-pointer disabled:opacity-50"
-                                        aria-describedby="custom-alias-description"
-                                    />
-                                    <span
-                                        className={`text-sm font-medium ${!user ? "text-muted" : "text-muted-strong"}`}
-                                        id="custom-alias-description"
-                                    >
-                                        Use custom alias
-                                        {!user && (
-                                            <span className="ml-1 text-primary">
-                                                (requires login)
-                                            </span>
-                                        )}
-                                    </span>
-                                </label>
-                            </div>
-
-                            {useCustomAlias && (
-                                <div
-                                    className={formCompoundClass(aliasHasError)}
-                                >
-                                    <div className="hero-alias-field">
-                                        <label
-                                            htmlFor="custom-alias-input"
-                                            className="sr-only"
-                                        >
-                                            Custom alias
-                                        </label>
-                                        <div className="hero-cli-bar hero-alias-bar">
-                                            <span
-                                                className="hero-cli-prefix shrink-0"
-                                                aria-hidden="true"
-                                            >
-                                                {getPublicShortBaseUrl()}/
-                                            </span>
-                                            <input
-                                                id="custom-alias-input"
-                                                type="text"
-                                                value={customAlias}
-                                                onChange={(e) =>
-                                                    handleChange(
-                                                        "customAlias",
-                                                        e.target.value,
-                                                        setCustomAlias,
-                                                    )
-                                                }
-                                                onBlur={(e) =>
-                                                    handleBlur(
-                                                        "customAlias",
-                                                        e.target.value,
-                                                    )
-                                                }
-                                                placeholder="your-custom-alias"
-                                                className="hero-cli-input font-mono text-sm"
-                                                aria-invalid={
-                                                    touched.customAlias &&
-                                                    fieldErrors.customAlias
-                                                        ? "true"
-                                                        : "false"
-                                                }
-                                                aria-describedby={
-                                                    fieldErrors.customAlias
-                                                        ? "customAlias-error"
-                                                        : "customAlias-hint"
-                                                }
-                                                autoComplete="off"
-                                            />
-                                        </div>
-                                        {touched.customAlias &&
-                                        fieldErrors.customAlias ? (
-                                            <p
-                                                id="customAlias-error"
-                                                className="hero-form-error hero-alias-footnote"
-                                                role="alert"
-                                            >
-                                                {fieldErrors.customAlias}
-                                            </p>
-                                        ) : (
-                                            <p
-                                                id="customAlias-hint"
-                                                className="hero-form-hint hero-alias-footnote"
-                                            >
-                                                3–20 chars · letters, numbers,
-                                                hyphens, underscores
-                                            </p>
-                                        )}
-                                    </div>
-                                </div>
-                            )}
                         </>
-                    </div>
+                    )}
+                </UrlInputBar>
+
+                {!isLanding && (
+                    <>
+                        <div className="flex items-center gap-3">
+                            <label
+                                htmlFor="custom-alias-checkbox"
+                                className={`flex items-center gap-3 ${!user ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+                            >
+                                <input
+                                    id="custom-alias-checkbox"
+                                    type="checkbox"
+                                    checked={useCustomAlias}
+                                    disabled={!user}
+                                    onChange={(e) => {
+                                        if (!user && e.target.checked) {
+                                            setError(
+                                                "Please sign in to use custom aliases",
+                                            );
+                                            if (onShowAuth) {
+                                                onShowAuth();
+                                            }
+                                            return;
+                                        }
+                                        setUseCustomAlias(e.target.checked);
+                                        setError("");
+                                        if (!e.target.checked) {
+                                            setFieldErrors((prev) => ({
+                                                ...prev,
+                                                customAlias: null,
+                                            }));
+                                            setTouched((prev) => ({
+                                                ...prev,
+                                                customAlias: false,
+                                            }));
+                                        }
+                                    }}
+                                    className="h-4 w-4 shrink-0 min-w-0 min-h-0 accent-[var(--color-primary)] cursor-pointer disabled:opacity-50"
+                                    aria-describedby="custom-alias-description"
+                                />
+                                <span
+                                    className={`text-sm font-medium ${!user ? "text-muted" : "text-muted-strong"}`}
+                                    id="custom-alias-description"
+                                >
+                                    Use custom alias
+                                    {!user && (
+                                        <span className="ml-1 text-primary">
+                                            (requires login)
+                                        </span>
+                                    )}
+                                </span>
+                            </label>
+                        </div>
+
+                        {useCustomAlias && (
+                            <div
+                                className={formCompoundClass(aliasHasError)}
+                            >
+                                <div className="hero-alias-field">
+                                    <label
+                                        htmlFor="custom-alias-input"
+                                        className="sr-only"
+                                    >
+                                        Custom alias
+                                    </label>
+                                    <div className="hero-cli-bar hero-alias-bar">
+                                        <span
+                                            className="hero-cli-prefix shrink-0"
+                                            aria-hidden="true"
+                                        >
+                                            {getPublicShortBaseUrl()}/
+                                        </span>
+                                        <input
+                                            id="custom-alias-input"
+                                            type="text"
+                                            value={customAlias}
+                                            onChange={(e) =>
+                                                handleChange(
+                                                    "customAlias",
+                                                    e.target.value,
+                                                    setCustomAlias,
+                                                )
+                                            }
+                                            onBlur={(e) =>
+                                                handleBlur(
+                                                    "customAlias",
+                                                    e.target.value,
+                                                )
+                                            }
+                                            placeholder="your-custom-alias"
+                                            className="hero-cli-input font-mono text-sm"
+                                            aria-invalid={
+                                                touched.customAlias &&
+                                                fieldErrors.customAlias
+                                                    ? "true"
+                                                    : "false"
+                                            }
+                                            aria-describedby={
+                                                fieldErrors.customAlias
+                                                    ? "customAlias-error"
+                                                    : "customAlias-hint"
+                                            }
+                                            autoComplete="off"
+                                        />
+                                    </div>
+                                    {touched.customAlias &&
+                                    fieldErrors.customAlias ? (
+                                        <p
+                                            id="customAlias-error"
+                                            className="hero-form-error hero-alias-footnote"
+                                            role="alert"
+                                        >
+                                            {fieldErrors.customAlias}
+                                        </p>
+                                    ) : (
+                                        <p
+                                            id="customAlias-hint"
+                                            className="hero-form-hint hero-alias-footnote"
+                                        >
+                                            3–20 chars · letters, numbers,
+                                            hyphens, underscores
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                    </>
                 )}
                 {error && (
                     <div
