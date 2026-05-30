@@ -57,6 +57,8 @@ export const toastConfig = {
 /**
  * Pre-configured toast functions for consistent UX
  */
+export const OFFLINE_TOAST_ID = 'offline-toast';
+
 export const showToast = {
   success: (message, options = {}) =>
     toast.success(message, { ...toastConfig.success, ...options }),
@@ -97,7 +99,7 @@ export const showToast = {
   // Offline notification
   offline: () =>
     toast.error("You're offline. Some features may not work.", {
-      id: 'offline-toast',
+      id: OFFLINE_TOAST_ID,
       duration: Infinity,
       icon: (
         <svg
@@ -118,7 +120,7 @@ export const showToast = {
 
   // Online notification
   online: () => {
-    toast.dismiss('offline-toast');
+    toast.dismiss(OFFLINE_TOAST_ID);
     toast.success("You're back online!", {
       duration: 3000,
       icon: (
@@ -654,7 +656,28 @@ export const useConfirmDialog = () => {
 /**
  * Confirmation Dialog Component
  */
-let dialogCount = 0;
+
+const scrollLockCount = useRef(0);
+
+export function useBodyScrollLock(isLocked) {
+  useEffect(() => {
+    if (isLocked) {
+      scrollLockCount.current++;
+      document.body.style.overflow = 'hidden';
+    } else {
+      scrollLockCount.current = Math.max(0, scrollLockCount.current - 1);
+    }
+    if (scrollLockCount.current <= 0) {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      scrollLockCount.current = Math.max(0, scrollLockCount.current - 1);
+      if (scrollLockCount.current <= 0) {
+        document.body.style.overflow = '';
+      }
+    };
+  }, [isLocked]);
+}
 
 export const ConfirmDialog = memo(
   ({
@@ -669,23 +692,12 @@ export const ConfirmDialog = memo(
   }) => {
     const dialogRef = useRef(null);
 
+    useBodyScrollLock(isOpen);
+
     useEffect(() => {
       if (isOpen) {
-        dialogCount++;
         dialogRef.current?.focus();
-        document.body.style.overflow = 'hidden';
-      } else {
-        dialogCount = Math.max(0, dialogCount - 1);
-        if (dialogCount === 0) {
-          document.body.style.overflow = '';
-        }
       }
-      return () => {
-        dialogCount = Math.max(0, dialogCount - 1);
-        if (dialogCount === 0) {
-          document.body.style.overflow = '';
-        }
-      };
     }, [isOpen]);
 
     const onCancelRef = useRef(onCancel);
@@ -812,6 +824,13 @@ ProgressBar.displayName = 'ProgressBar';
  */
 export const useCopyToClipboard = () => {
   const [copiedText, setCopiedText] = useState(null);
+  const timeoutRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
 
   const copy = useCallback(
     async (text, successMessage = 'Copied to clipboard!') => {
@@ -825,8 +844,8 @@ export const useCopyToClipboard = () => {
         setCopiedText(text);
         showToast.success(successMessage);
 
-        // Reset after 2 seconds
-        setTimeout(() => setCopiedText(null), 2000);
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        timeoutRef.current = setTimeout(() => setCopiedText(null), 2000);
         return true;
       } catch {
         showToast.error('Failed to copy');
