@@ -9,10 +9,6 @@ export const rateLimiter = ({
   failClosed = true
 }) => {
   return async (req, res, next) => {
-    if (process.env.NODE_ENV === 'test') {
-      return next();
-    }
-
     try {
       const key = keyGenerator(req);
       const now = new Date();

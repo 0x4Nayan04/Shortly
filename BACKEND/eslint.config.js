@@ -18,17 +18,5 @@ export default [
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }
       ]
     }
-  },
-  {
-    files: ['tests/**/*.js'],
-    languageOptions: {
-      sourceType: 'module',
-      parserOptions: {
-        ecmaVersion: 2022
-      }
-    },
-    rules: {
-      'no-undef': 'off'
-    }
   }
 ];

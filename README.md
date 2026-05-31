@@ -350,6 +350,50 @@ Cookie: token=<jwt>
 3. Use the dashboard to manage URLs, view analytics, and bulk-delete.
 4. Create custom aliases (3–20 chars: letters, numbers, hyphens, underscores).
 
+## Design tradeoffs
+
+Intentional product and engineering choices — useful context for reviewers and
+interviews. See [PRIVACY.md](./PRIVACY.md) for the public-facing version of
+analytics policy.
+
+### Redirect speed vs click accuracy
+
+The redirect handler sends a `302` **first**, then records the click
+asynchronously after the response finishes. That keeps links fast for visitors.
+
+**Tradeoff:** If someone closes the tab immediately, the visit may never be
+recorded. We prioritize fast redirects over perfectly exact counts. Bot user
+agents are excluded from recording entirely.
+
+### 30-day analytics window vs lifetime totals
+
+Raw click events (country, device, browser, referrer, daily chart buckets) are
+stored with a MongoDB TTL index and **deleted after 30 days**.
+
+**Tradeoff:** The analytics chart and breakdowns only cover stored history (up
+to 30 days). **Total clicks (all time)** on each link and in the dashboard
+overview comes from the link’s `click` counter, which is incremented on every
+recorded redirect and is not tied to the TTL window.
+
+### Anonymous links: device-local, claim on sign-in
+
+Guests can shorten without an account. The backend returns a `manage_token`; the
+frontend stores `{ id, manage_token }` in `localStorage` on that device.
+
+**Tradeoff:** Links are not tied to an account until the user signs in and the
+claim flow runs (`POST /api/create/claim`). There is no guest delete API — sign
+in to claim, then manage or delete from the dashboard. Clearing browser data
+loses manage access (the short link still works).
+
+### Email verification when Resend is configured
+
+If `RESEND_API_KEY` is set, new accounts must verify email before login. Without
+it (typical local dev), registration auto-verifies and issues a session
+immediately.
+
+**Tradeoff:** Production gets verified inboxes and fewer throwaway accounts;
+local dev stays frictionless when email is not configured.
+
 ## Security
 
 - Password hashing with bcrypt
