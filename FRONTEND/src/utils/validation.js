@@ -1,24 +1,8 @@
-/**
- * Frontend Validation Utilities
- *
- * These validators mirror the backend validation rules to provide
- * immediate feedback before form submission.
- */
-
-// Email validation regex
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-// URL validation regex (must start with http:// or https://)
 const URL_REGEX = /^https?:\/\/.+/i;
-
-// Custom alias validation regex (alphanumeric, hyphens, underscores only)
 const CUSTOM_ALIAS_REGEX = /^[a-zA-Z0-9_-]+$/;
 
-/**
- * Validate a single field and return error message or null
- */
 export const validators = {
-  // Name validation
   name: (value) => {
     if (!value || !value.trim()) {
       return 'Name is required';
@@ -32,7 +16,6 @@ export const validators = {
     return null;
   },
 
-  // Email validation
   email: (value) => {
     if (!value || !value.trim()) {
       return 'Email is required';
@@ -43,7 +26,6 @@ export const validators = {
     return null;
   },
 
-  // Password validation (for registration)
   password: (value, options = {}) => {
     const { minLength = 6, required = true } = options;
 
@@ -59,7 +41,6 @@ export const validators = {
     return null;
   },
 
-  // Login password (just check if provided)
   loginPassword: (value) => {
     if (!value) {
       return 'Password is required';
@@ -67,7 +48,6 @@ export const validators = {
     return null;
   },
 
-  // Confirm password validation
   confirmPassword: (value, password) => {
     if (!value) {
       return 'Please confirm your password';
@@ -78,7 +58,6 @@ export const validators = {
     return null;
   },
 
-  // URL validation
   url: (value) => {
     if (!value || !value.trim()) {
       return 'URL is required';
@@ -89,7 +68,6 @@ export const validators = {
     return null;
   },
 
-  // Custom alias validation
   customAlias: (value, options = {}) => {
     const { required = false } = options;
 
@@ -112,12 +90,6 @@ export const validators = {
   }
 };
 
-/**
- * Validate multiple fields at once
- * @param {Object} fields - Object with field names as keys and values to validate
- * @param {Object} rules - Object with field names as keys and validator functions or arrays
- * @returns {Object} - Object with field names as keys and error messages (or null) as values
- */
 export const validateForm = (fields, rules) => {
   const errors = {};
 
@@ -128,7 +100,6 @@ export const validateForm = (fields, rules) => {
       if (typeof rule === 'function') {
         errors[fieldName] = rule(value);
       } else if (Array.isArray(rule)) {
-        // Support passing extra args like [validators.confirmPassword, password]
         const [validator, ...args] = rule;
         errors[fieldName] = validator(value, ...args);
       }
@@ -138,20 +109,10 @@ export const validateForm = (fields, rules) => {
   return errors;
 };
 
-/**
- * Check if form has any errors
- * @param {Object} errors - Errors object from validateForm
- * @returns {boolean} - True if there are errors
- */
 export const hasErrors = (errors) => {
   return Object.values(errors).some((error) => error !== null);
 };
 
-/**
- * Get first error message from errors object
- * @param {Object} errors - Errors object from validateForm
- * @returns {string|null} - First error message or null
- */
 export const getFirstError = (errors) => {
   const firstError = Object.values(errors).find((error) => error !== null);
   return firstError || null;

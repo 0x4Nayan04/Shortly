@@ -45,17 +45,13 @@ export function AuthProvider({ children }) {
   const location = useLocation();
 
   const fetchUserStats = useCallback(async () => {
-    try {
-      const response = await getUrlStats();
-      const payload = getApiPayload(response);
-      if (payload?.stats) {
-        setUserStats({
-          totalUrls: payload.stats.totalUrls || 0,
-          totalClicks: payload.stats.totalClicks || 0
-        });
-      }
-    } catch (error) {
-      console.error('Error fetching user stats:', error);
+    const response = await getUrlStats().catch(() => null);
+    const payload = response ? getApiPayload(response) : null;
+    if (payload?.stats) {
+      setUserStats({
+        totalUrls: payload.stats.totalUrls || 0,
+        totalClicks: payload.stats.totalClicks || 0
+      });
     }
   }, []);
 
@@ -65,21 +61,17 @@ export function AuthProvider({ children }) {
       PROTECTED_ROUTE_PRELOADS[location.pathname]?.() ?? Promise.resolve();
 
     const checkAuthStatus = async () => {
-      try {
-        const response = await getCurrentUser();
-        const userData = getApiPayload(response)?.user;
-        if (cancelled) return;
+      const response = await getCurrentUser().catch(() => null);
+      if (!cancelled) {
+        const userData = response ? getApiPayload(response)?.user : null;
         if (userData) {
           setUser(userData);
           await claimStoredAnonymousLinks();
         }
-      } catch {
-        // ProtectedLayout redirects once authChecked is true and user is absent.
-      } finally {
-        await routePreload;
-        if (!cancelled) {
-          setAuthChecked(true);
-        }
+      }
+      await routePreload;
+      if (!cancelled) {
+        setAuthChecked(true);
       }
     };
 
@@ -87,8 +79,7 @@ export function AuthProvider({ children }) {
     return () => {
       cancelled = true;
     };
-    // Initial session check only — route layouts own redirects after authChecked.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only session check
   }, []);
 
   useEffect(() => {
@@ -166,16 +157,15 @@ export function AuthProvider({ children }) {
 
     if (!confirmed) return;
 
-    try {
-      await logoutUser();
+    const loggedOut = await logoutUser()
+      .then(() => true)
+      .catch(() => false);
+    if (loggedOut) {
       showToast.success('You have been signed out.');
-    } catch {
-      // Still logout locally even if API fails
-    } finally {
-      setUser(null);
-      announce('You have been signed out.');
-      navigate(ROUTES.HOME);
     }
+    setUser(null);
+    announce('You have been signed out.');
+    navigate(ROUTES.HOME);
   }, [navigate, announce, confirmLogout]);
 
   const openLogin = useCallback(() => navigate(ROUTES.LOGIN), [navigate]);

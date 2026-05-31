@@ -352,7 +352,6 @@ export const getUrlStats = asyncHandler(async (req, res, _next) => {
       stats: {
         totalUrls: overallStats.totalUrls,
         totalClicks: overallStats.totalClicksLifetime,
-        totalClicksLifetime: overallStats.totalClicksLifetime,
         avgClicksPerUrl: Math.round(overallStats.avgClicks * 100) / 100,
         clickEventRetentionDays: CLICK_RETENTION_DAYS
       },

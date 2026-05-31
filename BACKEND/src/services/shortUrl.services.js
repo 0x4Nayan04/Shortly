@@ -201,10 +201,14 @@ export const getShortUrl = async (short_url) => {
 export const claimAnonymousLinks = async (userId, claims) => {
   await assertUserLinkCapacity(userId);
 
-  const results = await Promise.all(
+  const claimed = [];
+  const skipped = [];
+
+  await Promise.all(
     claims.map(async ({ id, manage_token }) => {
       if (!id || !manage_token) {
-        return { type: 'skipped', id, reason: 'missing_id_or_token' };
+        skipped.push({ id, reason: 'missing_id_or_token' });
+        return;
       }
 
       const doc = await short_urlModel
@@ -218,7 +222,8 @@ export const claimAnonymousLinks = async (userId, claims) => {
         .lean();
 
       if (!doc) {
-        return { type: 'skipped', id, reason: 'not_found_or_invalid_token' };
+        skipped.push({ id, reason: 'not_found_or_invalid_token' });
+        return;
       }
 
       const ownedDuplicate = await short_urlModel.exists({
@@ -232,28 +237,21 @@ export const claimAnonymousLinks = async (userId, claims) => {
           { _id: doc._id },
           { $set: { deletedAt: new Date() } }
         );
-        return {
-          type: 'skipped',
+        skipped.push({
           id,
           reason: 'duplicate_destination',
           short_url: doc.short_url
-        };
+        });
+        return;
       }
 
       await short_urlModel.updateOne(
         { _id: doc._id },
         { $set: { user: userId }, $unset: { manage_token: 1 } }
       );
-      return { type: 'claimed', id, short_url: doc.short_url };
+      claimed.push({ id, short_url: doc.short_url });
     })
   );
-
-  const claimed = results
-    .filter((r) => r.type === 'claimed')
-    .map(({ type: _type, ...rest }) => rest);
-  const skipped = results
-    .filter((r) => r.type === 'skipped')
-    .map(({ type: _type, ...rest }) => rest);
 
   return { claimed, skipped };
 };

@@ -2,10 +2,6 @@ import User from '../schema/user.model.js';
 import { verifyToken } from './helper.js';
 import { getTokenFromRequest, isTokenVersionValid } from './authToken.js';
 
-/**
- * Decodes a valid JWT without a database lookup. Used globally so health checks
- * and 404s are not charged a user query when a stale cookie is present.
- */
 export const attachUser = async (req, res, next) => {
   const token = getTokenFromRequest(req);
   if (!token) {
@@ -23,10 +19,6 @@ export const attachUser = async (req, res, next) => {
   next();
 };
 
-/**
- * Loads req.user when a valid token was decoded. Use only on routes that need
- * optional authentication (e.g. public create with logged-in dedup).
- */
 export const loadUserIfAuthenticated = async (req, res, next) => {
   if (!req.authUserId) {
     return next();

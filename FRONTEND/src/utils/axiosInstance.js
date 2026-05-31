@@ -14,13 +14,10 @@ if (!import.meta.env.DEV && !import.meta.env.VITE_APP_URL?.trim()) {
 }
 
 const axiosInstance = axios.create({
-  // Dev: empty → relative /api/* via Vite proxy (same origin, no CORS).
-  // Prod: set VITE_APP_URL to your API origin.
   baseURL: apiBaseUrl,
   withCredentials: true
 });
 
-/** Merge `{ success, message, data: { ... } }` into a flat payload for callers. */
 export function mergeApiEnvelope(body) {
   if (
     !body ||
@@ -49,8 +46,6 @@ axiosInstance.interceptors.response.use(
     return response;
   },
   (error) => {
-    console.error('Axios Error:', error);
-
     if (error.response?.data) {
       error.response.data = mergeApiEnvelope(error.response.data);
     }
@@ -81,26 +76,18 @@ axiosInstance.interceptors.response.use(
 
 export default axiosInstance;
 
-/**
- * Flat API payload returned by axios (after interceptor) and `src/api/*` modules.
- * Envelope fields (`success`, `message`, `errors`) sit alongside resource fields
- * (`user`, `urls`, etc.) — never nested under `data`.
- */
 export function getApiPayload(response) {
   return response?.data ?? response;
 }
 
-/** Read a user object from a flat API payload. */
 export function getApiUser(payload) {
   return getApiPayload(payload)?.user ?? null;
 }
 
-/** Read a message string from a flat API payload. */
 export function getApiMessage(payload, fallback = '') {
   return getApiPayload(payload)?.message || fallback;
 }
 
-/** Consistent error message from axios or thrown API errors. */
 export function getApiErrorMessage(error, fallback = 'Something went wrong') {
   const raw = error?.response?.data;
   const data = raw && typeof raw === 'object' ? mergeApiEnvelope(raw) : raw;

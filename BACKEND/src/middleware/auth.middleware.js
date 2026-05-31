@@ -5,6 +5,7 @@ import {
   getTokenFromRequest,
   isTokenVersionValid
 } from '../utils/authToken.js';
+
 export const isAuthenticated = async (req, res, next) => {
   const token = getTokenFromRequest(req);
 

@@ -19,15 +19,6 @@ export function readAnonymousLinks() {
   }
 }
 
-export function clearClaimedAnonymousLinks(claimedIds = []) {
-  if (!claimedIds.length) return;
-  const claimed = new Set(claimedIds);
-  const remaining = readAnonymousLinks().filter(
-    (link) => !claimed.has(link.id)
-  );
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(remaining));
-}
-
 export function clearAnonymousLinksByIds(ids = []) {
   if (!ids.length) return;
   const processed = new Set(ids);

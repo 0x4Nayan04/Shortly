@@ -162,7 +162,6 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth, variant = 'default' }) => {
         setUseCustomAlias(false);
         resetValidation();
       } else {
-        console.error('Unexpected response structure:', response);
         showToast.dismiss(loadingToast);
         showToast.error('Failed to process the server response.');
         setError('Failed to process the server response.');
@@ -198,16 +197,6 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth, variant = 'default' }) => {
     announce('Short URL copied to clipboard');
   };
 
-  const blurField = (field, value) => {
-    handleBlur(field, { ...formValues, [field]: value });
-  };
-
-  const customAliasChangeHandler = (e) =>
-    updateField('customAlias', e.target.value, setCustomAlias);
-
-  const customAliasBlurHandler = (e) =>
-    blurField('customAlias', e.target.value);
-
   return (
     <div className={isLanding ? '' : 'space-y-6'}>
       <LiveRegion
@@ -226,7 +215,9 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth, variant = 'default' }) => {
           fieldErrors={fieldErrors}
           touched={touched}
           handleChange={updateField}
-          handleBlur={blurField}
+          handleBlur={(field, value) =>
+            handleBlur(field, { ...formValues, [field]: value })
+          }
           showPrefix={isLanding}
           shortUrl={shortUrl}>
           {isLanding && (
@@ -236,8 +227,15 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth, variant = 'default' }) => {
               useCustomAlias={useCustomAlias}
               onToggleCustomAlias={handleToggleCustomAlias}
               customAlias={customAlias}
-              onCustomAliasChange={customAliasChangeHandler}
-              onCustomAliasBlur={customAliasBlurHandler}
+              onCustomAliasChange={(e) =>
+                updateField('customAlias', e.target.value, setCustomAlias)
+              }
+              onCustomAliasBlur={(e) =>
+                handleBlur('customAlias', {
+                  ...formValues,
+                  customAlias: e.target.value
+                })
+              }
               touched={touched}
               fieldErrors={fieldErrors}
             />
@@ -250,8 +248,15 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth, variant = 'default' }) => {
             useCustomAlias={useCustomAlias}
             onUseCustomAliasChange={handleDefaultCustomAliasChange}
             customAlias={customAlias}
-            onCustomAliasChange={customAliasChangeHandler}
-            onCustomAliasBlur={customAliasBlurHandler}
+            onCustomAliasChange={(e) =>
+              updateField('customAlias', e.target.value, setCustomAlias)
+            }
+            onCustomAliasBlur={(e) =>
+              handleBlur('customAlias', {
+                ...formValues,
+                customAlias: e.target.value
+              })
+            }
             touched={touched}
             fieldErrors={fieldErrors}
           />

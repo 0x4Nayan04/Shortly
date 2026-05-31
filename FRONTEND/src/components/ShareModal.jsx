@@ -63,7 +63,7 @@ const ShareModal = memo(({ isOpen, onClose, shortUrl, fullUrl }) => {
       });
     } catch (err) {
       if (err.name !== 'AbortError') {
-        showToast.error('Share cancelled');
+        showToast.error('Could not share link');
       }
     }
   }, [shortUrlFull]);
@@ -143,10 +143,7 @@ const ShareModal = memo(({ isOpen, onClose, shortUrl, fullUrl }) => {
       onClick: downloadQr
     }
   ];
-  const visibleShareActions = shareActions.reduce((actions, action) => {
-    if (!action.hidden) actions.push(action);
-    return actions;
-  }, []);
+  const visibleShareActions = shareActions.filter((action) => !action.hidden);
 
   return (
     <div
@@ -187,7 +184,6 @@ const ShareModal = memo(({ isOpen, onClose, shortUrl, fullUrl }) => {
         </div>
 
         <div className='flex flex-col gap-6'>
-          {/* QR Code Section */}
           <div className='flex flex-col items-center justify-center bg-surface-muted border border-border p-4 rounded-sm'>
             {qrDataUrl ? (
               <div className='bg-white p-2 rounded-sm shadow-sm border border-border/50'>
@@ -204,7 +200,6 @@ const ShareModal = memo(({ isOpen, onClose, shortUrl, fullUrl }) => {
             )}
           </div>
 
-          {/* URLs Section */}
           <div className='flex flex-col gap-4'>
             <div className='flex flex-col gap-1.5'>
               <label
@@ -271,7 +266,6 @@ const ShareModal = memo(({ isOpen, onClose, shortUrl, fullUrl }) => {
             )}
           </div>
 
-          {/* Actions */}
           <div className='grid grid-cols-4 gap-3 pt-5 border-t border-border'>
             {visibleShareActions.map((action) => (
               <button

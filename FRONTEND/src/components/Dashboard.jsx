@@ -94,7 +94,6 @@ const Dashboard = () => {
       setError(err);
       showToast.error('Failed to fetch your links');
       announce('Error loading links');
-      console.error('Error fetching URLs:', err);
     } finally {
       setLoading(false);
     }
@@ -103,15 +102,10 @@ const Dashboard = () => {
   const fetchStats = useCallback(async () => {
     if (!isOnline) return;
     setStatsLoading(true);
-    try {
-      const response = await getUrlStats();
-      const payload = getApiPayload(response);
-      if (payload) setStats(payload);
-    } catch (err) {
-      console.error('Error fetching stats:', err);
-    } finally {
-      setStatsLoading(false);
-    }
+    const response = await getUrlStats().catch(() => null);
+    const payload = response ? getApiPayload(response) : null;
+    if (payload) setStats(payload);
+    setStatsLoading(false);
   }, [isOnline]);
 
   const handleUrlCreated = useCallback(() => {
@@ -143,8 +137,6 @@ const Dashboard = () => {
     [copy, announce]
   );
 
-  const handleShareUrl = useCallback((url) => setShareUrl(url), []);
-
   const handleDeleteUrl = useCallback(
     async (urlId, shortUrl) => {
       const confirmed = await confirmDialog.confirm({
@@ -175,11 +167,10 @@ const Dashboard = () => {
         showToast.success('Link deleted');
         announce('Link deleted');
         fetchStats();
-      } catch (err) {
+      } catch {
         showToast.dismiss(deleteToast);
         showToast.error('Failed to delete link');
         announce('Error deleting link');
-        console.error('Error deleting URL:', err);
         fetchMyUrls();
       } finally {
         setDeletingUrl(null);
@@ -240,7 +231,6 @@ const Dashboard = () => {
         showToast.error(
           err?.response?.data?.message || 'Failed to update link'
         );
-        console.error('Error updating URL:', err);
       } finally {
         setUpdatingUrl(null);
       }
@@ -283,7 +273,6 @@ const Dashboard = () => {
         showToast.error(
           err?.response?.data?.message || 'Failed to update link'
         );
-        console.error('Error updating URL:', err);
       } finally {
         setUpdatingUrl(null);
       }
@@ -342,11 +331,10 @@ const Dashboard = () => {
       setSelectedIds(new Set());
       fetchMyUrls();
       fetchStats();
-    } catch (err) {
+    } catch {
       showToast.dismiss(deleteToast);
       showToast.error('Failed to delete some links');
       announce('Error deleting links');
-      console.error('Error bulk deleting URLs:', err);
       fetchMyUrls();
     } finally {
       setIsBulkDeleting(false);
@@ -443,7 +431,7 @@ const Dashboard = () => {
               onCopy={copyToClipboard}
               onDelete={handleDeleteUrl}
               onSelect={handleSelectUrl}
-              onShare={handleShareUrl}
+              onShare={setShareUrl}
               onEdit={handleEditUrl}
               onToggleDisabled={handleToggleDisabled}
               currentPage={currentPage}
