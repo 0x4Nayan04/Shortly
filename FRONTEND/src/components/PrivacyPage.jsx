@@ -71,6 +71,11 @@ const privacyPolicySections = [
     headingId: 'privacy-transparency-heading',
     items: [
       {
+        id: 'click-accuracy',
+        icon: Info,
+        text: 'Click counts are approximate. We record visits after the redirect so links stay fast; a few visits may not be counted.'
+      },
+      {
         id: 'policy-updates',
         icon: Bell,
         text: 'Policy updates when analytics practices change.'
@@ -141,7 +146,6 @@ const PrivacyPage = ({ user, onLogout, onShowAuth, onShowProfile }) => {
                 the smallest amount of data needed to provide useful analytics,
                 and we never sell or share that data with third parties.
               </p>
-
             </header>
 
             <div className='grid gap-4 sm:grid-cols-3'>
@@ -223,6 +227,19 @@ const PrivacyPage = ({ user, onLogout, onShowAuth, onShowProfile }) => {
                     We do not store raw IP addresses. We use the IP address only
                     at request time to derive a country and discard it
                     immediately.
+                  </span>
+                </div>
+
+                <div className='mt-3 flex items-center gap-3 border border-border bg-[var(--color-surface-muted)] px-4 py-3 text-sm text-muted-strong'>
+                  <Info
+                    className='h-5 w-5 shrink-0 text-primary'
+                    aria-hidden='true'
+                  />
+                  <span>
+                    Click counts may not capture every visit. We send the
+                    redirect first, then record the visit so links stay fast. If
+                    someone closes the tab very quickly, that visit might not
+                    appear in your stats.
                   </span>
                 </div>
               </div>

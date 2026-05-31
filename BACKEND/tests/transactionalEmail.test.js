@@ -18,6 +18,10 @@ test('buildFrontEndUrl avoids double slashes', () => {
     buildFrontEndUrl('https://app.example.com/', '/verify-email/abc'),
     'https://app.example.com/verify-email/abc'
   );
+  assert.equal(
+    buildFrontEndUrl('https://app.example.com/', '/reset-password/abc'),
+    'https://app.example.com/reset-password/abc'
+  );
 });
 
 test('resolveEmailLogoUrl skips localhost frontends', () => {

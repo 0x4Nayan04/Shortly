@@ -158,7 +158,7 @@ export const getUserUrlsQuerySchema = Joi.object({
     'number.min': 'Skip cannot be negative',
     'number.base': 'Skip must be a number'
   }),
-  search: Joi.string().trim().max(200).allow('').default('').messages({
+  search: Joi.string().trim().max(200).allow('').optional().messages({
     'string.max': 'Search query cannot exceed 200 characters'
   }),
   sortBy: Joi.string()
