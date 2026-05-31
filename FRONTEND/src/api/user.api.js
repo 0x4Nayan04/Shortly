@@ -49,3 +49,18 @@ export const resetPassword = async (token, password) => {
   });
   return data;
 };
+
+export const verifyEmail = async (token) => {
+  const { data } = await axiosinstance.post(`api/auth/verify-email`, { token });
+  return data;
+};
+
+export const updateProfile = async (name) => {
+  const { data } = await axiosinstance.patch(`api/auth/me`, { name });
+  return data;
+};
+
+export const deleteAccount = async () => {
+  const { data } = await axiosinstance.delete(`api/auth/me`);
+  return data;
+};

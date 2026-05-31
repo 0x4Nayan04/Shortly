@@ -2,6 +2,8 @@ const PRIVATE_USER_FIELDS = new Set([
   'password',
   'resetPasswordToken',
   'resetPasswordExpires',
+  'emailVerificationToken',
+  'emailVerificationExpires',
   'tokenVersion',
   '__v'
 ]);

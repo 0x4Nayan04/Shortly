@@ -1841,7 +1841,8 @@
     padding-top: 0;
   }
   .settings-workspace__panel--profile::before,
-  .settings-workspace__panel--security::before {
+  .settings-workspace__panel--security::before,
+  .settings-workspace__panel--danger::before {
     content: '';
     position: absolute;
     top: 0;
@@ -1888,15 +1889,19 @@
   }
   .settings-profile__identity {
     display: flex;
-    align-items: center;
-    gap: 0.625rem;
+    align-items: flex-start;
+    gap: 0.875rem;
+    padding: 0.875rem 1rem;
+    border: 1px solid var(--color-border);
+    background-color: var(--color-surface-muted);
   }
   .settings-profile__avatar {
-    width: 3rem;
-    height: 3rem;
+    width: 3.25rem;
+    height: 3.25rem;
     border-radius: 9999px;
     border: 1px solid var(--color-border);
     object-fit: cover;
+    background-color: var(--color-surface);
   }
   .settings-profile__avatar--fallback {
     display: flex;
@@ -1904,19 +1909,33 @@
     justify-content: center;
     background-color: var(--color-blue-tint);
   }
+  .settings-profile__summary {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding-top: 0.25rem;
+  }
+  .settings-profile__display-name {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 1.0625rem;
+    font-weight: 500;
+    line-height: 1.3;
+    letter-spacing: -0.03em;
+    color: var(--color-ink);
+    overflow-wrap: anywhere;
+  }
   .settings-profile__fields {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0.75rem;
   }
   @media (min-width: 1024px) {
     .settings-profile__fields {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-    .settings-profile__field--name,
-    .settings-profile__field--email {
-      grid-column: 1 / -1;
+      gap: 0.75rem;
     }
   }
   .settings-profile__field {
@@ -2280,6 +2299,101 @@
     font-size: 0.9375rem;
     font-weight: 500;
     color: var(--color-ink);
+  }
+
+  .settings-profile__badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    border: 1px solid var(--color-border);
+    padding: 0.1875rem 0.625rem;
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 500;
+    line-height: 1.4;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+  .settings-profile__badge::before {
+    content: '';
+    width: 0.375rem;
+    height: 0.375rem;
+    border-radius: 9999px;
+    flex-shrink: 0;
+  }
+  .settings-profile__badge--verified {
+    color: #047857;
+    border-color: color-mix(in srgb, #047857 28%, var(--color-border));
+    background-color: color-mix(in srgb, #047857 8%, var(--color-surface));
+  }
+  .settings-profile__badge--verified::before {
+    background-color: #047857;
+  }
+  .settings-profile__badge--pending {
+    color: #b45309;
+    border-color: color-mix(in srgb, #b45309 28%, var(--color-border));
+    background-color: color-mix(in srgb, #f59e0b 8%, var(--color-surface));
+  }
+  .settings-profile__badge--pending::before {
+    background-color: #f59e0b;
+  }
+
+  .settings-workspace__panel--danger {
+    border-color: color-mix(in srgb, #dc2626 22%, var(--color-border));
+    background: color-mix(in srgb, #dc2626 4%, var(--color-surface));
+  }
+  .settings-workspace__panel--danger::before {
+    background: linear-gradient(
+      90deg,
+      color-mix(in srgb, #dc2626 20%, transparent) 0%,
+      color-mix(in srgb, #dc2626 45%, transparent) 50%,
+      color-mix(in srgb, #dc2626 20%, transparent) 100%
+    );
+  }
+  .settings-danger__heading {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0;
+    color: #dc2626;
+  }
+  .settings-danger__heading-icon {
+    width: 1.125rem;
+    height: 1.125rem;
+    flex-shrink: 0;
+    color: #dc2626;
+  }
+  .settings-danger__lead {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--color-muted-strong);
+  }
+  .settings-danger__form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    max-width: 28rem;
+  }
+  .settings-danger__submit {
+    background-color: #dc2626;
+    color: #ffffff;
+    border-color: #dc2626;
+  }
+  .settings-danger__submit:hover:not(:disabled) {
+    opacity: 0.92;
+  }
+  .settings-danger__submit:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+  .settings-danger__icon-wrap {
+    display: flex;
+    height: 4rem;
+    width: 4rem;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid color-mix(in srgb, #dc2626 22%, var(--color-border));
+    background: color-mix(in srgb, #dc2626 6%, var(--color-surface));
   }
 
   .dashboard-shorten-panel__heading {

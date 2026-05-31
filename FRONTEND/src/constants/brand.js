@@ -38,6 +38,9 @@ export const getDocumentTitleForPath = (pathname) => {
   if (pathname.startsWith('/reset-password/')) {
     return formatPageTitle('Reset password');
   }
+  if (pathname.startsWith('/verify-email/')) {
+    return formatPageTitle('Verify email');
+  }
   return ROUTE_PAGE_TITLES[pathname] ?? formatPageTitle('Page not found');
 };
 

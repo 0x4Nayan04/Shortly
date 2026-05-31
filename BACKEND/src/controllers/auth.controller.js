@@ -3,7 +3,10 @@ import {
   loginUser as loginUserService,
   changePassword as changePasswordService,
   requestPasswordReset as requestPasswordResetService,
-  resetPassword as resetPasswordService
+  resetPassword as resetPasswordService,
+  verifyEmail as verifyEmailService,
+  updateUserProfile as updateUserProfileService,
+  deleteUserAccount as deleteUserAccountService
 } from '../services/auth.services.js';
 import { cookieOptions } from '../config/config.js';
 import asyncHandler from '../utils/asyncHandler.js';
@@ -17,10 +20,28 @@ import { serializeUser } from '../utils/serializeUser.js';
 
 export const registerUser = asyncHandler(async (req, res, _next) => {
   const { name, email, password } = req.validatedBody;
-  const { token, user } = await registerUserService(name, email, password);
-  res.cookie('token', token, cookieOptions);
+  const result = await registerUserService(name, email, password);
+
+  if (result.token) {
+    res.cookie('token', result.token, cookieOptions);
+  }
+
+  const message = result.verificationRequired
+    ? 'Account created. Please verify your email before signing in.'
+    : SUCCESS_MESSAGES.AUTH.REGISTER_SUCCESS;
+
   res.status(201).json(
-    successResponse(SUCCESS_MESSAGES.AUTH.REGISTER_SUCCESS, {
+    successResponse(message, {
+      user: serializeUser(result.user)
+    })
+  );
+});
+
+export const verifyEmail = asyncHandler(async (req, res, _next) => {
+  const { token } = req.validatedBody;
+  const { user } = await verifyEmailService(token);
+  res.status(200).json(
+    successResponse('Email verified successfully', {
       user: serializeUser(user)
     })
   );
@@ -63,6 +84,22 @@ export const getUserProfile = asyncHandler(async (req, res, next) => {
   );
 });
 
+export const updateUserProfile = asyncHandler(async (req, res, _next) => {
+  const { name } = req.validatedBody;
+  const { user } = await updateUserProfileService(req.user._id, { name });
+  res.status(200).json(
+    successResponse(SUCCESS_MESSAGES.USER.PROFILE_UPDATED, {
+      user: serializeUser(user)
+    })
+  );
+});
+
+export const deleteAccount = asyncHandler(async (req, res, _next) => {
+  await deleteUserAccountService(req.user._id);
+  res.clearCookie('token', { ...cookieOptions });
+  res.status(200).json(successResponse('Account deleted successfully'));
+});
+
 export const changePassword = asyncHandler(async (req, res, _next) => {
   const { oldPassword, newPassword } = req.validatedBody;
   const { token, user } = await changePasswordService(
@@ -74,7 +111,7 @@ export const changePassword = asyncHandler(async (req, res, _next) => {
     .cookie('token', token, cookieOptions)
     .status(200)
     .json(
-      successResponse('Password updated successfully', {
+      successResponse(SUCCESS_MESSAGES.USER.PASSWORD_CHANGED, {
         user: serializeUser(user)
       })
     );
@@ -88,13 +125,6 @@ export const requestPasswordReset = asyncHandler(async (req, res, _next) => {
 
 export const resetPassword = asyncHandler(async (req, res, _next) => {
   const { token, password } = req.validatedBody;
-  const { token: jwtToken, user } = await resetPasswordService(token, password);
-  res
-    .cookie('token', jwtToken, cookieOptions)
-    .status(200)
-    .json(
-      successResponse('Password reset successfully', {
-        user: serializeUser(user)
-      })
-    );
+  await resetPasswordService(token, password);
+  res.status(200).json(successResponse('Password reset successfully'));
 });

@@ -13,8 +13,10 @@ at [shortly.nayan04.me](https://shortly.nayan04.me/).
 - **Bulk Delete** - Select and delete multiple URLs at once
 - **QR Codes** - Generate QR codes for any short URL (SVG or PNG)
 - **Analytics** - Dashboard with stats, recent activity, and top-performing URLs
-- **Authentication** - Register, login, and session management with HTTP-only cookies
-- **Password Management** - Change password (authenticated), forgot/reset password via email
+- **Authentication** - Register, login, and session management with HTTP-only
+  cookies
+- **Password Management** - Change password (authenticated), forgot/reset
+  password via email
 - **Rate Limiting** - Tiered rate limits per endpoint to prevent abuse
 
 ## Architecture
@@ -163,17 +165,17 @@ RESEND_API_KEY=re_xxxxxxxxxxxx
 RESEND_FROM_EMAIL=Shortly <noreply@yourdomain.com>
 ```
 
-| Variable         | Required | Description                                                    |
-| ---------------- | -------- | -------------------------------------------------------------- |
-| MONGODB_URI      | Yes      | MongoDB connection string                                      |
-| JWT_SECRET       | Yes      | Secret for JWT (min 32 chars)                                  |
-| FRONT_END_URL    | Yes      | Frontend origin for CORS, cookies, and password reset links    |
-| PORT             | Yes      | Server port                                                    |
-| NODE_ENV         | No       | `development` or `production`                                  |
-| PUBLIC_BASE_URL  | No       | Public origin for short links/QR codes (defaults to request host) |
-| ALLOWED_ORIGINS  | No       | Comma-separated CORS origins (defaults to FRONT_END_URL)       |
-| RESEND_API_KEY   | No*      | Resend API key for password reset emails (*required for forgot-password) |
-| RESEND_FROM_EMAIL| No       | Sender address for password reset emails                       |
+| Variable          | Required | Description                                                               |
+| ----------------- | -------- | ------------------------------------------------------------------------- |
+| MONGODB_URI       | Yes      | MongoDB connection string                                                 |
+| JWT_SECRET        | Yes      | Secret for JWT (min 32 chars)                                             |
+| FRONT_END_URL     | Yes      | Frontend origin for CORS, cookies, and password reset links               |
+| PORT              | Yes      | Server port                                                               |
+| NODE_ENV          | No       | `development` or `production`                                             |
+| PUBLIC_BASE_URL   | No       | Public origin for short links/QR codes (defaults to request host)         |
+| ALLOWED_ORIGINS   | No       | Comma-separated CORS origins (defaults to FRONT_END_URL)                  |
+| RESEND_API_KEY    | No\*     | Resend API key for password reset emails (\*required for forgot-password) |
+| RESEND_FROM_EMAIL | No       | Sender address for password reset emails                                  |
 
 ### Frontend (`FRONTEND/.env.example`)
 
@@ -216,15 +218,18 @@ VITE_APP_URL=http://localhost:3001
 
 ### Authentication
 
-| Method | Endpoint                  | Auth | Description              |
-| ------ | ------------------------- | ---- | ------------------------ |
-| POST   | /api/auth/register        | No   | Register user            |
-| POST   | /api/auth/login           | No   | Login                    |
-| POST   | /api/auth/logout          | Yes  | Logout                   |
-| GET    | /api/auth/me              | Yes  | Get profile              |
-| PUT    | /api/auth/change-password | Yes  | Change password          |
-| POST   | /api/auth/forgot-password | No   | Request password reset   |
-| POST   | /api/auth/reset-password  | No   | Reset password with token|
+| Method | Endpoint                  | Auth | Description               |
+| ------ | ------------------------- | ---- | ------------------------- |
+| POST   | /api/auth/register        | No   | Register user             |
+| POST   | /api/auth/verify-email    | No   | Verify email with token   |
+| POST   | /api/auth/login           | No   | Login                     |
+| POST   | /api/auth/logout          | Yes  | Logout                    |
+| GET    | /api/auth/me              | Yes  | Get profile               |
+| PATCH  | /api/auth/me              | Yes  | Update profile            |
+| DELETE | /api/auth/me              | Yes  | Delete account            |
+| POST   | /api/auth/change-password | Yes  | Change password           |
+| POST   | /api/auth/forgot-password | No   | Request password reset    |
+| POST   | /api/auth/reset-password  | No   | Reset password with token |
 
 ### URL Shortening
 
@@ -305,7 +310,8 @@ Cookie: token=<jwt>
 ## Security
 
 - Password hashing with bcrypt
-- JWT in HTTP-only cookies with token versioning (invalidate sessions on password change)
+- JWT in HTTP-only cookies with token versioning (invalidate sessions on
+  password change)
 - Server-side validation (Joi)
 - CORS and Helmet
 - Rate limiting (per-endpoint tiers)

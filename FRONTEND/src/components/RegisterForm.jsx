@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
+import { Mail } from 'lucide-react';
 import AuthSubmitButton from './AuthSubmitButton';
 import { useBlocker } from 'react-router-dom';
 import { registerUser } from '../api/user.api';
 import { getApiErrorMessage } from '../utils/axiosInstance';
 import {
   formAlertClass,
+  formSuccessIconWrapClass,
   getDesignInputClass
 } from '../utils/designFormClasses';
 import { validators } from '../utils/validation';
@@ -24,6 +26,8 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [verificationPending, setVerificationPending] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { isOnline } = useOnlineStatus();
@@ -151,7 +155,19 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
       const response = await registerUser(name, email, password);
 
       if (response.success !== false && response.user) {
-        showToast.success('Account created successfully!');
+        const needsVerification = response.user.isEmailVerified === false;
+
+        if (needsVerification) {
+          setRegisteredEmail(email);
+          setVerificationPending(true);
+          showToast.success(
+            response.message ||
+              'Account created. Please verify your email before signing in.'
+          );
+          return;
+        }
+
+        showToast.success(response.message || 'Account created successfully!');
         if (onRegisterSuccess) {
           onRegisterSuccess(response);
         }
@@ -194,6 +210,33 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
       setLoading(false);
     }
   };
+
+  if (verificationPending) {
+    return (
+      <div className='app-panel text-center'>
+        <div className={formSuccessIconWrapClass}>
+          <Mail
+            className='h-8 w-8 text-primary'
+            aria-hidden='true'
+          />
+        </div>
+        <h2 className='font-display text-xl font-medium tracking-display text-ink mb-2'>
+          Check your email
+        </h2>
+        <p className='text-muted-strong mb-6'>
+          We sent a verification link to{' '}
+          <strong className='text-ink'>{registeredEmail}</strong>. Open it to
+          activate your account, then sign in.
+        </p>
+        <button
+          type='button'
+          onClick={switchToLogin}
+          className='sm-btn sm-btn-primary'>
+          Go to sign in
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className='app-panel'>

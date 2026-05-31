@@ -90,6 +90,15 @@ export const validateEnvFormats = () => {
     logger.info('Using single origin from FRONT_END_URL for CORS');
   }
 
+  if (
+    process.env.RESEND_API_KEY?.trim() &&
+    !process.env.RESEND_FROM_EMAIL?.trim()
+  ) {
+    throw new Error(
+      'RESEND_FROM_EMAIL must be set when RESEND_API_KEY is configured'
+    );
+  }
+
   if (process.env.NODE_ENV === 'production') {
     if (
       !process.env.PUBLIC_BASE_URL ||

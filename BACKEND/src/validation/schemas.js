@@ -72,6 +72,22 @@ export const changePasswordSchema = Joi.object({
   })
 });
 
+export const verifyEmailSchema = Joi.object({
+  token: Joi.string().required().messages({
+    'string.empty': 'Verification token is required',
+    'any.required': 'Verification token is required'
+  })
+});
+
+export const updateProfileSchema = Joi.object({
+  name: Joi.string().trim().min(2).max(50).required().messages({
+    'string.empty': 'Name is required',
+    'string.min': 'Name must be at least 2 characters',
+    'string.max': 'Name cannot exceed 50 characters',
+    'any.required': 'Name is required'
+  })
+});
+
 // ============================================
 // URL VALIDATION SCHEMAS
 // ============================================
