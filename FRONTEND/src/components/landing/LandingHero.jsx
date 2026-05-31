@@ -1,11 +1,11 @@
 import { ArrowRight } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import UrlForm from '../UrlForm';
 import HeroDotGridWrap from './HeroDotGridWrap';
 import { LandingFrameInner } from './LandingFrame';
+import { useAuth } from '../../contexts/AuthContext';
 
-const LandingHero = ({ user }) => {
-  const navigate = useNavigate();
+const LandingHero = () => {
+  const { user, openLogin } = useAuth();
 
   return (
     <section
@@ -23,7 +23,7 @@ const LandingHero = ({ user }) => {
                   Custom aliases for members
                 </span>
                 <ArrowRight
-                  className='hero-chip-arrow h-3.5 w-3.5 text-muted'
+                  className='hero-chip-arrow size-3.5 text-muted'
                   aria-hidden='true'
                 />
               </a>
@@ -39,7 +39,7 @@ const LandingHero = ({ user }) => {
             <p className='landing-section-lead landing-section-lead--hero'>
               Paste any URL and get a clean link you can share everywhere. Sign
               up free for <span className='hero-copy-em'>custom aliases</span>{' '}
-              and <span className='hero-copy-em'>real-time analytics</span> —
+              and <span className='hero-copy-em'>real-time analytics</span>,
               privacy-first, with no visitor tracking cookies.
             </p>
           </div>
@@ -49,7 +49,7 @@ const LandingHero = ({ user }) => {
               <UrlForm
                 user={user}
                 variant='landing'
-                onShowAuth={() => navigate('/login')}
+                onShowAuth={openLogin}
               />
             </div>
           </div>

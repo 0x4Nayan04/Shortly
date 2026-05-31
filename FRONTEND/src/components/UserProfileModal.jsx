@@ -1,6 +1,7 @@
-import { useEffect } from 'react';
 import { X } from 'lucide-react';
 import { useFocusTrap } from './Accessibility';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
+import Avatar from './Avatar';
 
 const formatMemberSince = (createdAt) => {
   if (!createdAt) return 'Recently joined';
@@ -17,14 +18,7 @@ const UserProfileModal = ({ isOpen, onClose, user, userStats }) => {
     restoreFocus: true
   });
 
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    }
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [isOpen]);
+  useBodyScrollLock(isOpen);
 
   if (!isOpen) return null;
 
@@ -59,7 +53,7 @@ const UserProfileModal = ({ isOpen, onClose, user, userStats }) => {
             className='landing-icon-btn'
             aria-label='Close profile modal'>
             <X
-              className='h-5 w-5'
+              className='size-5'
               aria-hidden='true'
             />
           </button>
@@ -67,25 +61,14 @@ const UserProfileModal = ({ isOpen, onClose, user, userStats }) => {
 
         <div className='user-profile-modal__body'>
           <div className='user-profile-modal__profile'>
-            <div className='relative shrink-0'>
-              <img
-                src={user.avatar}
-                alt=''
-                className='user-profile-modal__avatar'
-                onError={(e) => {
-                  e.target.style.display = 'none';
-                  e.target.nextElementSibling.style.display = 'flex';
-                }}
-              />
-              <div
-                className='user-profile-modal__avatar user-profile-modal__avatar--fallback'
-                style={{ display: 'none' }}
-                aria-hidden='true'>
-                <span className='font-display text-base font-medium text-primary'>
-                  {(user.name || user.email || 'U').charAt(0).toUpperCase()}
-                </span>
-              </div>
-            </div>
+            <Avatar
+              src={user.avatar}
+              label={user.name || user.email}
+              wrapperClassName='relative shrink-0'
+              imgClassName='user-profile-modal__avatar'
+              fallbackClassName='user-profile-modal__avatar user-profile-modal__avatar--fallback'
+              fallbackTextClassName='font-display text-base font-medium text-primary'
+            />
             <div className='user-profile-modal__identity min-w-0 flex-1'>
               <p className='text-sm font-medium leading-snug text-ink'>
                 {user.name}
@@ -96,18 +79,17 @@ const UserProfileModal = ({ isOpen, onClose, user, userStats }) => {
                 {user.email}
               </p>
             </div>
-            <span
-              className='user-profile-modal__status shrink-0'
-              role='status'>
+            <output className='user-profile-modal__status shrink-0'>
               Active account
-            </span>
+            </output>
           </div>
 
           <p
             className='user-profile-modal__stats dashboard-workspace-stats-line tabular-nums'
             aria-label={`${totalUrls} URLs created, ${totalClicks} total clicks`}>
             <span>
-              <span className='font-mono text-ink'>{totalUrls}</span> URLs created
+              <span className='font-mono text-ink'>{totalUrls}</span> URLs
+              created
             </span>
             <span
               className='dashboard-workspace-stats-line__sep'
@@ -115,7 +97,8 @@ const UserProfileModal = ({ isOpen, onClose, user, userStats }) => {
               ·
             </span>
             <span>
-              <span className='font-mono text-ink'>{totalClicks}</span> total clicks
+              <span className='font-mono text-ink'>{totalClicks}</span> total
+              clicks
             </span>
           </p>
         </div>
@@ -123,7 +106,9 @@ const UserProfileModal = ({ isOpen, onClose, user, userStats }) => {
         <div className='user-profile-modal__footer border-t border-border'>
           <p className='user-profile-modal__member-since'>
             Member since{' '}
-            <time dateTime={user.createdAt}>{formatMemberSince(user.createdAt)}</time>
+            <time dateTime={user.createdAt}>
+              {formatMemberSince(user.createdAt)}
+            </time>
           </p>
           <button
             type='button'

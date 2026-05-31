@@ -7,21 +7,31 @@ import {
   User
 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import { useFocusTrap } from '../Accessibility';
+import Avatar from '../Avatar';
 import ShortlyLogo from '../ShortlyLogo';
 import { LandingFrameInner } from '../landing/LandingFrame';
 
-const AppNavbar = memo(({ user, onLogout, onShowRegister, onShowProfile }) => {
+const NavUserAvatar = ({ user }) => (
+  <Avatar
+    src={user.avatar}
+    label={user.name || user.email}
+    className='nav-user-avatar'
+    fallbackClassName='nav-user-avatar-fallback'
+    width={28}
+    height={28}
+  />
+);
+
+const AppNavbar = memo(() => {
+  const { user, logout, openRegister, openProfile } = useAuth();
   const navigate = useNavigate();
   const { pathname } = useLocation();
 
   const goRegister = useCallback(() => {
-    if (onShowRegister) {
-      onShowRegister();
-    } else {
-      navigate('/register');
-    }
-  }, [navigate, onShowRegister]);
+    openRegister();
+  }, [openRegister]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
   const dropdownButtonRef = useRef(null);
@@ -62,9 +72,9 @@ const AppNavbar = memo(({ user, onLogout, onShowRegister, onShowProfile }) => {
   }, [navigate, closeDropdown]);
 
   const handleShowProfileClick = useCallback(() => {
-    onShowProfile?.();
+    openProfile();
     closeDropdown();
-  }, [onShowProfile, closeDropdown]);
+  }, [openProfile, closeDropdown]);
 
   const handleNavigateSettings = useCallback(() => {
     navigate('/settings');
@@ -72,9 +82,9 @@ const AppNavbar = memo(({ user, onLogout, onShowRegister, onShowProfile }) => {
   }, [navigate, closeDropdown]);
 
   const handleLogoutClick = useCallback(() => {
-    onLogout();
+    logout();
     closeDropdown();
-  }, [onLogout, closeDropdown]);
+  }, [logout, closeDropdown]);
 
   const handleDropdownKeyDown = useCallback((e) => {
     if (e.key === 'Escape') {
@@ -88,27 +98,6 @@ const AppNavbar = memo(({ user, onLogout, onShowRegister, onShowProfile }) => {
     user?.name?.trim().split(/\s+/)[0] ||
     user?.email?.split('@')[0] ||
     'Account';
-  const avatarInitial = (user?.name || user?.email || 'U')
-    .charAt(0)
-    .toUpperCase();
-
-  const renderAvatar = () => (
-    <span
-      className='nav-user-avatar'
-      aria-hidden='true'>
-      <img
-        src={user.avatar}
-        alt=''
-        width={28}
-        height={28}
-        onError={(e) => {
-          e.target.style.display = 'none';
-          e.target.nextElementSibling.style.display = 'flex';
-        }}
-      />
-      <span className='nav-user-avatar-fallback'>{avatarInitial}</span>
-    </span>
-  );
 
   return (
     <header className='sticky top-0 z-50 h-[var(--nav-height)] border-b border-border bg-surface'>
@@ -127,9 +116,8 @@ const AppNavbar = memo(({ user, onLogout, onShowRegister, onShowProfile }) => {
             aria-hidden='true'
           />
 
-          <div
+          <nav
             className='flex min-w-0 items-center justify-end gap-2 justify-self-end'
-            role='navigation'
             aria-label='Account'>
             {user ? (
               <>
@@ -151,7 +139,7 @@ const AppNavbar = memo(({ user, onLogout, onShowRegister, onShowProfile }) => {
                     aria-haspopup='true'
                     aria-controls='app-user-menu'
                     aria-label={`Account menu for ${accountLabel}`}>
-                    {renderAvatar()}
+                    <NavUserAvatar user={user} />
                     <span className='nav-user-trigger-name'>{firstName}</span>
                     <ChevronDown
                       className='nav-user-trigger-chevron'
@@ -164,6 +152,7 @@ const AppNavbar = memo(({ user, onLogout, onShowRegister, onShowProfile }) => {
                       ref={focusTrapRef}
                       id='app-user-menu'
                       role='menu'
+                      tabIndex={-1}
                       aria-label='Account menu'
                       onKeyDown={handleDropdownKeyDown}
                       className='nav-user-menu animate-slide-down'>
@@ -182,7 +171,6 @@ const AppNavbar = memo(({ user, onLogout, onShowRegister, onShowProfile }) => {
 
                       <div
                         className='nav-user-menu-list'
-                        role='group'
                         aria-labelledby='app-user-menu-section'>
                         <button
                           type='button'
@@ -230,7 +218,6 @@ const AppNavbar = memo(({ user, onLogout, onShowRegister, onShowProfile }) => {
 
                       <div
                         className='nav-user-menu-footer'
-                        role='group'
                         aria-label='Session'>
                         <button
                           type='button'
@@ -281,7 +268,7 @@ const AppNavbar = memo(({ user, onLogout, onShowRegister, onShowProfile }) => {
                 </button>
               </>
             )}
-          </div>
+          </nav>
         </div>
       </LandingFrameInner>
     </header>

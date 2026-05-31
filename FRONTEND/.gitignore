@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# CSS assemble script output
+src/styles/.assembled-check.css
+src/styles/dev-backup/

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Loader2, Mail } from 'lucide-react';
 import { forgotPassword } from '../api/user.api';
 import { getApiErrorMessage } from '../utils/axiosInstance';
@@ -7,34 +7,30 @@ import {
   getDesignInputClass
 } from '../utils/designFormClasses';
 import { validators } from '../utils/validation';
+import { useFormValidation } from '../hooks/useFormValidation';
 import { showToast } from './UxEnhancements';
 
 const ForgotPassword = ({ switchToLogin }) => {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
-  const [error, setError] = useState('');
-  const [touched, setTouched] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
-  const validateField = (value) => validators.email(value);
+  const getRules = useCallback(() => ({ email: validators.email }), []);
 
-  const handleBlur = () => {
-    setTouched(true);
-    const fieldError = validateField(email);
-    setError(fieldError || '');
-  };
+  const { fieldErrors, touched, handleBlur, onFieldChange, validateAll } =
+    useFormValidation(['email'], getRules);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setTouched(true);
-    const fieldError = validateField(email);
-    if (fieldError) {
-      setError(fieldError);
+    const values = { email };
+
+    if (!validateAll(values).valid) {
       return;
     }
 
     setLoading(true);
-    setError('');
+    setSubmitError('');
 
     try {
       await forgotPassword(email);
@@ -42,7 +38,7 @@ const ForgotPassword = ({ switchToLogin }) => {
       showToast.success('Reset link sent if account exists.');
     } catch (err) {
       const msg = getApiErrorMessage(err, 'Something went wrong. Try again.');
-      setError(msg);
+      setSubmitError(msg);
       showToast.error(msg);
     } finally {
       setLoading(false);
@@ -54,7 +50,7 @@ const ForgotPassword = ({ switchToLogin }) => {
       <div className='app-panel text-center'>
         <div className={formSuccessIconWrapClass}>
           <Mail
-            className='h-8 w-8 text-primary'
+            className='size-8 text-primary'
             aria-hidden='true'
           />
         </div>
@@ -74,6 +70,8 @@ const ForgotPassword = ({ switchToLogin }) => {
       </div>
     );
   }
+
+  const emailError = fieldErrors.email;
 
   return (
     <div className='app-panel'>
@@ -104,23 +102,29 @@ const ForgotPassword = ({ switchToLogin }) => {
             value={email}
             onChange={(e) => {
               setEmail(e.target.value);
-              if (touched) setError(validateField(e.target.value) || '');
+              onFieldChange(
+                'email',
+                { email: e.target.value },
+                {
+                  clearError: () => setSubmitError('')
+                }
+              );
             }}
-            onBlur={handleBlur}
+            onBlur={() => handleBlur('email', { email })}
             placeholder='Enter your email'
             className={getDesignInputClass({
-              hasError: touched && !!error
+              hasError: touched.email && !!emailError
             })}
-            aria-invalid={touched && !!error}
-            aria-describedby={error ? 'forgot-email-error' : undefined}
+            aria-invalid={touched.email && !!emailError}
+            aria-describedby={emailError ? 'forgot-email-error' : undefined}
             autoComplete='email'
           />
-          {touched && error && (
+          {touched.email && emailError && (
             <p
               id='forgot-email-error'
               className='sm-field-error'
               role='alert'>
-              {error}
+              {emailError}
             </p>
           )}
         </div>
@@ -133,16 +137,24 @@ const ForgotPassword = ({ switchToLogin }) => {
           {loading ? (
             <>
               <Loader2
-                className='h-5 w-5 animate-spin'
+                className='size-5 animate-spin'
                 aria-hidden='true'
               />
-              Sending...
+              Sending&hellip;
             </>
           ) : (
             'Send reset link'
           )}
         </button>
       </form>
+
+      {submitError && (
+        <p
+          className='sm-field-error mt-4 text-center'
+          role='alert'>
+          {submitError}
+        </p>
+      )}
 
       <div className='mt-6 text-center'>
         <p className='text-sm text-muted-strong'>

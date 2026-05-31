@@ -1,5 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
-import { useBlocker } from 'react-router-dom';
+import { useCallback, useRef, useState } from 'react';
 import AuthSubmitButton from './AuthSubmitButton';
 import { loginUser } from '../api/user.api';
 import { getApiErrorMessage } from '../utils/axiosInstance';
@@ -8,14 +7,10 @@ import {
   getDesignInputClass
 } from '../utils/designFormClasses';
 import { validators } from '../utils/validation';
+import { useFormValidation } from '../hooks/useFormValidation';
+import { useUnsavedNavigationGuard } from '../hooks/useUnsavedNavigationGuard';
 import PasswordVisibilityToggle from './PasswordVisibilityToggle';
-import {
-  showToast,
-  useOnlineStatus,
-  useUnsavedChanges,
-  useConfirmDialog,
-  ConfirmDialog
-} from './UxEnhancements';
+import { showToast, useOnlineStatus, ConfirmDialog } from './UxEnhancements';
 
 const LoginForm = ({
   onLoginSuccess,
@@ -31,81 +26,26 @@ const LoginForm = ({
   const emailRef = useRef(null);
   const passwordRef = useRef(null);
 
+  const getRules = useCallback(
+    () => ({
+      email: validators.email,
+      password: validators.loginPassword
+    }),
+    []
+  );
+
+  const {
+    fieldErrors,
+    touched,
+    handleBlur,
+    onFieldChange,
+    validateAll,
+    mergeFieldErrors,
+    resetValidation
+  } = useFormValidation(['email', 'password'], getRules);
+
   const hasUnsavedChanges = !loading && (email || password);
-  useUnsavedChanges(hasUnsavedChanges);
-  const navigationBlocker = useBlocker(hasUnsavedChanges);
-  const unsavedDialog = useConfirmDialog();
-
-  useEffect(() => {
-    if (navigationBlocker.state === 'blocked') {
-      unsavedDialog
-        .confirm({
-          title: 'Unsaved changes',
-          message: 'You have unsaved changes. Are you sure you want to leave?',
-          confirmLabel: 'Leave',
-          cancelLabel: 'Stay',
-          variant: 'danger'
-        })
-        .then((confirmed) => {
-          if (confirmed) {
-            navigationBlocker.proceed();
-          } else {
-            navigationBlocker.reset();
-          }
-        });
-    }
-  }, [navigationBlocker.state]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const [fieldErrors, setFieldErrors] = useState({
-    email: null,
-    password: null
-  });
-  const [touched, setTouched] = useState({
-    email: false,
-    password: false
-  });
-
-  const validateField = (field, value) => {
-    switch (field) {
-      case 'email':
-        return validators.email(value);
-      case 'password':
-        return validators.loginPassword(value);
-      default:
-        return null;
-    }
-  };
-
-  const handleBlur = (field, value) => {
-    setTouched((prev) => ({ ...prev, [field]: true }));
-    setFieldErrors((prev) => ({
-      ...prev,
-      [field]: validateField(field, value)
-    }));
-  };
-
-  const handleChange = (field, value, setter) => {
-    setter(value);
-    if (error) setError('');
-
-    if (touched[field]) {
-      setFieldErrors((prev) => ({
-        ...prev,
-        [field]: validateField(field, value)
-      }));
-    }
-  };
-
-  const validateAllFields = () => {
-    const errors = {
-      email: validators.email(email),
-      password: validators.loginPassword(password)
-    };
-    setFieldErrors(errors);
-    setTouched({ email: true, password: true });
-
-    return errors;
-  };
+  const unsavedDialog = useUnsavedNavigationGuard(hasUnsavedChanges);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -115,8 +55,9 @@ const LoginForm = ({
       return;
     }
 
-    const errors = validateAllFields();
-    if (errors.email || errors.password) {
+    const values = { email, password };
+    const { valid, errors } = validateAll(values);
+    if (!valid) {
       showToast.error('Please fill in all required fields.');
       if (errors.email || !email) {
         emailRef.current?.focus();
@@ -139,8 +80,7 @@ const LoginForm = ({
 
         setEmail('');
         setPassword('');
-        setFieldErrors({ email: null, password: null });
-        setTouched({ email: false, password: false });
+        resetValidation();
       } else {
         setError(response.message || 'Login failed');
         showToast.error(response.message || 'Login failed');
@@ -153,17 +93,14 @@ const LoginForm = ({
         data.errors.forEach((e) => {
           backendErrors[e.field] = e.message;
         });
-        setFieldErrors((prev) => ({ ...prev, ...backendErrors }));
+        mergeFieldErrors(backendErrors);
         showToast.error('Please check your credentials.');
       } else {
         const errorMsg = getApiErrorMessage(err, 'Invalid email or password');
         setError(errorMsg);
         showToast.error(errorMsg);
         if (status === 403 && /verify/i.test(errorMsg)) {
-          setFieldErrors((prev) => ({
-            ...prev,
-            email: 'Verify your email before signing in.'
-          }));
+          mergeFieldErrors({ email: 'Verify your email before signing in.' });
         }
       }
     } finally {
@@ -197,8 +134,19 @@ const LoginForm = ({
             id='login-email'
             type='email'
             value={email}
-            onChange={(e) => handleChange('email', e.target.value, setEmail)}
-            onBlur={(e) => handleBlur('email', e.target.value)}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              onFieldChange(
+                'email',
+                { email: e.target.value, password },
+                {
+                  clearError: () => setError('')
+                }
+              );
+            }}
+            onBlur={(e) =>
+              handleBlur('email', { email: e.target.value, password })
+            }
             placeholder='Enter your email'
             className={getDesignInputClass({
               hasError: touched.email && fieldErrors.email
@@ -231,10 +179,17 @@ const LoginForm = ({
               id='login-password'
               type={showPassword ? 'text' : 'password'}
               value={password}
-              onChange={(e) =>
-                handleChange('password', e.target.value, setPassword)
+              onChange={(e) => {
+                setPassword(e.target.value);
+                onFieldChange(
+                  'password',
+                  { email, password: e.target.value },
+                  { clearError: () => setError('') }
+                );
+              }}
+              onBlur={(e) =>
+                handleBlur('password', { email, password: e.target.value })
               }
-              onBlur={(e) => handleBlur('password', e.target.value)}
               placeholder='Enter your password'
               className={getDesignInputClass({
                 hasError: touched.password && fieldErrors.password,

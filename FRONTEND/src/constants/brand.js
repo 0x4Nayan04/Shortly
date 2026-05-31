@@ -1,5 +1,7 @@
 /** Brand assets, document metadata, and route titles */
 
+import { ROUTES } from './routes';
+
 export const SHORTLY_SITE_NAME = 'Shortly';
 
 export const SHORTLY_DEFAULT_TITLE = 'Shortly · Short links & analytics';
@@ -24,21 +26,21 @@ export const formatPageTitle = (pageTitle) =>
   `${pageTitle} · ${SHORTLY_SITE_NAME}`;
 
 const ROUTE_PAGE_TITLES = {
-  '/': SHORTLY_DEFAULT_TITLE,
-  '/login': formatPageTitle('Sign in'),
-  '/register': formatPageTitle('Create account'),
-  '/dashboard': formatPageTitle('Dashboard'),
-  '/settings': formatPageTitle('Settings'),
-  '/privacy': formatPageTitle('Privacy'),
-  '/forgot-password': formatPageTitle('Reset password')
+  [ROUTES.HOME]: SHORTLY_DEFAULT_TITLE,
+  [ROUTES.LOGIN]: formatPageTitle('Sign in'),
+  [ROUTES.REGISTER]: formatPageTitle('Create account'),
+  [ROUTES.DASHBOARD]: formatPageTitle('Dashboard'),
+  [ROUTES.SETTINGS]: formatPageTitle('Settings'),
+  [ROUTES.PRIVACY]: formatPageTitle('Privacy'),
+  [ROUTES.FORGOT_PASSWORD]: formatPageTitle('Reset password')
 };
 
 /** @param {string} pathname */
 export const getDocumentTitleForPath = (pathname) => {
-  if (pathname.startsWith('/reset-password/')) {
+  if (pathname.startsWith(`${ROUTES.RESET_PASSWORD}/`)) {
     return formatPageTitle('Reset password');
   }
-  if (pathname.startsWith('/verify-email/')) {
+  if (pathname.startsWith(`${ROUTES.VERIFY_EMAIL}/`)) {
     return formatPageTitle('Verify email');
   }
   return ROUTE_PAGE_TITLES[pathname] ?? formatPageTitle('Page not found');

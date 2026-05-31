@@ -1,7 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Info, ShieldAlert } from 'lucide-react';
 import { changePassword, deleteAccount, updateProfile } from '../api/user.api';
-import { getApiErrorMessage } from '../utils/axiosInstance';
+import {
+  getApiErrorMessage,
+  getApiMessage,
+  getApiUser
+} from '../utils/axiosInstance';
 import { getDesignInputClass } from '../utils/designFormClasses';
 import {
   validators,
@@ -15,16 +19,12 @@ import AppCatalogShell, {
 } from './app/AppCatalogShell';
 import AppNavbar from './app/AppNavbar';
 import PasswordVisibilityToggle from './PasswordVisibilityToggle';
+import Avatar from './Avatar';
 import { showToast, LoadingButton } from './UxEnhancements';
+import { useAuth } from '../contexts/AuthContext';
 
-const AccountSettings = ({
-  user,
-  onLogout,
-  onShowAuth,
-  onShowProfile,
-  onProfileUpdated,
-  onAccountDeleted
-}) => {
+const AccountSettings = () => {
+  const { user, updateUser, handleAccountDeleted } = useAuth();
   const [name, setName] = useState(user.name || '');
   const [profileLoading, setProfileLoading] = useState(false);
   const [profileErrors, setProfileErrors] = useState({});
@@ -67,11 +67,13 @@ const AccountSettings = ({
     setProfileLoading(true);
     try {
       const response = await updateProfile(name.trim());
-      const updatedUser = response.user;
-      if (updatedUser && onProfileUpdated) {
-        onProfileUpdated(updatedUser);
+      const updatedUser = getApiUser(response);
+      if (updatedUser) {
+        updateUser(updatedUser);
       }
-      showToast.success(response.message || 'Profile updated successfully');
+      showToast.success(
+        getApiMessage(response, 'Profile updated successfully')
+      );
     } catch (error) {
       showToast.error(getApiErrorMessage(error, 'Failed to update profile'));
     } finally {
@@ -139,9 +141,7 @@ const AccountSettings = ({
     try {
       await deleteAccount();
       showToast.success('Your account has been deleted.');
-      if (onAccountDeleted) {
-        onAccountDeleted();
-      }
+      handleAccountDeleted();
     } catch (error) {
       showToast.error(getApiErrorMessage(error, 'Failed to delete account'));
     } finally {
@@ -151,16 +151,10 @@ const AccountSettings = ({
 
   return (
     <AppCatalogShell>
-      <AppNavbar
-        user={user}
-        onLogout={onLogout}
-        onShowAuth={onShowAuth}
-        onShowProfile={onShowProfile}
-      />
+      <AppNavbar />
       <main
         id='main-content'
         className='flex-1'
-        role='main'
         aria-labelledby='settings-heading'>
         <LandingSectionBlock>
           <LandingFrameInner className='landing-section-intro dashboard-workspace-intro'>
@@ -194,27 +188,14 @@ const AccountSettings = ({
                     onSubmit={handleProfileSave}
                     noValidate>
                     <div className='settings-profile__identity'>
-                      <div className='relative shrink-0'>
-                        <img
-                          src={user.avatar}
-                          alt=''
-                          className='settings-profile__avatar'
-                          onError={(e) => {
-                            e.target.style.display = 'none';
-                            e.target.nextElementSibling.style.display = 'flex';
-                          }}
-                        />
-                        <div
-                          className='settings-profile__avatar settings-profile__avatar--fallback'
-                          style={{ display: 'none' }}
-                          aria-hidden='true'>
-                          <span className='font-display text-lg font-medium text-primary'>
-                            {(name.trim() || user.name || user.email || 'U')
-                              .charAt(0)
-                              .toUpperCase()}
-                          </span>
-                        </div>
-                      </div>
+                      <Avatar
+                        src={user.avatar}
+                        label={name.trim() || user.name || user.email}
+                        wrapperClassName='relative shrink-0'
+                        imgClassName='settings-profile__avatar'
+                        fallbackClassName='settings-profile__avatar settings-profile__avatar--fallback'
+                        fallbackTextClassName='font-display text-lg font-medium text-primary'
+                      />
                       <div className='settings-profile__summary min-w-0 flex-1'>
                         <p className='settings-profile__display-name'>
                           {name.trim() || user.name}

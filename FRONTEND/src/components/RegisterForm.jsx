@@ -1,7 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useState } from 'react';
 import { Mail } from 'lucide-react';
 import AuthSubmitButton from './AuthSubmitButton';
-import { useBlocker } from 'react-router-dom';
 import { registerUser } from '../api/user.api';
 import { getApiErrorMessage } from '../utils/axiosInstance';
 import {
@@ -10,14 +9,10 @@ import {
   getDesignInputClass
 } from '../utils/designFormClasses';
 import { validators } from '../utils/validation';
+import { useFormValidation } from '../hooks/useFormValidation';
+import { useUnsavedNavigationGuard } from '../hooks/useUnsavedNavigationGuard';
 import PasswordVisibilityToggle from './PasswordVisibilityToggle';
-import {
-  showToast,
-  useOnlineStatus,
-  useUnsavedChanges,
-  useConfirmDialog,
-  ConfirmDialog
-} from './UxEnhancements';
+import { showToast, useOnlineStatus, ConfirmDialog } from './UxEnhancements';
 
 const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
   const [name, setName] = useState('');
@@ -32,107 +27,56 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { isOnline } = useOnlineStatus();
 
+  const getRules = useCallback(
+    (values) => ({
+      name: validators.name,
+      email: validators.email,
+      password: validators.password,
+      confirmPassword: [validators.confirmPassword, values.password]
+    }),
+    []
+  );
+
+  const {
+    fieldErrors,
+    touched,
+    handleBlur,
+    onFieldChange,
+    validateAll,
+    mergeFieldErrors,
+    resetValidation
+  } = useFormValidation(
+    ['name', 'email', 'password', 'confirmPassword'],
+    getRules,
+    {
+      onAfterFieldChange: (field, values, { setFieldErrors, getTouched }) => {
+        if (field === 'password' && getTouched().confirmPassword) {
+          setFieldErrors((prev) => ({
+            ...prev,
+            confirmPassword: validators.confirmPassword(
+              values.confirmPassword,
+              values.password
+            )
+          }));
+        }
+      }
+    }
+  );
+
   const hasUnsavedChanges =
     !loading && (name || email || password || confirmPassword);
-  useUnsavedChanges(hasUnsavedChanges);
-  const navigationBlocker = useBlocker(hasUnsavedChanges);
-  const unsavedDialog = useConfirmDialog();
+  const unsavedDialog = useUnsavedNavigationGuard(hasUnsavedChanges);
 
-  useEffect(() => {
-    if (navigationBlocker.state === 'blocked') {
-      unsavedDialog
-        .confirm({
-          title: 'Unsaved changes',
-          message: 'You have unsaved changes. Are you sure you want to leave?',
-          confirmLabel: 'Leave',
-          cancelLabel: 'Stay',
-          variant: 'danger'
-        })
-        .then((confirmed) => {
-          if (confirmed) {
-            navigationBlocker.proceed();
-          } else {
-            navigationBlocker.reset();
-          }
-        });
-    }
-  }, [navigationBlocker.state]); // eslint-disable-line react-hooks/exhaustive-deps
+  const formValues = { name, email, password, confirmPassword };
 
-  const [fieldErrors, setFieldErrors] = useState({
-    name: null,
-    email: null,
-    password: null,
-    confirmPassword: null
-  });
-  const [touched, setTouched] = useState({
-    name: false,
-    email: false,
-    password: false,
-    confirmPassword: false
-  });
-
-  const validateField = (field, value) => {
-    switch (field) {
-      case 'name':
-        return validators.name(value);
-      case 'email':
-        return validators.email(value);
-      case 'password':
-        return validators.password(value);
-      case 'confirmPassword':
-        return validators.confirmPassword(value, password);
-      default:
-        return null;
-    }
-  };
-
-  const handleBlur = (field, value) => {
-    setTouched((prev) => ({ ...prev, [field]: true }));
-    setFieldErrors((prev) => ({
-      ...prev,
-      [field]: validateField(field, value)
-    }));
-  };
-
-  const handleChange = (field, value, setter) => {
+  const updateField = (field, value, setter) => {
     setter(value);
-    if (error) setError('');
-
-    if (touched[field]) {
-      setFieldErrors((prev) => ({
-        ...prev,
-        [field]: validateField(field, value)
-      }));
-    }
-
-    if (field === 'password' && touched.confirmPassword) {
-      setFieldErrors((prev) => ({
-        ...prev,
-        confirmPassword: validators.confirmPassword(confirmPassword, value)
-      }));
-    }
-  };
-
-  const validateAllFields = () => {
-    const errors = {
-      name: validators.name(name),
-      email: validators.email(email),
-      password: validators.password(password),
-      confirmPassword: validators.confirmPassword(confirmPassword, password)
-    };
-    setFieldErrors(errors);
-    setTouched({
-      name: true,
-      email: true,
-      password: true,
-      confirmPassword: true
-    });
-
-    return (
-      !errors.name &&
-      !errors.email &&
-      !errors.password &&
-      !errors.confirmPassword
+    onFieldChange(
+      field,
+      { ...formValues, [field]: value },
+      {
+        clearError: () => setError('')
+      }
     );
   };
 
@@ -144,7 +88,7 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
       return;
     }
 
-    if (!validateAllFields()) {
+    if (!validateAll(formValues).valid) {
       return;
     }
 
@@ -176,18 +120,7 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
         setEmail('');
         setPassword('');
         setConfirmPassword('');
-        setFieldErrors({
-          name: null,
-          email: null,
-          password: null,
-          confirmPassword: null
-        });
-        setTouched({
-          name: false,
-          email: false,
-          password: false,
-          confirmPassword: false
-        });
+        resetValidation();
       } else {
         setError(response.message || 'Registration failed');
         showToast.error(response.message || 'Registration failed');
@@ -199,7 +132,7 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
         data.errors.forEach((e) => {
           backendErrors[e.field] = e.message;
         });
-        setFieldErrors((prev) => ({ ...prev, ...backendErrors }));
+        mergeFieldErrors(backendErrors);
         showToast.error('Please check the form for errors.');
       } else {
         const errorMsg = getApiErrorMessage(err, 'Registration failed');
@@ -216,7 +149,7 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
       <div className='app-panel text-center'>
         <div className={formSuccessIconWrapClass}>
           <Mail
-            className='h-8 w-8 text-primary'
+            className='size-8 text-primary'
             aria-hidden='true'
           />
         </div>
@@ -263,8 +196,8 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
             id='name'
             type='text'
             value={name}
-            onChange={(e) => handleChange('name', e.target.value, setName)}
-            onBlur={(e) => handleBlur('name', e.target.value)}
+            onChange={(e) => updateField('name', e.target.value, setName)}
+            onBlur={() => handleBlur('name', formValues)}
             placeholder='Enter your full name'
             className={getDesignInputClass({
               hasError: touched.name && fieldErrors.name
@@ -292,8 +225,8 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
             id='email'
             type='email'
             value={email}
-            onChange={(e) => handleChange('email', e.target.value, setEmail)}
-            onBlur={(e) => handleBlur('email', e.target.value)}
+            onChange={(e) => updateField('email', e.target.value, setEmail)}
+            onBlur={() => handleBlur('email', formValues)}
             placeholder='Enter your email'
             className={getDesignInputClass({
               hasError: touched.email && fieldErrors.email
@@ -323,9 +256,9 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
               type={showPassword ? 'text' : 'password'}
               value={password}
               onChange={(e) =>
-                handleChange('password', e.target.value, setPassword)
+                updateField('password', e.target.value, setPassword)
               }
-              onBlur={(e) => handleBlur('password', e.target.value)}
+              onBlur={() => handleBlur('password', formValues)}
               placeholder='Enter your password'
               className={getDesignInputClass({
                 hasError: touched.password && fieldErrors.password,
@@ -398,13 +331,13 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
               type={showConfirmPassword ? 'text' : 'password'}
               value={confirmPassword}
               onChange={(e) =>
-                handleChange(
+                updateField(
                   'confirmPassword',
                   e.target.value,
                   setConfirmPassword
                 )
               }
-              onBlur={(e) => handleBlur('confirmPassword', e.target.value)}
+              onBlur={() => handleBlur('confirmPassword', formValues)}
               placeholder='Confirm your password'
               className={getDesignInputClass({
                 hasError:

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Check, Loader2 } from 'lucide-react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { resetPassword } from '../api/user.api';
@@ -9,6 +9,7 @@ import {
   getDesignInputClass
 } from '../utils/designFormClasses';
 import { validators } from '../utils/validation';
+import { useFormValidation } from '../hooks/useFormValidation';
 import { showToast, useOnlineStatus } from './UxEnhancements';
 import PasswordVisibilityToggle from './PasswordVisibilityToggle';
 
@@ -19,36 +20,45 @@ const ResetPassword = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [fieldErrors, setFieldErrors] = useState({
-    password: null,
-    confirmPassword: null
-  });
-  const [touched, setTouched] = useState({
-    password: false,
-    confirmPassword: false
-  });
   const [done, setDone] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { isOnline } = useOnlineStatus();
 
-  const handleBlur = (field) => {
-    setTouched((prev) => ({ ...prev, [field]: true }));
-    if (field === 'password') {
-      setFieldErrors((prev) => ({
-        ...prev,
-        password: validators.password(password)
-      }));
-    } else {
-      const matchErr =
-        password !== confirmPassword ? 'Passwords do not match' : null;
-      setFieldErrors((prev) => ({
-        ...prev,
-        confirmPassword: !confirmPassword
-          ? 'Please confirm your password'
-          : matchErr
-      }));
-    }
+  const getRules = useCallback(
+    (values) => ({
+      password: validators.password,
+      confirmPassword: [validators.confirmPassword, values.password]
+    }),
+    []
+  );
+
+  const { fieldErrors, touched, handleBlur, onFieldChange, validateAll } =
+    useFormValidation(['password', 'confirmPassword'], getRules, {
+      onAfterFieldChange: (field, values, { setFieldErrors, getTouched }) => {
+        if (field === 'password' && getTouched().confirmPassword) {
+          setFieldErrors((prev) => ({
+            ...prev,
+            confirmPassword: validators.confirmPassword(
+              values.confirmPassword,
+              values.password
+            )
+          }));
+        }
+      }
+    });
+
+  const formValues = { password, confirmPassword };
+
+  const updateField = (field, value, setter) => {
+    setter(value);
+    onFieldChange(
+      field,
+      { ...formValues, [field]: value },
+      {
+        clearError: () => setError('')
+      }
+    );
   };
 
   const handleSubmit = async (e) => {
@@ -59,17 +69,7 @@ const ResetPassword = () => {
       return;
     }
 
-    const passwordError = validators.password(password);
-    const confirmError = !confirmPassword
-      ? 'Please confirm your password'
-      : password !== confirmPassword
-        ? 'Passwords do not match'
-        : null;
-
-    setTouched({ password: true, confirmPassword: true });
-    setFieldErrors({ password: passwordError, confirmPassword: confirmError });
-
-    if (passwordError || confirmError) {
+    if (!validateAll(formValues).valid) {
       return;
     }
 
@@ -94,7 +94,7 @@ const ResetPassword = () => {
       <div className='app-panel text-center'>
         <div className={formSuccessIconWrapClass}>
           <Check
-            className='h-8 w-8 text-primary'
+            className='size-8 text-primary'
             aria-hidden='true'
           />
         </div>
@@ -142,17 +142,10 @@ const ResetPassword = () => {
               id='reset-password'
               type={showPassword ? 'text' : 'password'}
               value={password}
-              onChange={(e) => {
-                setPassword(e.target.value);
-                setError('');
-                if (touched.password) {
-                  setFieldErrors((prev) => ({
-                    ...prev,
-                    password: validators.password(e.target.value)
-                  }));
-                }
-              }}
-              onBlur={() => handleBlur('password')}
+              onChange={(e) =>
+                updateField('password', e.target.value, setPassword)
+              }
+              onBlur={() => handleBlur('password', formValues)}
               placeholder='At least 6 characters'
               className={getDesignInputClass({
                 hasError: touched.password && fieldErrors.password,
@@ -192,23 +185,14 @@ const ResetPassword = () => {
               id='reset-confirm-password'
               type={showConfirmPassword ? 'text' : 'password'}
               value={confirmPassword}
-              onChange={(e) => {
-                setConfirmPassword(e.target.value);
-                setError('');
-                if (touched.confirmPassword) {
-                  const matchErr =
-                    e.target.value !== password
-                      ? 'Passwords do not match'
-                      : null;
-                  setFieldErrors((prev) => ({
-                    ...prev,
-                    confirmPassword: !e.target.value
-                      ? 'Please confirm your password'
-                      : matchErr
-                  }));
-                }
-              }}
-              onBlur={() => handleBlur('confirmPassword')}
+              onChange={(e) =>
+                updateField(
+                  'confirmPassword',
+                  e.target.value,
+                  setConfirmPassword
+                )
+              }
+              onBlur={() => handleBlur('confirmPassword', formValues)}
               placeholder='Re-enter your password'
               className={getDesignInputClass({
                 hasError:
@@ -248,10 +232,10 @@ const ResetPassword = () => {
           {loading ? (
             <>
               <Loader2
-                className='h-5 w-5 animate-spin'
+                className='size-5 animate-spin'
                 aria-hidden='true'
               />
-              Resetting...
+              Resetting&hellip;
             </>
           ) : (
             'Reset password'

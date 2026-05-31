@@ -107,19 +107,13 @@ const privacyHighlights = [
   }
 ];
 
-const PrivacyPage = ({ user, onLogout, onShowAuth, onShowProfile }) => {
+const PrivacyPage = () => {
   return (
     <AppCatalogShell>
-      <AppNavbar
-        user={user}
-        onLogout={onLogout}
-        onShowAuth={onShowAuth}
-        onShowProfile={onShowProfile}
-      />
+      <AppNavbar />
       <main
         id='main-content'
         className='flex-1'
-        role='main'
         aria-labelledby='privacy-heading'>
         <LandingSectionBlock>
           <LandingFrameInner className='py-8'>
@@ -128,7 +122,7 @@ const PrivacyPage = ({ user, onLogout, onShowAuth, onShowProfile }) => {
                 to='/'
                 className='mb-4 inline-flex items-center gap-1 text-[13px] text-muted-strong transition-colors duration-150 hover:text-primary'>
                 <ArrowLeft
-                  className='h-3.5 w-3.5'
+                  className='size-3.5'
                   aria-hidden='true'
                 />
                 Back to home
@@ -174,7 +168,7 @@ const PrivacyPage = ({ user, onLogout, onShowAuth, onShowProfile }) => {
               <div className='border-b border-border p-6 sm:p-8'>
                 <div className='mb-6 flex items-center gap-3'>
                   <FileText
-                    className='h-5 w-5 text-primary'
+                    className='size-5 text-primary'
                     aria-hidden='true'
                   />
                   <h2 className='text-lg font-semibold text-ink'>
@@ -220,7 +214,7 @@ const PrivacyPage = ({ user, onLogout, onShowAuth, onShowProfile }) => {
 
                 <div className='mt-5 flex items-center gap-3 border-t border-border bg-[var(--color-blue-tint)] px-4 py-3 text-sm text-muted-strong'>
                   <Info
-                    className='h-5 w-5 shrink-0 text-primary'
+                    className='size-5 shrink-0 text-primary'
                     aria-hidden='true'
                   />
                   <span>
@@ -232,7 +226,7 @@ const PrivacyPage = ({ user, onLogout, onShowAuth, onShowProfile }) => {
 
                 <div className='mt-3 flex items-center gap-3 border border-border bg-[var(--color-surface-muted)] px-4 py-3 text-sm text-muted-strong'>
                   <Info
-                    className='h-5 w-5 shrink-0 text-primary'
+                    className='size-5 shrink-0 text-primary'
                     aria-hidden='true'
                   />
                   <span>
@@ -254,8 +248,7 @@ const PrivacyPage = ({ user, onLogout, onShowAuth, onShowProfile }) => {
                   </p>
                 </header>
                 <ul
-                  className='grid grid-cols-1 gap-3 lg:grid-cols-3 lg:gap-4'
-                  role='list'>
+                  className='grid grid-cols-1 gap-3 lg:grid-cols-3 lg:gap-4'>
                   {privacyExclusions.map((item, index) => (
                     <li
                       key={item}
@@ -263,7 +256,7 @@ const PrivacyPage = ({ user, onLogout, onShowAuth, onShowProfile }) => {
                         index === 4 ? 'lg:col-span-3' : ''
                       }`}>
                       <X
-                        className='mt-0.5 h-4 w-4 shrink-0 text-[#dc2626]'
+                        className='mt-0.5 size-4 shrink-0 text-[#dc2626]'
                         aria-hidden='true'
                       />
                       <span className='text-sm leading-snug text-muted-strong'>
@@ -292,8 +285,7 @@ const PrivacyPage = ({ user, onLogout, onShowAuth, onShowProfile }) => {
                       {section.title}
                     </h2>
                     <ul
-                      className='privacy-section__tiles'
-                      role='list'>
+                      className='privacy-section__tiles'>
                       {section.items.map((item) => {
                         const Icon = item.icon;
                         return (

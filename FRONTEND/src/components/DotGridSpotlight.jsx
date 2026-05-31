@@ -1,5 +1,4 @@
 import { useEffect, useRef } from 'react';
-import { cn } from '../lib/utils';
 
 /**
  * Interactive dot grid with cursor-tracking spotlight.
@@ -147,11 +146,12 @@ export function DotGridSpotlight({
     <canvas
       ref={canvasRef}
       data-ready='false'
-      aria-hidden='true'
-      className={cn(
+      className={[
         'pointer-events-none absolute inset-0 block opacity-0 transition-opacity duration-500 data-[ready=true]:opacity-100',
         className
-      )}
+      ]
+        .filter(Boolean)
+        .join(' ')}
     />
   );
 }

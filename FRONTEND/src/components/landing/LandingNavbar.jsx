@@ -1,6 +1,8 @@
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowRight, LogOut, Menu, X } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
+import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 import { useFocusTrap } from '../Accessibility';
 import ShortlyLogo from '../ShortlyLogo';
 import { LandingFrameInner } from './LandingFrame';
@@ -11,7 +13,8 @@ const NAV_LINKS = [
   { label: 'Privacy', to: '/privacy' }
 ];
 
-const LandingNavbar = memo(({ user, onLogout }) => {
+const LandingNavbar = memo(() => {
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -28,14 +31,7 @@ const LandingNavbar = memo(({ user, onLogout }) => {
     [navigate]
   );
 
-  useEffect(() => {
-    if (!isMobileMenuOpen) return;
-    const { overflow } = document.body.style;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = overflow;
-    };
-  }, [isMobileMenuOpen]);
+  useBodyScrollLock(isMobileMenuOpen);
 
   useEffect(() => {
     if (!isMobileMenuOpen) return;
@@ -93,9 +89,8 @@ const LandingNavbar = memo(({ user, onLogout }) => {
             )}
           </nav>
 
-          <div
+          <nav
             className='flex items-center justify-end gap-2 justify-self-end'
-            role='navigation'
             aria-label='Account'>
             {user ? (
               <>
@@ -106,17 +101,17 @@ const LandingNavbar = memo(({ user, onLogout }) => {
                   <span className='sm-btn-split-label'>Dashboard</span>
                   <span className='sm-btn-split-icon'>
                     <ArrowRight
-                      className='h-3.5 w-3.5'
+                      className='size-3.5'
                       aria-hidden='true'
                     />
                   </span>
                 </button>
                 <button
                   type='button'
-                  onClick={onLogout}
+                  onClick={logout}
                   className='sm-btn sm-btn-secondary hidden sm:inline-flex items-center gap-1.5'>
                   <LogOut
-                    className='h-3.5 w-3.5'
+                    className='size-3.5'
                     aria-hidden='true'
                   />
                   <span>Sign out</span>
@@ -130,7 +125,7 @@ const LandingNavbar = memo(({ user, onLogout }) => {
                 <span className='sm-btn-split-label'>Sign in</span>
                 <span className='sm-btn-split-icon'>
                   <ArrowRight
-                    className='h-3.5 w-3.5'
+                    className='size-3.5'
                     aria-hidden='true'
                   />
                 </span>
@@ -146,31 +141,35 @@ const LandingNavbar = memo(({ user, onLogout }) => {
               onClick={() => setIsMobileMenuOpen((prev) => !prev)}>
               {isMobileMenuOpen ? (
                 <X
-                  className='h-4 w-4'
+                  className='size-4'
                   aria-hidden='true'
                 />
               ) : (
                 <Menu
-                  className='h-4 w-4'
+                  className='size-4'
                   aria-hidden='true'
                 />
               )}
             </button>
-          </div>
+          </nav>
         </div>
       </LandingFrameInner>
       {isMobileMenuOpen ? (
         <div
-          className='landing-mobile-menu-overlay md:hidden'
-          onClick={closeMobileMenu}>
+          className='landing-mobile-menu-overlay md:hidden'>
+          <button
+            type='button'
+            className='absolute inset-0 size-full cursor-default'
+            onClick={closeMobileMenu}
+            aria-label='Close menu'
+          />
           <div
             id='landing-mobile-menu'
-            className='landing-mobile-menu-panel'
+            className='landing-mobile-menu-panel relative z-10'
             ref={mobileMenuRef}
             role='dialog'
             aria-modal='true'
-            aria-label='Site navigation'
-            onClick={(e) => e.stopPropagation()}>
+            aria-label='Site navigation'>
             <nav
               className='landing-mobile-menu-links'
               aria-label='Page sections'>
@@ -209,12 +208,12 @@ const LandingNavbar = memo(({ user, onLogout }) => {
                   <button
                     type='button'
                     onClick={() => {
-                      onLogout();
+                      logout();
                       handleMobileNavClick();
                     }}
                     className='sm-btn sm-btn-secondary w-full inline-flex items-center justify-center gap-1.5'>
                     <LogOut
-                      className='h-3.5 w-3.5'
+                      className='size-3.5'
                       aria-hidden='true'
                     />
                     <span>Sign out</span>
@@ -230,7 +229,7 @@ const LandingNavbar = memo(({ user, onLogout }) => {
                   className='sm-btn sm-btn-primary w-full inline-flex items-center justify-center gap-1.5'>
                   <span>Sign in</span>
                   <ArrowRight
-                    className='h-3.5 w-3.5'
+                    className='size-3.5'
                     aria-hidden='true'
                   />
                 </button>

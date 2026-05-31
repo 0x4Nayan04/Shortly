@@ -80,15 +80,3 @@ export const claimAnonymousLinks = async (links) => {
   const { data } = await axiosinstance.post(`api/create/claim`, { links });
   return data;
 };
-
-export const updateShortUrl = async (urlId, updates) => {
-  const { data } = await axiosinstance.patch(`api/create/${urlId}`, updates);
-  return data;
-};
-
-export const deleteAnonymousShortUrl = async (urlId, manage_token) => {
-  const { data } = await axiosinstance.delete(`api/create/anonymous/${urlId}`, {
-    data: { manage_token }
-  });
-  return data;
-};

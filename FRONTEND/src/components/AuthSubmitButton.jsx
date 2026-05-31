@@ -6,31 +6,29 @@ import { BrandedSpinner } from './LoadingSpinner';
  */
 const AuthSubmitButton = memo(
   ({ loading, loadingLabel, children, className = 'sm-btn sm-btn-primary sm-btn-block' }) => (
-    <>
-      <button
-        type='submit'
-        disabled={loading}
-        aria-busy={loading}
-        className={`${className}${loading ? ' sm-btn--auth-loading' : ''}`.trim()}>
-        {loading ? (
-          <>
-            <BrandedSpinner
-              size='sm'
-              decorative
-            />
-            {loadingLabel}
-          </>
-        ) : (
-          children
-        )}
-      </button>
+    <button
+      type='submit'
+      disabled={loading}
+      aria-busy={loading}
+      className={`${className}${loading ? ' sm-btn--auth-loading' : ''}`.trim()}>
+      {loading ? (
+        <>
+          <BrandedSpinner
+            size='sm'
+            decorative
+          />
+          {loadingLabel}
+        </>
+      ) : (
+        children
+      )}
       <span
         className='sr-only'
         aria-live='polite'
         aria-atomic='true'>
         {loading ? loadingLabel : ''}
       </span>
-    </>
+    </button>
   )
 );
 

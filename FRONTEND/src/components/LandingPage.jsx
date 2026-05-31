@@ -5,19 +5,15 @@ import LandingFrame, { LandingSectionBlock } from './landing/LandingFrame';
 import LandingHero from './landing/LandingHero';
 import LandingNavbar from './landing/LandingNavbar';
 
-const LandingPage = ({ onLogout, user }) => (
+const LandingPage = () => (
   <div className='landing-page flex min-h-screen flex-col'>
     <LandingFrame>
-      <LandingNavbar
-        user={user}
-        onLogout={onLogout}
-      />
+      <LandingNavbar />
       <main
         id='main-content'
-        className='flex-1'
-        role='main'>
+        className='flex-1'>
         <LandingSectionBlock>
-          <LandingHero user={user} />
+          <LandingHero />
         </LandingSectionBlock>
         <LandingSectionBlock>
           <LandingFeaturesCatalog />
@@ -27,7 +23,7 @@ const LandingPage = ({ onLogout, user }) => (
         </LandingSectionBlock>
       </main>
       <LandingSectionBlock className='site-footer-block'>
-        <LandingFooter user={user} />
+        <LandingFooter />
       </LandingSectionBlock>
     </LandingFrame>
   </div>

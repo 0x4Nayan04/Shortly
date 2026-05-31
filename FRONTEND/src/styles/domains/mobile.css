@@ -1,0 +1,241 @@
+@layer utilities {
+  @media (max-width: 767px) {
+    /* ── Landing catalog — mobile list only, no visual panel ── */
+    .landing-catalog-split .catalog-visual {
+      display: none;
+    }
+    .catalog-row:hover {
+      background-color: transparent;
+    }
+    .catalog-row {
+      min-height: 0;
+      padding-block: 0.625rem;
+      font-size: 14px;
+    }
+
+    /* ── Footer bar ── */
+    .landing-footer-bar {
+      align-items: center;
+      text-align: center;
+      padding-block: 0.5rem;
+      gap: 0.125rem;
+    }
+
+    /* ── Overall spacing ── */
+    .dashboard-layout-grid {
+      gap: 0.75rem;
+    }
+    .dashboard-layout-grid > .dashboard-zone--divider {
+      padding-top: 0.75rem;
+    }
+    .dashboard-zone {
+      gap: 0.5rem;
+    }
+
+    /* ── Card/panel padding ── */
+    .app-panel {
+      padding: 0.875rem;
+    }
+
+    /* ── Hero zone ── */
+    .dashboard-hero-zone {
+      padding: 1.125rem 0.875rem;
+    }
+    .dashboard-hero-title {
+      font-size: clamp(1.35rem, 5.5vw, 1.65rem);
+      letter-spacing: -0.03em;
+    }
+    .dashboard-hero-subtitle {
+      font-size: 0.85rem;
+      line-height: 1.45;
+      max-width: none;
+    }
+    .dashboard-hero-zone .dashboard-workspace-shorten .hero-cli-bar {
+      min-height: var(--form-h);
+    }
+    .dashboard-hero-zone .dashboard-workspace-shorten .hero-cli-input {
+      min-height: var(--form-h);
+      font-size: 0.9375rem;
+    }
+    .dashboard-hero-zone .dashboard-workspace-shorten .hero-cli-submit {
+      min-height: var(--form-h);
+      font-size: 0.875rem;
+    }
+    .dashboard-hero-content {
+      gap: 0.625rem;
+    }
+    .dashboard-hero-quicklinks {
+      gap: 0.375rem;
+    }
+    .dashboard-hero-quicklink {
+      padding: 0.5rem 0.75rem;
+      font-size: 0.8125rem;
+    }
+
+    /* ── Stat cards ── */
+    .dashboard-stat-card {
+      padding: 0.75rem;
+      gap: 0.5rem;
+    }
+    .dashboard-stat__header {
+      gap: 0.375rem;
+    }
+    .dashboard-stat__icon {
+      width: 1.125rem;
+      height: 1.125rem;
+    }
+    .dashboard-stat__label {
+      font-size: 0.6875rem;
+      line-height: 1.3;
+    }
+    .dashboard-stat__value {
+      font-size: 1.375rem;
+    }
+
+    /* ── Insights section ── */
+    .dashboard-insights-zone {
+      gap: 0.625rem;
+      padding-top: 0.625rem;
+    }
+    .dashboard-insights-grid {
+      gap: 0.625rem;
+    }
+    .dashboard-insights-panel {
+      padding: 0.875rem;
+      gap: 0.5rem;
+    }
+    .dashboard-insights-panel__header {
+      gap: 0.125rem;
+    }
+    .dashboard-insights-panel__title {
+      font-size: 0.9375rem;
+    }
+    .dashboard-insights-panel__subtitle {
+      font-size: 0.6875rem;
+    }
+    .top-url-item {
+      gap: 0.625rem;
+      padding: 0.5rem 0;
+    }
+    .top-url-item__rank {
+      width: 1.75rem;
+      height: 1.75rem;
+      font-size: 0.75rem;
+    }
+    .top-url-item__short {
+      font-size: 0.875rem;
+    }
+    .top-url-item__dest {
+      font-size: 0.75rem;
+    }
+    .top-url-item__clicks-value {
+      font-size: 0.875rem;
+    }
+
+    /* ── Activity chart ── */
+    .click-analytics__chart-panel {
+      padding: 0.75rem;
+      gap: 0.375rem;
+    }
+    .click-analytics__chart-title {
+      font-size: 0.875rem;
+    }
+    .click-analytics__chart-subtitle {
+      font-size: 0.625rem;
+    }
+    .click-analytics {
+      --click-analytics-chart-height: 8rem;
+      --click-analytics-chart-label-reserve: 1.5rem;
+    }
+    .click-analytics__chart-bars {
+      padding: var(--click-analytics-chart-label-reserve) 0.375rem 0;
+      gap: 0.125rem;
+    }
+    .click-analytics__chart-axis {
+      font-size: 0.5625rem;
+    }
+
+    /* ── Links panel ── */
+    .dashboard-links-panel {
+      gap: 0.625rem;
+      min-width: 0;
+    }
+    .dashboard-links-panel__heading {
+      font-size: 1.125rem;
+    }
+    .dashboard-links-tabs {
+      margin-top: 0.5rem;
+    }
+    .dashboard-links-tab {
+      padding: 0.375rem 0.75rem;
+      font-size: 0.75rem;
+    }
+
+    /* ── Link list container ── */
+    .dashboard-links-list.hero-form-compound {
+      overflow: hidden;
+      border-style: solid;
+      border-color: var(--color-border);
+    }
+    .dashboard-links-list__items {
+      padding-top: 0;
+    }
+    .dashboard-links-list
+      .dashboard-link-item:first-child
+      .dashboard-link-item__main {
+      padding-top: 0.625rem;
+    }
+
+    .app-page .dashboard-layout-grid {
+      padding-bottom: calc(var(--space-s8) + 0.5rem);
+    }
+
+    /* ── Analytics tab ── */
+    .click-analytics {
+      gap: 0.75rem;
+    }
+    .click-analytics__breakdowns {
+      gap: 0.75rem;
+    }
+    .click-analytics__breakdown-card {
+      padding: 0.75rem;
+      gap: 0.5rem;
+    }
+
+    /* ── Breakdown rows compact ── */
+    .click-analytics__breakdown-label {
+      font-size: 0.75rem;
+    }
+    .click-analytics__breakdown-count {
+      font-size: 0.75rem;
+    }
+    .click-analytics__breakdown-pct {
+      font-size: 0.6875rem;
+      min-width: 1.75rem;
+    }
+
+    /* ── Platform cards ── */
+    .click-analytics__platform-group {
+      padding-block: 0.5rem;
+      gap: 0.375rem;
+    }
+    .click-analytics__platform-title {
+      font-size: 0.625rem;
+    }
+
+    /* ── Top countries ── */
+    .click-analytics__countries-empty-state {
+      font-size: 0.75rem;
+    }
+
+    /* ── Empty state ── */
+    .dashboard-empty-state {
+      padding: 2rem 1rem;
+    }
+
+    /* ── Pagination ── */
+    .sm-btn {
+      font-size: 0.8125rem;
+    }
+  }
+}

@@ -1,4 +1,8 @@
 import axios from 'axios';
+import {
+  isAuthApiPath,
+  shouldSuppressSessionExpired
+} from '../constants/routes';
 
 const apiBaseUrl =
   import.meta.env.VITE_APP_URL?.trim() || (import.meta.env.DEV ? '/' : '');
@@ -17,7 +21,7 @@ const axiosInstance = axios.create({
 });
 
 /** Merge `{ success, message, data: { ... } }` into a flat payload for callers. */
-function mergeApiEnvelope(body) {
+export function mergeApiEnvelope(body) {
   if (
     !body ||
     typeof body !== 'object' ||
@@ -57,14 +61,9 @@ axiosInstance.interceptors.response.use(
 
       if (
         status === 401 &&
-        !requestUrl.includes('/auth/me') &&
-        !requestUrl.includes('/auth/login') &&
-        !requestUrl.includes('/auth/register') &&
-        !requestUrl.includes('/auth/verify-email') &&
+        !isAuthApiPath(requestUrl) &&
         typeof window !== 'undefined' &&
-        !window.location.pathname.startsWith('/login') &&
-        !window.location.pathname.startsWith('/register') &&
-        !window.location.pathname.startsWith('/verify-email/')
+        !shouldSuppressSessionExpired(window.location.pathname)
       ) {
         const returnTo = encodeURIComponent(
           window.location.pathname + window.location.search
@@ -82,9 +81,23 @@ axiosInstance.interceptors.response.use(
 
 export default axiosInstance;
 
-/** API modules return axios `data` (already merged). Use if a value might still be nested. */
+/**
+ * Flat API payload returned by axios (after interceptor) and `src/api/*` modules.
+ * Envelope fields (`success`, `message`, `errors`) sit alongside resource fields
+ * (`user`, `urls`, etc.) — never nested under `data`.
+ */
 export function getApiPayload(response) {
   return response?.data ?? response;
+}
+
+/** Read a user object from a flat API payload. */
+export function getApiUser(payload) {
+  return getApiPayload(payload)?.user ?? null;
+}
+
+/** Read a message string from a flat API payload. */
+export function getApiMessage(payload, fallback = '') {
+  return getApiPayload(payload)?.message || fallback;
 }
 
 /** Consistent error message from axios or thrown API errors. */

@@ -6,25 +6,19 @@ import AppCatalogShell, {
 } from './app/AppCatalogShell';
 import AppNavbar from './app/AppNavbar';
 
-const NotFound = ({ user, onLogout, onShowAuth, onShowProfile }) => {
+const NotFound = () => {
   const navigate = useNavigate();
 
   return (
     <AppCatalogShell>
-      <AppNavbar
-        user={user}
-        onLogout={onLogout}
-        onShowAuth={onShowAuth}
-        onShowProfile={onShowProfile}
-      />
+      <AppNavbar />
       <main
         id='main-content'
-        className='flex-1'
-        role='main'>
+        className='flex-1'>
         <LandingSectionBlock>
           <LandingFrameInner className='py-12'>
             <div className='mx-auto max-w-md text-center'>
-              <div className='mx-auto mb-6 w-20 h-20 bg-[var(--color-blue-tint)] border border-border flex items-center justify-center'>
+              <div className='mx-auto mb-6 size-20 bg-[var(--color-blue-tint)] border border-border flex items-center justify-center'>
                 <span className='font-display text-4xl font-medium tracking-display text-primary'>
                   404
                 </span>
@@ -44,7 +38,7 @@ const NotFound = ({ user, onLogout, onShowAuth, onShowProfile }) => {
                   onClick={() => navigate(-1)}
                   className='sm-btn sm-btn-secondary inline-flex items-center justify-center gap-2'>
                   <ArrowLeft
-                    className='w-4 h-4'
+                    className='size-4'
                     aria-hidden='true'
                   />
                   Go back
@@ -53,7 +47,7 @@ const NotFound = ({ user, onLogout, onShowAuth, onShowProfile }) => {
                   to='/'
                   className='sm-btn sm-btn-primary inline-flex items-center justify-center gap-2'>
                   <Home
-                    className='w-4 h-4'
+                    className='size-4'
                     aria-hidden='true'
                   />
                   Home page
@@ -69,7 +63,7 @@ const NotFound = ({ user, onLogout, onShowAuth, onShowProfile }) => {
                     className='landing-text-link inline-flex items-center gap-1 text-sm'>
                     URL Shortener{' '}
                     <ExternalLink
-                      className='w-3 h-3'
+                      className='size-3'
                       aria-hidden='true'
                     />
                   </Link>
@@ -78,7 +72,7 @@ const NotFound = ({ user, onLogout, onShowAuth, onShowProfile }) => {
                     className='landing-text-link inline-flex items-center gap-1 text-sm'>
                     Sign in{' '}
                     <ExternalLink
-                      className='w-3 h-3'
+                      className='size-3'
                       aria-hidden='true'
                     />
                   </Link>
@@ -87,7 +81,7 @@ const NotFound = ({ user, onLogout, onShowAuth, onShowProfile }) => {
                     className='landing-text-link inline-flex items-center gap-1 text-sm'>
                     Sign up{' '}
                     <ExternalLink
-                      className='w-3 h-3'
+                      className='size-3'
                       aria-hidden='true'
                     />
                   </Link>
@@ -96,7 +90,7 @@ const NotFound = ({ user, onLogout, onShowAuth, onShowProfile }) => {
                     className='landing-text-link inline-flex items-center gap-1 text-sm'>
                     Privacy{' '}
                     <ExternalLink
-                      className='w-3 h-3'
+                      className='size-3'
                       aria-hidden='true'
                     />
                   </Link>
