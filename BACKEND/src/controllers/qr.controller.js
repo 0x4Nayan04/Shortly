@@ -3,12 +3,18 @@ import short_urlModel from '../schema/shortUrl.model.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import { NotFoundError } from '../utils/errorHandler.js';
 import { buildPublicShortUrl } from '../utils/publicShortUrl.js';
+import { normalizeSlug } from '../utils/normalizeSlug.js';
 
 export const getQrCode = asyncHandler(async (req, res, next) => {
   const { short_url } = req.validatedParams;
   const { format } = req.validatedQuery;
+  const slug = normalizeSlug(short_url);
 
-  const exists = await short_urlModel.exists({ short_url });
+  const exists = await short_urlModel.exists({
+    short_url: slug,
+    deletedAt: null,
+    disabled: { $ne: true }
+  });
 
   if (!exists) {
     return next(new NotFoundError('Short URL not found'));

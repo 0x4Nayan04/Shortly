@@ -1,5 +1,6 @@
 import Click from '../schema/click.model.js';
 import short_urlModel from '../schema/shortUrl.model.js';
+import { CLICK_RETENTION_DAYS } from '../constants/shortUrlLimits.js';
 
 const userClickStages = (userId, since) => [
   {
@@ -14,13 +15,17 @@ const userClickStages = (userId, since) => [
   {
     $match: {
       'url.user': userId,
+      'url.deletedAt': null,
       timestamp: { $gte: since }
     }
   }
 ];
 
-export async function getClickAggregates(userId, days = 30) {
-  const urlCount = await short_urlModel.countDocuments({ user: userId });
+export async function getClickAggregates(userId, days = CLICK_RETENTION_DAYS) {
+  const urlCount = await short_urlModel.countDocuments({
+    user: userId,
+    deletedAt: null
+  });
   if (urlCount === 0) return null;
 
   const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
@@ -87,6 +92,8 @@ export async function getClickAggregates(userId, days = 30) {
   const uniqueCountries = overview[2]?.[0]?.count || 0;
 
   return {
+    periodDays: days,
+    retentionDays: CLICK_RETENTION_DAYS,
     overview: { total: totalClicks, uniqueReferrers, uniqueCountries },
     clicksOverTime: dailyClicks,
     countries: breakdowns[0],

@@ -102,9 +102,10 @@ export const createCustomUrlSchema = Joi.object({
     }),
   custom_url: Joi.string()
     .trim()
+    .lowercase()
     .min(3)
     .max(20)
-    .pattern(/^[a-zA-Z0-9_-]+$/)
+    .pattern(/^[a-z0-9_-]+$/)
     .custom((value, helpers) => {
       if (isReservedSlug(value)) {
         return helpers.error('any.reserved');
@@ -183,15 +184,75 @@ export const bulkDeleteUrlsSchema = Joi.object({
 export const shortUrlParamsSchema = Joi.object({
   short_url: Joi.string()
     .trim()
+    .lowercase()
     .min(1)
     .max(20)
-    .pattern(/^[a-zA-Z0-9_-]+$/)
+    .pattern(/^[a-z0-9_-]+$/)
     .required()
     .messages({
       'string.empty': 'Short URL is required',
       'string.pattern.base': 'Invalid short URL format',
       'any.required': 'Short URL is required'
     })
+});
+
+export const updateUrlSchema = Joi.object({
+  full_url: Joi.string()
+    .trim()
+    .uri({ scheme: ['http', 'https'] })
+    .messages({
+      'string.uri':
+        'Please provide a valid URL (must start with http:// or https://)'
+    }),
+  short_url: Joi.string()
+    .trim()
+    .lowercase()
+    .min(3)
+    .max(20)
+    .pattern(/^[a-z0-9_-]+$/)
+    .custom((value, helpers) => {
+      if (isReservedSlug(value)) {
+        return helpers.error('any.reserved');
+      }
+      return value;
+    })
+    .messages({
+      'string.min': 'Custom URL must be at least 3 characters',
+      'string.max': 'Custom URL cannot exceed 20 characters',
+      'string.pattern.base':
+        'Custom URL can only contain letters, numbers, hyphens, and underscores',
+      'any.reserved': RESERVED_SLUG_MESSAGE
+    }),
+  disabled: Joi.boolean()
+})
+  .min(1)
+  .messages({
+    'object.min':
+      'Provide at least one field to update (full_url, short_url, or disabled)'
+  });
+
+export const claimAnonymousLinksSchema = Joi.object({
+  links: Joi.array()
+    .items(
+      Joi.object({
+        id: Joi.string()
+          .pattern(/^[0-9a-fA-F]{24}$/)
+          .required()
+          .messages({
+            'string.pattern.base': 'Invalid URL ID format'
+          }),
+        manage_token: Joi.string().min(16).required()
+      })
+    )
+    .min(1)
+    .max(50)
+    .required()
+});
+
+export const deleteAnonymousUrlSchema = Joi.object({
+  manage_token: Joi.string().min(16).required().messages({
+    'any.required': 'Manage token is required'
+  })
 });
 
 export const qrQuerySchema = Joi.object({
