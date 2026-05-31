@@ -3,6 +3,7 @@ import {
   isReservedSlug,
   RESERVED_SLUG_MESSAGE
 } from '../constants/reservedSlugs.js';
+import { validateCustomSlug } from '../utils/validateCustomSlug.js';
 
 // ============================================
 // AUTH VALIDATION SCHEMAS
@@ -117,24 +118,19 @@ export const createCustomUrlSchema = Joi.object({
       'any.required': 'URL is required'
     }),
   custom_url: Joi.string()
-    .trim()
-    .lowercase()
-    .min(3)
-    .max(20)
-    .pattern(/^[a-z0-9_-]+$/)
-    .custom((value, helpers) => {
-      if (isReservedSlug(value)) {
-        return helpers.error('any.reserved');
-      }
-      return value;
-    })
     .required()
+    .custom((value, helpers) => {
+      try {
+        return validateCustomSlug(value);
+      } catch (err) {
+        if (err.message === RESERVED_SLUG_MESSAGE) {
+          return helpers.error('any.reserved');
+        }
+        return helpers.message({ custom: err.message });
+      }
+    })
     .messages({
       'string.empty': 'Custom URL is required',
-      'string.min': 'Custom URL must be at least 3 characters',
-      'string.max': 'Custom URL cannot exceed 20 characters',
-      'string.pattern.base':
-        'Custom URL can only contain letters, numbers, hyphens, and underscores',
       'any.reserved': RESERVED_SLUG_MESSAGE,
       'any.required': 'Custom URL is required'
     })

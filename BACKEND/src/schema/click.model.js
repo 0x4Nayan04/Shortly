@@ -1,50 +1,51 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 
 const clickSchema = mongoose.Schema(
   {
     short_url_id: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "ShortUrl",
+      ref: 'ShortUrl',
       required: true,
-      index: true,
+      index: true
     },
     referrer: {
       type: String,
-      default: "",
+      default: ''
     },
     country: {
       type: String,
-      default: "",
+      default: ''
     },
     user_agent: {
       type: String,
-      default: "",
+      default: '',
+      maxlength: 512
     },
     device_type: {
       type: String,
-      default: "",
+      default: ''
     },
     browser: {
       type: String,
-      default: "",
+      default: ''
     },
     os: {
       type: String,
-      default: "",
+      default: ''
     },
     timestamp: {
       type: Date,
-      default: Date.now,
-    },
+      default: Date.now
+    }
   },
   {
-    timestamps: false,
+    timestamps: false
   }
 );
 
 clickSchema.index({ timestamp: 1 }, { expireAfterSeconds: 60 * 60 * 24 * 30 });
 clickSchema.index({ short_url_id: 1, timestamp: -1 });
 
-const Click = mongoose.model("Click", clickSchema);
+const Click = mongoose.model('Click', clickSchema);
 
 export default Click;

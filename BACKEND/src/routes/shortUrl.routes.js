@@ -107,12 +107,6 @@ router.delete(
   validateBody(bulkDeleteUrlsSchema),
   bulkDeleteUrls
 );
-router.post(
-  '/bulk-delete',
-  isAuthenticated,
-  validateBody(bulkDeleteUrlsSchema),
-  bulkDeleteUrls
-);
 router.delete(
   '/:id',
   isAuthenticated,

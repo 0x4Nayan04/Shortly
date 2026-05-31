@@ -15,6 +15,7 @@ import { generateNanoId } from '../utils/helper.js';
 import { AppError, NotFoundError } from '../utils/errorHandler.js';
 import { normalizeSlug } from '../utils/normalizeSlug.js';
 import { normalizeUrl } from '../utils/normalizeUrl.js';
+import { validateCustomSlug } from '../utils/validateCustomSlug.js';
 
 const generateManageToken = () => crypto.randomBytes(24).toString('hex');
 
@@ -203,25 +204,11 @@ export const createCustomShortUrl = async (full_url, custom_url, userId) => {
   await assertUserLinkCapacity(userId);
 
   const canonical_url = normalizeUrl(full_url);
-  const slug = normalizeSlug(custom_url);
-
-  if (!slug || slug.length < 3 || slug.length > 20) {
-    throw new AppError(
-      'Custom URL must be between 3 and 20 characters long.',
-      400
-    );
-  }
-
-  const validPattern = /^[a-z0-9_-]+$/;
-  if (!validPattern.test(slug)) {
-    throw new AppError(
-      'Custom URL can only contain letters, numbers, hyphens, and underscores.',
-      400
-    );
-  }
-
-  if (isReservedSlug(slug)) {
-    throw new AppError(RESERVED_SLUG_MESSAGE, 400);
+  let slug;
+  try {
+    slug = validateCustomSlug(custom_url);
+  } catch (err) {
+    throw new AppError(err.message, 400);
   }
 
   if (!(await isSlugAvailable(slug))) {

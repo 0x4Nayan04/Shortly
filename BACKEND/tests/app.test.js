@@ -67,7 +67,7 @@ test('unmatched multi-segment path returns JSON 404', async () => {
 
 test('QR route rejects invalid slug format', async () => {
   const app = createApp();
-  const res = await request(app, 'GET', '/api/v1/qr/bad%20slug');
+  const res = await request(app, 'GET', '/api/qr/bad%20slug');
   assert.equal(res.status, 400);
 });
 
@@ -81,7 +81,7 @@ test('health endpoint returns structured payload', async (t) => {
     serverSelectionTimeoutMS: 5000
   });
   const app = createApp();
-  const res = await request(app, 'GET', '/api/v1/health');
+  const res = await request(app, 'GET', '/api/health');
   await mongoose.disconnect();
   assert.equal(res.status, 200);
   const json = JSON.parse(res.body);

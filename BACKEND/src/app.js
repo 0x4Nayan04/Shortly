@@ -3,7 +3,8 @@ import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express, { urlencoded } from 'express';
 import helmet from 'helmet';
-import { errorHandler, AppError } from './utils/errorHandler.js';
+import { errorHandler, AppError, NotFoundError } from './utils/errorHandler.js';
+import { isReservedSlug } from './constants/reservedSlugs.js';
 import { redirectFromShortUrl } from './controllers/shortUrl.controllers.js';
 import { getQrCode } from './controllers/qr.controller.js';
 import authRoutes from './routes/auth.routes.js';
@@ -45,7 +46,15 @@ export function createApp() {
 
   const app = express();
 
-  app.set('trust proxy', 1);
+  const trustProxy = process.env.TRUST_PROXY ?? '1';
+  app.set(
+    'trust proxy',
+    trustProxy === 'true' || trustProxy === '1'
+      ? 1
+      : trustProxy === 'false' || trustProxy === '0'
+        ? false
+        : trustProxy
+  );
 
   app.use(requestIdMiddleware);
   app.use(latencyMiddleware);
@@ -123,7 +132,6 @@ export function createApp() {
       'Content-Type',
       'Accept',
       'Authorization',
-      'Cookie',
       'Cache-Control'
     ],
     exposedHeaders: [
@@ -143,13 +151,10 @@ export function createApp() {
   app.use(cookieParser());
   app.use(attachUser);
 
-  app.use('/api/v1/health', healthRoutes);
   app.use('/api/health', healthRoutes);
 
-  app.use('/api/v1/create', shortUrlCreate);
   app.use('/api/create', shortUrlCreate);
 
-  app.use('/api/v1/auth', authRoutes);
   app.use('/api/auth', authRoutes);
 
   const qrHandler = [
@@ -158,20 +163,25 @@ export function createApp() {
     validateQuery(qrQuerySchema),
     getQrCode
   ];
-  app.get('/api/v1/qr/:short_url', ...qrHandler);
   app.get('/api/qr/:short_url', ...qrHandler);
 
-  app.use('/api/v1', (req, res) => {
-    res.status(404).json({ success: false, message: 'API endpoint not found' });
-  });
   app.use('/api', (req, res) => {
     res.status(404).json({ success: false, message: 'API endpoint not found' });
   });
+
+  const rejectReservedRedirectSlug = (req, _res, next) => {
+    const slug = req.validatedParams?.short_url ?? req.params.short_url;
+    if (isReservedSlug(slug)) {
+      return next(new NotFoundError('Route not found'));
+    }
+    next();
+  };
 
   app.get(
     '/:short_url',
     redirectLimiter,
     validateParams(shortUrlParamsSchema),
+    rejectReservedRedirectSlug,
     redirectFromShortUrl
   );
 
