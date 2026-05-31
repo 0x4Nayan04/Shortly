@@ -8,6 +8,7 @@ import {
 } from 'react-router-dom';
 import { useDocumentMeta } from './hooks/useDocumentMeta';
 import { getUrlStats } from './api/shortUrl.api';
+import { claimStoredAnonymousLinks } from './utils/claimAnonymousLinks';
 import { getCurrentUser, logoutUser } from './api/user.api';
 import { getApiPayload } from './utils/axiosInstance';
 import {
@@ -342,6 +343,7 @@ const App = () => {
         if (cancelled) return;
         if (userData) {
           setUser(userData);
+          await claimStoredAnonymousLinks();
           if (
             location.pathname === '/login' ||
             location.pathname === '/register' ||
@@ -407,6 +409,14 @@ const App = () => {
           return;
         }
       }
+
+      const claimResult = await claimStoredAnonymousLinks();
+      if (claimResult.claimed.length > 0) {
+        showToast.success(
+          `Added ${claimResult.claimed.length} anonymous link${claimResult.claimed.length === 1 ? '' : 's'} to your dashboard`
+        );
+      }
+
       announce('Successfully signed in. Redirecting to dashboard.');
       showToast.success('Welcome back! You have been signed in.');
       navigate('/dashboard');

@@ -169,6 +169,12 @@ const ActivityChart = memo(({ data }) => {
                       <strong>
                         {day.count} link{day.count !== 1 ? 's' : ''}
                       </strong>
+                      {day.clicks > 0 && (
+                        <span>
+                          {day.clicks} click{day.clicks !== 1 ? 's' : ''}{' '}
+                          (lifetime)
+                        </span>
+                      )}
                       <span>{dateLabel}</span>
                     </div>
                   )}
@@ -546,10 +552,21 @@ const Dashboard = ({ user, onLogout, onShowAuth, onShowProfile }) => {
     setIsBulkDeleting(true);
     const deleteToast = showToast.loading(`Deleting ${count} links…`);
     try {
-      await bulkDeleteUrls(Array.from(selectedIds));
+      const response = await bulkDeleteUrls(Array.from(selectedIds));
+      const payload = getApiPayload(response);
+      const deletedCount = payload?.deletedCount ?? count;
+      const skippedCount = payload?.skippedIds?.length ?? 0;
       showToast.dismiss(deleteToast);
-      showToast.success(`Deleted ${count} link${count > 1 ? 's' : ''}`);
-      announce(`Deleted ${count} links`);
+      if (skippedCount > 0) {
+        showToast.success(
+          `Deleted ${deletedCount} link${deletedCount === 1 ? '' : 's'}; ${skippedCount} skipped`
+        );
+      } else {
+        showToast.success(
+          `Deleted ${deletedCount} link${deletedCount === 1 ? '' : 's'}`
+        );
+      }
+      announce(`Deleted ${deletedCount} links`);
       setSelectedIds(new Set());
       fetchMyUrls();
       fetchStats();

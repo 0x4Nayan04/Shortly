@@ -13,6 +13,7 @@ import { BrandedSpinner } from './LoadingSpinner';
 import ShareModal from './ShareModal';
 import { createShortUrl, createCustomShortUrl } from '../api/shortUrl.api';
 import { getApiErrorMessage, getApiPayload } from '../utils/axiosInstance';
+import { rememberAnonymousLink } from '../utils/anonymousLinks';
 import {
   buildPublicShortUrl,
   getPublicShortBaseUrl
@@ -226,14 +227,28 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth, variant = 'default' }) => {
         response = await createShortUrl(url);
       }
 
-      const createdShortUrl = getApiPayload(response)?.short_url;
+      const payload = getApiPayload(response);
+      const createdShortUrl = payload?.short_url;
 
       if (createdShortUrl) {
+        if (payload?.id && payload?.manage_token) {
+          rememberAnonymousLink({
+            id: payload.id,
+            manage_token: payload.manage_token,
+            short_url: createdShortUrl
+          });
+        }
+
         setCreatedLink({ slug: createdShortUrl, fullUrl: url });
         setShortUrl(buildPublicShortUrl(createdShortUrl));
         showToast.dismiss(loadingToast);
-        showToast.success('URL shortened successfully!');
-        announce('URL shortened successfully! Your new short URL is ready.');
+        if (payload.reused) {
+          showToast.success('Existing short link reused for this URL');
+          announce('Existing short link reused for this URL');
+        } else {
+          showToast.success('URL shortened successfully!');
+          announce('URL shortened successfully! Your new short URL is ready.');
+        }
         // Call the callback if provided (for dashboard refresh)
         if (onUrlCreated) {
           onUrlCreated();
