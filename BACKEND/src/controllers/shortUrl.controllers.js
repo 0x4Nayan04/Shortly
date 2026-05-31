@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import short_urlModel from '../schema/shortUrl.model.js';
 import {
   createShortUrlWithoutUser,
@@ -86,26 +87,37 @@ export const redirectFromShortUrl = asyncHandler(async (req, res, next) => {
   const { user_agent, device_type, browser, os } = parseUserAgent(req);
 
   const recordClick = async () => {
+    const session = await mongoose.startSession();
     try {
-      await short_urlModel.updateOne(
-        { _id: shortUrlData._id },
-        { $inc: { click: 1 } }
-      );
-      await Click.create({
-        short_url_id: shortUrlData._id,
-        referrer,
-        country,
-        user_agent,
-        device_type,
-        browser,
-        os,
-        timestamp: new Date()
+      await session.withTransaction(async () => {
+        await short_urlModel.updateOne(
+          { _id: shortUrlData._id },
+          { $inc: { click: 1 } },
+          { session }
+        );
+        await Click.create(
+          [
+            {
+              short_url_id: shortUrlData._id,
+              referrer,
+              country,
+              user_agent,
+              device_type,
+              browser,
+              os,
+              timestamp: new Date()
+            }
+          ],
+          { session }
+        );
       });
     } catch (error) {
       logger.error('Error recording click', {
         error: error.message,
-        short_url: shortUrlData.short_url
+        short_url
       });
+    } finally {
+      await session.endSession();
     }
   };
 
@@ -125,7 +137,7 @@ export const getUserUrls = asyncHandler(async (req, res, _next) => {
   const baseQuery = { user: userId };
 
   // Add search filter if provided
-  if (search.trim()) {
+  if (search && search.trim()) {
     const searchRegex = new RegExp(escapeRegExp(search.trim()), 'i');
     baseQuery.$or = [{ full_url: searchRegex }, { short_url: searchRegex }];
   }

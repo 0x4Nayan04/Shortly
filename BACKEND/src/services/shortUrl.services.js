@@ -41,9 +41,7 @@ const generateUniqueShortUrl = async () => {
 };
 
 const findExistingShortUrlForFullUrl = async (full_url, userId) => {
-  const query = userId
-    ? { full_url, user: userId }
-    : { full_url, user: null };
+  const query = userId ? { full_url, user: userId } : { full_url, user: null };
   const existing = await short_urlModel
     .findOne(query)
     .select('short_url')
@@ -129,6 +127,10 @@ export const createCustomShortUrl = async (full_url, custom_url, userId) => {
     await saveShortUrl(custom_url, full_url, userId);
   } catch (err) {
     if (err.code === 11000) {
+      const keys = err.keyPattern ? Object.keys(err.keyPattern) : [];
+      if (keys.includes('full_url') && keys.includes('user')) {
+        throw new AppError('You already have a short link for this URL.', 409);
+      }
       throw new AppError(
         'Custom short URL already exists. Please choose a different one.',
         409

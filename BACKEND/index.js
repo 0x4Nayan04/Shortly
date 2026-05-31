@@ -43,5 +43,3 @@ start().catch((error) => {
   logger.error('Failed to start server', { error: error.message });
   process.exit(1);
 });
-
-export { app };
