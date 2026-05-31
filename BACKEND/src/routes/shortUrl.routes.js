@@ -30,6 +30,7 @@ import {
   rateLimiter,
   keyGenerators
 } from '../middleware/rateLimit.middleware.js';
+import { loadUserIfAuthenticated } from '../utils/attachUser.js';
 
 const router = express.Router();
 
@@ -58,7 +59,13 @@ const statsLimiter = rateLimiter({
 });
 
 // Public route - creates short URL, no authentication required
-router.post('/', createLimiter, validateBody(createUrlSchema), createShortUrl);
+router.post(
+  '/',
+  loadUserIfAuthenticated,
+  createLimiter,
+  validateBody(createUrlSchema),
+  createShortUrl
+);
 
 // Protected routes - require authentication
 router.post(

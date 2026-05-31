@@ -46,51 +46,21 @@ export const createShortUrl = asyncHandler(async (req, res, _next) => {
   const canonical_url = resolveCanonicalUrl(full_url);
   const userId = req.user ? req.user._id : null;
 
-  const existingQuery = userId
-    ? { canonical_url, user: userId, ...activeLinkFilter }
-    : { canonical_url, user: null, ...activeLinkFilter };
-
-  const existing = await short_urlModel
-    .findOne(existingQuery)
-    .sort({ createdAt: 1 })
-    .select('short_url _id')
-    .lean();
-
-  let short_url;
-  let linkId;
-  let manage_token;
-  let created = false;
-
-  if (!existing) {
-    created = true;
-    if (userId) {
-      ({ short_url, id: linkId } = await createShortUrlWithUser(
-        canonical_url,
-        userId
-      ));
-    } else {
-      ({
-        short_url,
-        id: linkId,
-        manage_token
-      } = await createShortUrlWithoutUser(canonical_url));
-    }
-  } else {
-    short_url = existing.short_url;
-    linkId = existing._id?.toString();
-  }
+  const result = userId
+    ? await createShortUrlWithUser(canonical_url, userId)
+    : await createShortUrlWithoutUser(canonical_url);
 
   const payload = {
-    id: linkId,
-    short_url,
+    id: result.id,
+    short_url: result.short_url,
     full_url: canonical_url,
     user_authenticated: !!userId,
-    created,
-    reused: !created
+    created: result.created,
+    reused: result.reused
   };
 
-  if (manage_token) {
-    payload.manage_token = manage_token;
+  if (result.manage_token) {
+    payload.manage_token = result.manage_token;
   }
 
   res.json(successResponse(SUCCESS_MESSAGES.URL.CREATED, payload));
@@ -348,39 +318,38 @@ export const bulkDeleteUrls = asyncHandler(async (req, res, _next) => {
 
 export const getUrlStats = asyncHandler(async (req, res, _next) => {
   const userId = req.user._id;
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
-  const [stats, recentActivity, topUrls, clickStats] = await Promise.all([
+  const [urlFacet, topUrls, clickStats] = await Promise.all([
     short_urlModel.aggregate([
       { $match: { user: userId, deletedAt: null } },
       {
-        $group: {
-          _id: null,
-          totalUrls: { $sum: 1 },
-          totalClicksLifetime: { $sum: '$click' },
-          avgClicks: { $avg: '$click' }
+        $facet: {
+          overall: [
+            {
+              $group: {
+                _id: null,
+                totalUrls: { $sum: 1 },
+                totalClicksLifetime: { $sum: '$click' },
+                avgClicks: { $avg: '$click' }
+              }
+            }
+          ],
+          recentActivity: [
+            { $match: { createdAt: { $gte: sevenDaysAgo } } },
+            {
+              $group: {
+                _id: {
+                  $dateToString: { format: '%Y-%m-%d', date: '$createdAt' }
+                },
+                count: { $sum: 1 },
+                clicks: { $sum: '$click' }
+              }
+            },
+            { $sort: { _id: 1 } }
+          ]
         }
       }
-    ]),
-    short_urlModel.aggregate([
-      {
-        $match: {
-          user: userId,
-          deletedAt: null,
-          createdAt: {
-            $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-          }
-        }
-      },
-      {
-        $group: {
-          _id: {
-            $dateToString: { format: '%Y-%m-%d', date: '$createdAt' }
-          },
-          count: { $sum: 1 },
-          clicks: { $sum: '$click' }
-        }
-      },
-      { $sort: { _id: 1 } }
     ]),
     short_urlModel
       .find({ user: userId, ...activeLinkFilter })
@@ -391,11 +360,13 @@ export const getUrlStats = asyncHandler(async (req, res, _next) => {
     getClickAggregates(userId)
   ]);
 
-  const overallStats = stats[0] || {
+  const facet = urlFacet[0] || { overall: [], recentActivity: [] };
+  const overallStats = facet.overall[0] || {
     totalUrls: 0,
     totalClicksLifetime: 0,
     avgClicks: 0
   };
+  const recentActivity = facet.recentActivity;
 
   res.json(
     successResponse('URL stats fetched', {

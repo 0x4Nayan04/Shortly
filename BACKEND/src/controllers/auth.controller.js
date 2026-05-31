@@ -14,9 +14,10 @@ import {
   SUCCESS_MESSAGES,
   successResponse
 } from '../utils/responseMessages.js';
-import { findUserById } from '../dao/user.dao.js';
-import { NotFoundError } from '../utils/errorHandler.js';
 import { serializeUser } from '../utils/serializeUser.js';
+import { getTokenFromRequest } from '../utils/authToken.js';
+import { verifyToken } from '../utils/helper.js';
+import User from '../schema/user.model.js';
 
 export const registerUser = asyncHandler(async (req, res, _next) => {
   const { name, email, password } = req.validatedBody;
@@ -62,24 +63,26 @@ export const loginUser = asyncHandler(async (req, res, _next) => {
 });
 
 export const logoutUser = asyncHandler(async (req, res, _next) => {
-  if (req.user) {
-    req.user.tokenVersion = (req.user.tokenVersion ?? 0) + 1;
-    await req.user.save();
+  const token = getTokenFromRequest(req);
+  if (token) {
+    try {
+      const decoded = await verifyToken(token);
+      await User.findByIdAndUpdate(decoded.id, {
+        $inc: { tokenVersion: 1 }
+      });
+    } catch {
+      // Invalid or expired token — still clear the cookie.
+    }
   }
 
   res.clearCookie('token', { ...cookieOptions });
   res.status(200).json(successResponse(SUCCESS_MESSAGES.AUTH.LOGOUT_SUCCESS));
 });
 
-export const getUserProfile = asyncHandler(async (req, res, next) => {
-  const user = await findUserById(req.user._id);
-  if (!user) {
-    return next(new NotFoundError('User not found'));
-  }
-
+export const getUserProfile = asyncHandler(async (req, res, _next) => {
   res.status(200).json(
     successResponse('User profile fetched', {
-      user: serializeUser(user)
+      user: serializeUser(req.user)
     })
   );
 });

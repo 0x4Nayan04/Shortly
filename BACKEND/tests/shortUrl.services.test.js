@@ -33,5 +33,6 @@ test('create response includes created and reused flags', async () => {
     new URL('../src/controllers/shortUrl.controllers.js', import.meta.url),
     'utf8'
   );
-  assert.match(source, /reused: !created/);
+  assert.match(source, /created: result\.created/);
+  assert.match(source, /reused: result\.reused/);
 });

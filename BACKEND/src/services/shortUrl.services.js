@@ -61,6 +61,36 @@ const findExistingShortUrlForCanonical = async (canonical_url, userId) => {
   return existing?.short_url ?? null;
 };
 
+const findExistingLinkForCanonical = async (canonical_url, userId) => {
+  const short_url = await findExistingShortUrlForCanonical(
+    canonical_url,
+    userId
+  );
+  if (!short_url) {
+    return null;
+  }
+
+  const query = userId
+    ? { short_url, user: userId, ...activeLinkFilter }
+    : { short_url, user: null, ...activeLinkFilter };
+  const doc = await short_urlModel
+    .findOne(query)
+    .select('_id short_url manage_token')
+    .lean();
+
+  if (!doc) {
+    return null;
+  }
+
+  return {
+    short_url: doc.short_url,
+    id: doc._id?.toString(),
+    manage_token: doc.manage_token ?? undefined,
+    created: false,
+    reused: true
+  };
+};
+
 const assertUserLinkCapacity = async (userId) => {
   if (!userId) return;
   const count = await countActiveLinksForUser(userId);
@@ -89,7 +119,7 @@ const saveShortUrlWithRetry = async ({
       user_Id: userId,
       manage_token
     });
-    return saved;
+    return { ...saved, created: true, reused: false };
   } catch (err) {
     if (err.code !== 11000) {
       throw err;
@@ -111,7 +141,12 @@ const saveShortUrlWithRetry = async ({
             })
             .select('_id short_url')
             .lean();
-          return { short_url: existing, id: doc?._id?.toString() };
+          return {
+            short_url: existing,
+            id: doc?._id?.toString(),
+            created: false,
+            reused: true
+          };
         }
       }
       const fallback = await generateUniqueShortUrl();
@@ -130,6 +165,11 @@ const saveShortUrlWithRetry = async ({
 
 export const createShortUrlWithoutUser = async (full_url) => {
   const canonical_url = normalizeUrl(full_url);
+  const existing = await findExistingLinkForCanonical(canonical_url, null);
+  if (existing) {
+    return existing;
+  }
+
   const short_url = await generateUniqueShortUrl();
   const manage_token = generateManageToken();
   const saved = await saveShortUrlWithRetry({
@@ -143,8 +183,13 @@ export const createShortUrlWithoutUser = async (full_url) => {
 };
 
 export const createShortUrlWithUser = async (full_url, userId) => {
-  await assertUserLinkCapacity(userId);
   const canonical_url = normalizeUrl(full_url);
+  const existing = await findExistingLinkForCanonical(canonical_url, userId);
+  if (existing) {
+    return existing;
+  }
+
+  await assertUserLinkCapacity(userId);
   const short_url = await generateUniqueShortUrl();
   return saveShortUrlWithRetry({
     short_url,

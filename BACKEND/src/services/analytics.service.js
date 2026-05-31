@@ -31,74 +31,65 @@ export async function getClickAggregates(userId, days = CLICK_RETENTION_DAYS) {
   const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
   const baseStages = userClickStages(userId, since);
 
-  const [overview, dailyClicks, breakdowns] = await Promise.all([
-    Promise.all([
-      Click.aggregate([
-        ...baseStages,
-        { $group: { _id: null, total: { $sum: 1 } } }
-      ]),
-      Click.aggregate([
-        ...baseStages,
-        { $group: { _id: '$referrer' } },
-        { $group: { _id: null, count: { $sum: 1 } } }
-      ]),
-      Click.aggregate([
-        ...baseStages,
-        { $group: { _id: '$country' } },
-        { $group: { _id: null, count: { $sum: 1 } } }
-      ])
-    ]),
-
-    Click.aggregate([
-      ...baseStages,
-      {
-        $group: {
-          _id: { $dateToString: { format: '%Y-%m-%d', date: '$timestamp' } },
-          clicks: { $sum: 1 }
-        }
-      },
-      { $sort: { _id: 1 } }
-    ]),
-
-    Promise.all([
-      Click.aggregate([
-        ...baseStages,
-        { $group: { _id: '$country', count: { $sum: 1 } } },
-        { $sort: { count: -1 } },
-        { $limit: 10 }
-      ]),
-      Click.aggregate([
-        ...baseStages,
-        { $group: { _id: '$device_type', count: { $sum: 1 } } },
-        { $sort: { count: -1 } }
-      ]),
-      Click.aggregate([
-        ...baseStages,
-        { $group: { _id: '$browser', count: { $sum: 1 } } },
-        { $sort: { count: -1 } },
-        { $limit: 5 }
-      ]),
-      Click.aggregate([
-        ...baseStages,
-        { $group: { _id: '$os', count: { $sum: 1 } } },
-        { $sort: { count: -1 } },
-        { $limit: 5 }
-      ])
-    ])
+  const [facetResult] = await Click.aggregate([
+    ...baseStages,
+    {
+      $facet: {
+        overviewTotal: [{ $group: { _id: null, total: { $sum: 1 } } }],
+        overviewReferrers: [
+          { $group: { _id: '$referrer' } },
+          { $group: { _id: null, count: { $sum: 1 } } }
+        ],
+        overviewCountries: [
+          { $group: { _id: '$country' } },
+          { $group: { _id: null, count: { $sum: 1 } } }
+        ],
+        dailyClicks: [
+          {
+            $group: {
+              _id: {
+                $dateToString: { format: '%Y-%m-%d', date: '$timestamp' }
+              },
+              clicks: { $sum: 1 }
+            }
+          },
+          { $sort: { _id: 1 } }
+        ],
+        countries: [
+          { $group: { _id: '$country', count: { $sum: 1 } } },
+          { $sort: { count: -1 } },
+          { $limit: 10 }
+        ],
+        devices: [
+          { $group: { _id: '$device_type', count: { $sum: 1 } } },
+          { $sort: { count: -1 } }
+        ],
+        browsers: [
+          { $group: { _id: '$browser', count: { $sum: 1 } } },
+          { $sort: { count: -1 } },
+          { $limit: 5 }
+        ],
+        operatingSystems: [
+          { $group: { _id: '$os', count: { $sum: 1 } } },
+          { $sort: { count: -1 } },
+          { $limit: 5 }
+        ]
+      }
+    }
   ]);
 
-  const totalClicks = overview[0]?.[0]?.total || 0;
-  const uniqueReferrers = overview[1]?.[0]?.count || 0;
-  const uniqueCountries = overview[2]?.[0]?.count || 0;
+  const totalClicks = facetResult.overviewTotal[0]?.total || 0;
+  const uniqueReferrers = facetResult.overviewReferrers[0]?.count || 0;
+  const uniqueCountries = facetResult.overviewCountries[0]?.count || 0;
 
   return {
     periodDays: days,
     retentionDays: CLICK_RETENTION_DAYS,
     overview: { total: totalClicks, uniqueReferrers, uniqueCountries },
-    clicksOverTime: dailyClicks,
-    countries: breakdowns[0],
-    devices: breakdowns[1],
-    browsers: breakdowns[2],
-    operatingSystems: breakdowns[3]
+    clicksOverTime: facetResult.dailyClicks,
+    countries: facetResult.countries,
+    devices: facetResult.devices,
+    browsers: facetResult.browsers,
+    operatingSystems: facetResult.operatingSystems
   };
 }

@@ -9,7 +9,7 @@ import { logger } from '../utils/logger.js';
 
 /**
  * Middleware to check if user is authenticated.
- * Reuses req.user from attachUser when the token matches to avoid a duplicate DB lookup.
+ * Reuses req.user when loadUserIfAuthenticated already loaded a matching session.
  */
 export const isAuthenticated = async (req, res, next) => {
   try {
