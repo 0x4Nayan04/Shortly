@@ -24,7 +24,6 @@ import {
 } from '../utils/responseMessages.js';
 import { escapeRegExp } from '../utils/escapeRegExp.js';
 import { logger } from '../utils/logger.js';
-import { retryWithBackoff } from '../utils/retry.js';
 import { isSafeRedirectUrl } from '../utils/safeRedirectUrl.js';
 import { normalizeSlug } from '../utils/normalizeSlug.js';
 
