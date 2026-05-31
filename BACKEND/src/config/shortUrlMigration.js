@@ -1,6 +1,7 @@
 import short_urlModel from '../schema/shortUrl.model.js';
 import Click from '../schema/click.model.js';
 import { logger } from '../utils/logger.js';
+import { normalizeUrl } from '../utils/normalizeUrl.js';
 
 /**
  * Normalize anonymous links: missing `user` field → explicit null.
@@ -17,15 +18,47 @@ export const backfillAnonymousShortUrlUsers = async () => {
   }
 };
 
+export const backfillCanonicalUrls = async () => {
+  const missing = await short_urlModel
+    .find({
+      $or: [{ canonical_url: { $exists: false } }, { canonical_url: null }]
+    })
+    .select('_id full_url')
+    .lean();
+
+  if (missing.length === 0) return;
+
+  let updated = 0;
+  for (const doc of missing) {
+    try {
+      const canonical_url = normalizeUrl(doc.full_url);
+      await short_urlModel.updateOne(
+        { _id: doc._id },
+        { $set: { canonical_url } }
+      );
+      updated++;
+    } catch (error) {
+      logger.warn('Skipped canonical_url backfill for short URL', {
+        id: doc._id,
+        error: error.message
+      });
+    }
+  }
+
+  if (updated > 0) {
+    logger.info('Backfilled canonical_url on short URLs', { count: updated });
+  }
+};
+
 /**
- * Remove duplicate (user, full_url) rows so the unique compound index can apply.
+ * Remove duplicate (user, canonical_url) rows so lookups stay stable.
  * Keeps the row with the highest click count, then earliest createdAt.
  */
 export const deduplicateShortUrlsByUserAndFullUrl = async () => {
   const duplicateGroups = await short_urlModel.aggregate([
     {
       $group: {
-        _id: { user: '$user', full_url: '$full_url' },
+        _id: { user: '$user', canonical_url: '$canonical_url' },
         ids: { $push: '$_id' },
         count: { $sum: 1 }
       }
@@ -69,17 +102,17 @@ export const deduplicateShortUrlsByUserAndFullUrl = async () => {
     removed += duplicates.length;
   }
 
-  logger.info('Deduplicated short URLs by user and full_url', {
+  logger.info('Deduplicated short URLs by user and canonical_url', {
     groups: duplicateGroups.length,
     removed
   });
 };
 
-async function hasDuplicateUserFullUrlPairs() {
+async function hasDuplicateUserCanonicalPairs() {
   const duplicates = await short_urlModel.aggregate([
     {
       $group: {
-        _id: { user: '$user', full_url: '$full_url' },
+        _id: { user: '$user', canonical_url: '$canonical_url' },
         count: { $sum: 1 }
       }
     },
@@ -98,7 +131,17 @@ export const migrateShortUrlData = async () => {
     await backfillAnonymousShortUrlUsers();
   }
 
-  if (await hasDuplicateUserFullUrlPairs()) {
-    await deduplicateShortUrlsByUserAndFullUrl();
+  await backfillCanonicalUrls();
+
+  if (process.env.SHORT_URL_DEDUPE_ON_STARTUP === 'true') {
+    if (await hasDuplicateUserCanonicalPairs()) {
+      await deduplicateShortUrlsByUserAndFullUrl();
+    }
+  } else if (await hasDuplicateUserCanonicalPairs()) {
+    logger.warn(
+      'Duplicate (user, canonical_url) short URL rows detected; set SHORT_URL_DEDUPE_ON_STARTUP=true to merge on startup'
+    );
   }
+
+  await short_urlModel.syncIndexes();
 };

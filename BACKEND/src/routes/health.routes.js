@@ -30,7 +30,6 @@ router.get('/', healthLimiter, (_req, res) => {
     uptime: process.uptime(),
     uptimeHuman: `${Math.floor(process.uptime())}s`,
     timestamp: new Date().toISOString(),
-    memory: process.memoryUsage(),
     mongo: {
       state: mongoStates[mongoState] || 'unknown',
       connected: mongoConnected

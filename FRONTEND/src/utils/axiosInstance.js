@@ -60,9 +60,11 @@ axiosInstance.interceptors.response.use(
         !requestUrl.includes('/auth/me') &&
         !requestUrl.includes('/auth/login') &&
         !requestUrl.includes('/auth/register') &&
+        !requestUrl.includes('/auth/verify-email') &&
         typeof window !== 'undefined' &&
         !window.location.pathname.startsWith('/login') &&
-        !window.location.pathname.startsWith('/register')
+        !window.location.pathname.startsWith('/register') &&
+        !window.location.pathname.startsWith('/verify-email/')
       ) {
         const returnTo = encodeURIComponent(
           window.location.pathname + window.location.search

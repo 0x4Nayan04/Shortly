@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { Info } from 'lucide-react';
-import { changePassword } from '../api/user.api';
+import { useEffect, useState } from 'react';
+import { Info, ShieldAlert } from 'lucide-react';
+import { changePassword, deleteAccount, updateProfile } from '../api/user.api';
 import { getApiErrorMessage } from '../utils/axiosInstance';
 import { getDesignInputClass } from '../utils/designFormClasses';
 import {
@@ -17,7 +17,17 @@ import AppNavbar from './app/AppNavbar';
 import PasswordVisibilityToggle from './PasswordVisibilityToggle';
 import { showToast, LoadingButton } from './UxEnhancements';
 
-const AccountSettings = ({ user, onLogout, onShowAuth, onShowProfile }) => {
+const AccountSettings = ({
+  user,
+  onLogout,
+  onShowAuth,
+  onShowProfile,
+  onProfileUpdated,
+  onAccountDeleted
+}) => {
+  const [name, setName] = useState(user.name || '');
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [profileErrors, setProfileErrors] = useState({});
   const [passwordForm, setPasswordForm] = useState({
     oldPassword: '',
     newPassword: '',
@@ -28,9 +38,64 @@ const AccountSettings = ({ user, onLogout, onShowAuth, onShowProfile }) => {
   const [showOldPassword, setShowOldPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [deleteConfirmEmail, setDeleteConfirmEmail] = useState('');
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
+  useEffect(() => {
+    setName(user.name || '');
+  }, [user.name]);
+
+  const profileDirty = name.trim() !== (user.name || '').trim();
+  const emailVerified = user.isEmailVerified !== false;
+  const deleteConfirmed =
+    deleteConfirmEmail.trim().toLowerCase() === user.email?.toLowerCase();
+
+  const handleProfileSave = async (event) => {
+    event.preventDefault();
+    const nameError = validators.name(name);
+    setProfileErrors({ name: nameError });
+
+    if (nameError) {
+      showToast.error(nameError);
+      return;
+    }
+
+    if (!profileDirty) {
+      return;
+    }
+
+    setProfileLoading(true);
+    try {
+      const response = await updateProfile(name.trim());
+      const updatedUser = response.user;
+      if (updatedUser && onProfileUpdated) {
+        onProfileUpdated(updatedUser);
+      }
+      showToast.success(response.message || 'Profile updated successfully');
+    } catch (error) {
+      showToast.error(getApiErrorMessage(error, 'Failed to update profile'));
+    } finally {
+      setProfileLoading(false);
+    }
+  };
 
   const handlePasswordChange = async (event) => {
     event.preventDefault();
+
+    if (
+      passwordForm.newPassword &&
+      passwordForm.oldPassword &&
+      passwordForm.newPassword === passwordForm.oldPassword
+    ) {
+      setPasswordErrors({
+        newPassword: 'New password must be different from your current password'
+      });
+      showToast.error(
+        'New password must be different from your current password'
+      );
+      return;
+    }
+
     const errors = validateForm(passwordForm, {
       oldPassword: validators.loginPassword,
       newPassword: (value) =>
@@ -59,6 +124,28 @@ const AccountSettings = ({ user, onLogout, onShowAuth, onShowProfile }) => {
       showToast.error(getApiErrorMessage(error, 'Failed to update password'));
     } finally {
       setPasswordLoading(false);
+    }
+  };
+
+  const handleDeleteAccount = async (event) => {
+    event.preventDefault();
+
+    if (!deleteConfirmed) {
+      showToast.error('Enter your email address to confirm deletion.');
+      return;
+    }
+
+    setDeleteLoading(true);
+    try {
+      await deleteAccount();
+      showToast.success('Your account has been deleted.');
+      if (onAccountDeleted) {
+        onAccountDeleted();
+      }
+    } catch (error) {
+      showToast.error(getApiErrorMessage(error, 'Failed to delete account'));
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -102,7 +189,10 @@ const AccountSettings = ({ user, onLogout, onShowAuth, onShowProfile }) => {
                     Profile
                   </h2>
 
-                  <div className='settings-workspace__panel-body'>
+                  <form
+                    className='settings-workspace__panel-body'
+                    onSubmit={handleProfileSave}
+                    noValidate>
                     <div className='settings-profile__identity'>
                       <div className='relative shrink-0'>
                         <img
@@ -119,20 +209,24 @@ const AccountSettings = ({ user, onLogout, onShowAuth, onShowProfile }) => {
                           style={{ display: 'none' }}
                           aria-hidden='true'>
                           <span className='font-display text-lg font-medium text-primary'>
-                            {(user.name || user.email || 'U')
+                            {(name.trim() || user.name || user.email || 'U')
                               .charAt(0)
                               .toUpperCase()}
                           </span>
                         </div>
                       </div>
-                      <div className='min-w-0 flex-1'>
-                        <p className='font-medium text-ink'>{user.name}</p>
-                        <p className='settings-profile__email font-mono text-sm text-muted-strong'>
-                          {user.email}
+                      <div className='settings-profile__summary min-w-0 flex-1'>
+                        <p className='settings-profile__display-name'>
+                          {name.trim() || user.name}
                         </p>
-                        <p className='mt-0.5 text-xs text-muted'>
-                          Avatar from Gravatar
-                        </p>
+                        <span
+                          className={
+                            emailVerified
+                              ? 'settings-profile__badge settings-profile__badge--verified'
+                              : 'settings-profile__badge settings-profile__badge--pending'
+                          }>
+                          {emailVerified ? 'Verified' : 'Pending verification'}
+                        </span>
                       </div>
                     </div>
 
@@ -146,10 +240,24 @@ const AccountSettings = ({ user, onLogout, onShowAuth, onShowProfile }) => {
                         <input
                           id='settings-name'
                           type='text'
-                          value={user.name}
-                          readOnly
-                          className={`${getDesignInputClass()} w-full min-w-0 bg-surface-muted border-dashed cursor-default`}
+                          value={name}
+                          onChange={(e) => {
+                            setName(e.target.value);
+                            if (profileErrors.name) {
+                              setProfileErrors({
+                                name: validators.name(e.target.value)
+                              });
+                            }
+                          }}
+                          className={getDesignInputClass({
+                            hasError: Boolean(profileErrors.name),
+                            className: 'w-full min-w-0'
+                          })}
+                          autoComplete='name'
                         />
+                        {profileErrors.name && (
+                          <p className='sm-field-error'>{profileErrors.name}</p>
+                        )}
                       </div>
                       <div className='settings-profile__field settings-profile__field--email min-w-0'>
                         <span
@@ -166,30 +274,30 @@ const AccountSettings = ({ user, onLogout, onShowAuth, onShowProfile }) => {
                       </div>
                     </div>
 
-                    <div
-                      className='settings-profile__notice'
-                      role='note'>
-                      <Info
-                        className='settings-profile__notice-icon'
-                        aria-hidden='true'
-                      />
-                      <p className='text-sm text-muted-strong'>
-                        <span className='font-medium text-ink'>
-                          Profile editing coming soon.
-                        </span>{' '}
-                        Name and email are read-only for now; your avatar
-                        follows your Gravatar address.
-                      </p>
-                    </div>
+                    {!emailVerified && (
+                      <div
+                        className='settings-profile__notice'
+                        role='note'>
+                        <Info
+                          className='settings-profile__notice-icon'
+                          aria-hidden='true'
+                        />
+                        <p className='text-sm text-muted-strong'>
+                          Check your inbox for the verification link before
+                          signing in on a new device.
+                        </p>
+                      </div>
+                    )}
 
-                    <button
-                      type='button'
-                      disabled
-                      title='Profile editing coming soon'
-                      className='sm-btn sm-btn-secondary w-full cursor-not-allowed opacity-50'>
+                    <LoadingButton
+                      type='submit'
+                      loading={profileLoading}
+                      loadingText='Saving...'
+                      className='sm-btn sm-btn-primary w-full md:w-auto'
+                      disabled={!profileDirty || profileLoading}>
                       Save changes
-                    </button>
-                  </div>
+                    </LoadingButton>
+                  </form>
                 </section>
 
                 <section
@@ -328,23 +436,60 @@ const AccountSettings = ({ user, onLogout, onShowAuth, onShowProfile }) => {
                         Update password
                       </LoadingButton>
                     </form>
-
-                    <div className='settings-security__2fa'>
-                      <div className='min-w-0'>
-                        <p className='settings-security__2fa-title'>
-                          Two-factor authentication
-                        </p>
-                        <p className='text-sm text-muted'>
-                          Extra sign-in protection
-                        </p>
-                      </div>
-                      <span className='inline-flex items-center border border-border bg-blue-tint px-2 py-0.5 text-[11px] font-medium leading-tight text-primary'>
-                        Coming soon
-                      </span>
-                    </div>
                   </div>
                 </section>
               </div>
+
+              <section
+                aria-labelledby='settings-danger-heading'
+                className='app-panel settings-workspace__panel settings-workspace__panel--danger'>
+                <h2
+                  id='settings-danger-heading'
+                  className='dashboard-shorten-panel__heading settings-danger__heading'>
+                  <ShieldAlert
+                    className='settings-danger__heading-icon'
+                    aria-hidden='true'
+                  />
+                  <span>Delete account</span>
+                </h2>
+                <div className='settings-workspace__panel-body'>
+                  <p className='settings-danger__lead'>
+                    Permanently remove your account and all short links you
+                    created. This cannot be undone.
+                  </p>
+                  <form
+                    className='settings-danger__form'
+                    onSubmit={handleDeleteAccount}
+                    noValidate>
+                    <div>
+                      <label
+                        htmlFor='settings-delete-email'
+                        className='sm-label'>
+                        Type your email to confirm
+                      </label>
+                      <input
+                        id='settings-delete-email'
+                        type='email'
+                        value={deleteConfirmEmail}
+                        onChange={(e) => setDeleteConfirmEmail(e.target.value)}
+                        placeholder={user.email}
+                        autoComplete='off'
+                        className={getDesignInputClass({
+                          className: 'w-full'
+                        })}
+                      />
+                    </div>
+                    <LoadingButton
+                      type='submit'
+                      loading={deleteLoading}
+                      loadingText='Deleting...'
+                      className='settings-danger__submit sm-btn w-full md:w-auto'
+                      disabled={!deleteConfirmed || deleteLoading}>
+                      Delete my account
+                    </LoadingButton>
+                  </form>
+                </div>
+              </section>
             </div>
           </LandingFrameInner>
         </LandingSectionBlock>

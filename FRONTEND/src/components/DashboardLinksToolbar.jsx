@@ -1,14 +1,8 @@
-import {
-  memo,
-  useCallback,
-  useEffect,
-  useRef,
-  useState
-} from 'react';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { Check, ChevronDown, SortAsc, SortDesc } from 'lucide-react';
 import { formCompoundClass } from '../utils/designFormClasses';
 
-export const SORT_OPTIONS = [
+const SORT_OPTIONS = [
   { value: 'createdAt', label: 'Date created' },
   { value: 'click', label: 'Clicks' },
   { value: 'short_url', label: 'Short URL' },
@@ -21,163 +15,146 @@ const preventEmptyBackspaceNav = (event) => {
   event.preventDefault();
 };
 
-const SortSelect = memo(
-  ({ value, onChange, options, disabled, id, label }) => {
-    const [open, setOpen] = useState(false);
-    const [focusIdx, setFocusIdx] = useState(-1);
-    const containerRef = useRef(null);
-    const triggerRef = useRef(null);
+const SortSelect = memo(({ value, onChange, options, disabled, id, label }) => {
+  const [open, setOpen] = useState(false);
+  const [focusIdx, setFocusIdx] = useState(-1);
+  const containerRef = useRef(null);
+  const triggerRef = useRef(null);
 
-    const currentLabel =
-      options.find((o) => o.value === value)?.label || '';
+  const currentLabel = options.find((o) => o.value === value)?.label || '';
 
-    useEffect(() => {
+  useEffect(() => {
+    if (!open) {
+      setFocusIdx(-1);
+      return;
+    }
+    const idx = options.findIndex((o) => o.value === value);
+    setFocusIdx(idx >= 0 ? idx : 0);
+  }, [open, options, value]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('pointerdown', onPointerDown);
+    return () => document.removeEventListener('pointerdown', onPointerDown);
+  }, [open]);
+
+  const select = useCallback(
+    (nextVal) => {
+      onChange(nextVal);
+      setOpen(false);
+      triggerRef.current?.focus();
+    },
+    [onChange]
+  );
+
+  const onKeyDown = useCallback(
+    (e) => {
       if (!open) {
-        setFocusIdx(-1);
+        if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') {
+          e.preventDefault();
+          setOpen(true);
+        }
         return;
       }
-      const idx = options.findIndex((o) => o.value === value);
-      setFocusIdx(idx >= 0 ? idx : 0);
-    }, [open, options, value]);
 
-    useEffect(() => {
-      if (!open) return;
-      const onPointerDown = (e) => {
-        if (
-          containerRef.current &&
-          !containerRef.current.contains(e.target)
-        ) {
+      switch (e.key) {
+        case 'Escape':
+          e.preventDefault();
           setOpen(false);
-        }
-      };
-      document.addEventListener('pointerdown', onPointerDown);
-      return () =>
-        document.removeEventListener('pointerdown', onPointerDown);
-    }, [open]);
-
-    const select = useCallback(
-      (nextVal) => {
-        onChange(nextVal);
-        setOpen(false);
-        triggerRef.current?.focus();
-      },
-      [onChange]
-    );
-
-    const onKeyDown = useCallback(
-      (e) => {
-        if (!open) {
-          if (
-            e.key === 'Enter' ||
-            e.key === ' ' ||
-            e.key === 'ArrowDown'
-          ) {
-            e.preventDefault();
-            setOpen(true);
+          triggerRef.current?.focus();
+          break;
+        case 'ArrowDown':
+          e.preventDefault();
+          setFocusIdx((prev) => (prev < options.length - 1 ? prev + 1 : 0));
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          setFocusIdx((prev) => (prev > 0 ? prev - 1 : options.length - 1));
+          break;
+        case 'Enter':
+        case ' ':
+          e.preventDefault();
+          if (focusIdx >= 0 && focusIdx < options.length) {
+            select(options[focusIdx].value);
           }
-          return;
-        }
+          break;
+        case 'Tab':
+          setOpen(false);
+          break;
+      }
+    },
+    [open, focusIdx, options, select]
+  );
 
-        switch (e.key) {
-          case 'Escape':
-            e.preventDefault();
-            setOpen(false);
-            triggerRef.current?.focus();
-            break;
-          case 'ArrowDown':
-            e.preventDefault();
-            setFocusIdx((prev) =>
-              prev < options.length - 1 ? prev + 1 : 0
-            );
-            break;
-          case 'ArrowUp':
-            e.preventDefault();
-            setFocusIdx((prev) =>
-              prev > 0 ? prev - 1 : options.length - 1
-            );
-            break;
-          case 'Enter':
-          case ' ':
-            e.preventDefault();
-            if (focusIdx >= 0 && focusIdx < options.length) {
-              select(options[focusIdx].value);
-            }
-            break;
-          case 'Tab':
-            setOpen(false);
-            break;
-        }
-      },
-      [open, focusIdx, options, select]
-    );
+  const onTriggerClick = useCallback(() => {
+    if (disabled) return;
+    setOpen((prev) => !prev);
+  }, [disabled]);
 
-    const onTriggerClick = useCallback(() => {
-      if (disabled) return;
-      setOpen((prev) => !prev);
-    }, [disabled]);
+  return (
+    <div
+      ref={containerRef}
+      className='sort-select'
+      onKeyDown={onKeyDown}>
+      <label
+        htmlFor={id}
+        className='sr-only'>
+        {label}
+      </label>
+      <button
+        ref={triggerRef}
+        id={id}
+        type='button'
+        role='combobox'
+        aria-haspopup='listbox'
+        aria-expanded={open}
+        aria-controls={`${id}-listbox`}
+        aria-label={label}
+        disabled={disabled}
+        className='dashboard-toolbar-compound__select outline-none'
+        onClick={onTriggerClick}>
+        <span className='sort-select__label'>{currentLabel}</span>
+        <ChevronDown
+          className={`sort-select__chevron${open ? ' sort-select__chevron--open' : ''}`}
+          aria-hidden='true'
+        />
+      </button>
 
-    return (
-      <div
-        ref={containerRef}
-        className='sort-select'
-        onKeyDown={onKeyDown}>
-        <label
-          htmlFor={id}
-          className='sr-only'>
-          {label}
-        </label>
-        <button
-          ref={triggerRef}
-          id={id}
-          type='button'
-          role='combobox'
-          aria-haspopup='listbox'
-          aria-expanded={open}
-          aria-controls={`${id}-listbox`}
+      {open && (
+        <ul
+          id={`${id}-listbox`}
+          role='listbox'
           aria-label={label}
-          disabled={disabled}
-          className='dashboard-toolbar-compound__select outline-none'
-          onClick={onTriggerClick}>
-          <span className='sort-select__label'>{currentLabel}</span>
-          <ChevronDown
-            className={`sort-select__chevron${open ? ' sort-select__chevron--open' : ''}`}
-            aria-hidden='true'
-          />
-        </button>
-
-        {open && (
-          <ul
-            id={`${id}-listbox`}
-            role='listbox'
-            aria-label={label}
-            className='sort-select__panel'>
-            {options.map((opt, idx) => (
-              <li
-                key={opt.value}
-                role='option'
-                aria-selected={opt.value === value}
-                className={`sort-select__option${opt.value === value ? ' sort-select__option--selected' : ''}${idx === focusIdx ? ' sort-select__option--focused' : ''}`}
-                onPointerDown={() => select(opt.value)}
-                onMouseEnter={() => setFocusIdx(idx)}>
-                <span className='sort-select__option-check'>
-                  {opt.value === value && (
-                    <Check
-                      className='sort-select__option-check-icon'
-                      aria-hidden='true'
-                    />
-                  )}
-                </span>
-                <span className='sort-select__option-label'>
-                  {opt.label}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-    );
-  }
-);
+          className='sort-select__panel'>
+          {options.map((opt, idx) => (
+            <li
+              key={opt.value}
+              role='option'
+              aria-selected={opt.value === value}
+              className={`sort-select__option${opt.value === value ? ' sort-select__option--selected' : ''}${idx === focusIdx ? ' sort-select__option--focused' : ''}`}
+              onPointerDown={() => select(opt.value)}
+              onMouseEnter={() => setFocusIdx(idx)}>
+              <span className='sort-select__option-check'>
+                {opt.value === value && (
+                  <Check
+                    className='sort-select__option-check-icon'
+                    aria-hidden='true'
+                  />
+                )}
+              </span>
+              <span className='sort-select__option-label'>{opt.label}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+});
 
 SortSelect.displayName = 'SortSelect';
 

@@ -15,17 +15,45 @@ export const rateLimiter = ({
 
     try {
       const key = keyGenerator(req);
-      const expires_at = new Date(Date.now() + windowMs);
+      const now = new Date();
+      const windowEnd = new Date(now.getTime() + windowMs);
 
       const record = await RateLimit.findOneAndUpdate(
         { key },
-        { $inc: { count: 1 }, $setOnInsert: { expires_at } },
+        [
+          {
+            $set: {
+              count: {
+                $cond: {
+                  if: {
+                    $lte: [{ $ifNull: ['$expires_at', new Date(0)] }, now]
+                  },
+                  then: 1,
+                  else: { $add: [{ $ifNull: ['$count', 0] }, 1] }
+                }
+              },
+              expires_at: {
+                $cond: {
+                  if: {
+                    $lte: [{ $ifNull: ['$expires_at', new Date(0)] }, now]
+                  },
+                  then: windowEnd,
+                  else: '$expires_at'
+                }
+              }
+            }
+          }
+        ],
         {
           upsert: true,
           returnDocument: 'after',
           projection: { count: 1, expires_at: 1, _id: 0 }
         }
       ).lean();
+
+      if (!record) {
+        throw new Error('Rate limit update returned no document');
+      }
 
       const remaining = Math.max(0, max - record.count);
       const resetMs = record.expires_at.getTime() - Date.now();

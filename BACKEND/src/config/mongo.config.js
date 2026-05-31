@@ -10,10 +10,14 @@ const mongooseOptions = {
   socketTimeoutMS: 45000,
   connectTimeoutMS: 30000,
   heartbeatFrequencyMS: 10000,
-  family: 4,
   retryWrites: true,
   retryReads: true
 };
+
+const ipFamily = process.env.MONGODB_IP_FAMILY?.trim();
+if (ipFamily !== undefined && ipFamily !== '') {
+  mongooseOptions.family = Number(ipFamily);
+}
 
 const backfillUserTimestamps = async () => {
   const result = await User.updateMany(

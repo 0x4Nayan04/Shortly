@@ -15,7 +15,8 @@ const SPA_SLUGS = new Set([
   'settings',
   'privacy',
   'forgot-password',
-  'reset-password'
+  'reset-password',
+  'verify-email'
 ]);
 
 function isShortLinkPath(pathname) {

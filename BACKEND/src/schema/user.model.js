@@ -40,6 +40,18 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null
     },
+    isEmailVerified: {
+      type: Boolean,
+      default: false
+    },
+    emailVerificationToken: {
+      type: String,
+      default: null
+    },
+    emailVerificationExpires: {
+      type: Date,
+      default: null
+    },
     avatar: {
       type: String,
       required: false,
@@ -49,17 +61,7 @@ const userSchema = new mongoose.Schema(
     }
   },
   {
-    timestamps: true,
-    toJSON: {
-      transform(_doc, ret) {
-        delete ret.password;
-        delete ret.resetPasswordToken;
-        delete ret.resetPasswordExpires;
-        delete ret.tokenVersion;
-        delete ret.__v;
-        return ret;
-      }
-    }
+    timestamps: true
   }
 );
 
@@ -79,6 +81,7 @@ userSchema.pre('save', async function (next) {
 });
 
 userSchema.index({ resetPasswordToken: 1 }, { sparse: true });
+userSchema.index({ emailVerificationToken: 1 }, { sparse: true });
 
 userSchema.methods.generateResetToken = function () {
   const token = crypto.randomBytes(resetTokenSize).toString('hex');
@@ -87,6 +90,16 @@ userSchema.methods.generateResetToken = function () {
     .update(token)
     .digest('hex');
   this.resetPasswordExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+  return token;
+};
+
+userSchema.methods.generateEmailVerificationToken = function () {
+  const token = crypto.randomBytes(resetTokenSize).toString('hex');
+  this.emailVerificationToken = crypto
+    .createHash('sha256')
+    .update(token)
+    .digest('hex');
+  this.emailVerificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
   return token;
 };
 

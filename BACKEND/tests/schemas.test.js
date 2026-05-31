@@ -4,7 +4,8 @@ import {
   registerSchema,
   resetPasswordSchema,
   shortUrlParamsSchema,
-  qrQuerySchema
+  qrQuerySchema,
+  getUserUrlsQuerySchema
 } from '../src/validation/schemas.js';
 
 test('registerSchema rejects passwords shorter than 6 characters', () => {
@@ -35,7 +36,9 @@ test('resetPasswordSchema requires at least 6 characters', () => {
 });
 
 test('shortUrlParamsSchema rejects invalid slug characters', () => {
-  const { error } = shortUrlParamsSchema.validate({ short_url: '../etc/passwd' });
+  const { error } = shortUrlParamsSchema.validate({
+    short_url: '../etc/passwd'
+  });
   assert.ok(error);
 });
 
@@ -43,4 +46,13 @@ test('qrQuerySchema accepts png and svg formats', () => {
   assert.equal(qrQuerySchema.validate({ format: 'png' }).error, undefined);
   assert.equal(qrQuerySchema.validate({ format: 'svg' }).error, undefined);
   assert.ok(qrQuerySchema.validate({ format: 'pdf' }).error);
+});
+
+test('getUserUrlsQuerySchema distinguishes missing search from empty string', () => {
+  const missing = getUserUrlsQuerySchema.validate({});
+  const empty = getUserUrlsQuerySchema.validate({ search: '' });
+  assert.equal(missing.error, undefined);
+  assert.equal(empty.error, undefined);
+  assert.equal(missing.value.search, undefined);
+  assert.equal(empty.value.search, '');
 });

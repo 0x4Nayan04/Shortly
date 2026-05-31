@@ -1,8 +1,8 @@
-import axiosinstance from "../utils/axiosInstance";
+import axiosinstance from '../utils/axiosInstance';
 
 export const createShortUrl = async (fullUrl) => {
   const payload = {
-    full_url: fullUrl,
+    full_url: fullUrl
   };
 
   const { data } = await axiosinstance.post(`api/create`, payload);
@@ -12,7 +12,7 @@ export const createShortUrl = async (fullUrl) => {
 export const createCustomShortUrl = async (fullUrl, customAlias) => {
   const payload = {
     full_url: fullUrl,
-    custom_url: customAlias,
+    custom_url: customAlias
   };
 
   const { data } = await axiosinstance.post(`api/create/custom`, payload);
@@ -36,22 +36,24 @@ export const deleteShortUrl = async (urlId) => {
 export const getMyUrls = async ({
   limit = 20,
   skip = 0,
-  search = "",
-  sortBy = "createdAt",
-  sortOrder = "desc",
+  search = '',
+  sortBy = 'createdAt',
+  sortOrder = 'desc'
 } = {}) => {
   const params = new URLSearchParams({
     limit: limit.toString(),
     skip: skip.toString(),
     sortBy,
-    sortOrder,
+    sortOrder
   });
 
   if (search.trim()) {
-    params.append("search", search.trim());
+    params.append('search', search.trim());
   }
 
-  const { data } = await axiosinstance.get(`api/create/my-urls?${params.toString()}`);
+  const { data } = await axiosinstance.get(
+    `api/create/my-urls?${params.toString()}`
+  );
   return data;
 };
 
@@ -61,7 +63,7 @@ export const getMyUrls = async ({
  */
 export const bulkDeleteUrls = async (ids) => {
   const { data } = await axiosinstance.delete(`api/create/bulk`, {
-    data: { ids },
+    data: { ids }
   });
   return data;
 };
@@ -71,5 +73,22 @@ export const bulkDeleteUrls = async (ids) => {
  */
 export const getUrlStats = async () => {
   const { data } = await axiosinstance.get(`api/create/stats`);
+  return data;
+};
+
+export const claimAnonymousLinks = async (links) => {
+  const { data } = await axiosinstance.post(`api/create/claim`, { links });
+  return data;
+};
+
+export const updateShortUrl = async (urlId, updates) => {
+  const { data } = await axiosinstance.patch(`api/create/${urlId}`, updates);
+  return data;
+};
+
+export const deleteAnonymousShortUrl = async (urlId, manage_token) => {
+  const { data } = await axiosinstance.delete(`api/create/anonymous/${urlId}`, {
+    data: { manage_token }
+  });
   return data;
 };

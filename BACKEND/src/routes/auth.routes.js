@@ -6,7 +6,10 @@ import {
   getUserProfile,
   changePassword,
   requestPasswordReset,
-  resetPassword
+  resetPassword,
+  verifyEmail,
+  updateUserProfile,
+  deleteAccount
 } from '../controllers/auth.controller.js';
 import { isAuthenticated } from '../middleware/auth.middleware.js';
 import { validateBody } from '../middleware/validation.middleware.js';
@@ -15,7 +18,9 @@ import {
   loginSchema,
   changePasswordSchema,
   forgotPasswordSchema,
-  resetPasswordSchema
+  resetPasswordSchema,
+  verifyEmailSchema,
+  updateProfileSchema
 } from '../validation/schemas.js';
 import {
   rateLimiter,
@@ -49,6 +54,19 @@ const resetPasswordLimiter = rateLimiter({
   keyGenerator: keyGenerators.ip
 });
 
+const verifyEmailLimiter = rateLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  keyGenerator: keyGenerators.ip
+});
+
+const meLimiter = rateLimiter({
+  windowMs: 60 * 1000,
+  max: 30,
+  keyGenerator: keyGenerators.userId,
+  failClosed: false
+});
+
 // Public routes
 router.post(
   '/register',
@@ -56,7 +74,13 @@ router.post(
   validateBody(registerSchema),
   registerUser
 );
-router.post('/login', validateBody(loginSchema), loginLimiter, loginUser);
+router.post('/login', loginLimiter, validateBody(loginSchema), loginUser);
+router.post(
+  '/verify-email',
+  verifyEmailLimiter,
+  validateBody(verifyEmailSchema),
+  verifyEmail
+);
 
 // Logout should clear cookie even if token expired
 router.post('/logout', logoutUser);
@@ -64,8 +88,8 @@ router.post('/logout', logoutUser);
 // Public password reset routes
 router.post(
   '/forgot-password',
-  validateBody(forgotPasswordSchema),
   forgotPasswordLimiter,
+  validateBody(forgotPasswordSchema),
   requestPasswordReset
 );
 router.post(
@@ -76,7 +100,14 @@ router.post(
 );
 
 // Protected routes (require authentication)
-router.get('/me', isAuthenticated, getUserProfile);
+router.get('/me', isAuthenticated, meLimiter, getUserProfile);
+router.patch(
+  '/me',
+  isAuthenticated,
+  validateBody(updateProfileSchema),
+  updateUserProfile
+);
+router.delete('/me', isAuthenticated, deleteAccount);
 router.post(
   '/change-password',
   isAuthenticated,

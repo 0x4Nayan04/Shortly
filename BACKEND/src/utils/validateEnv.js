@@ -18,6 +18,10 @@ export const validateEnvironment = () => {
     );
   }
 
+  if (process.env.FRONT_END_URL) {
+    process.env.FRONT_END_URL = process.env.FRONT_END_URL.replace(/\/+$/, '');
+  }
+
   if (process.env.NODE_ENV !== 'production') {
     const presentOptional = optionalEnvVars.filter(
       (varName) => process.env[varName]
@@ -90,6 +94,15 @@ export const validateEnvFormats = () => {
     logger.info('Using single origin from FRONT_END_URL for CORS');
   }
 
+  if (
+    process.env.RESEND_API_KEY?.trim() &&
+    !process.env.RESEND_FROM_EMAIL?.trim()
+  ) {
+    throw new Error(
+      'RESEND_FROM_EMAIL must be set when RESEND_API_KEY is configured'
+    );
+  }
+
   if (process.env.NODE_ENV === 'production') {
     if (
       !process.env.PUBLIC_BASE_URL ||
@@ -98,6 +111,14 @@ export const validateEnvFormats = () => {
       throw new Error(
         'PUBLIC_BASE_URL must be set to a valid http(s) URL in production'
       );
+    }
+
+    if (!process.env.RESEND_API_KEY?.trim()) {
+      throw new Error('RESEND_API_KEY must be set in production');
+    }
+
+    if (!process.env.RESEND_FROM_EMAIL?.trim()) {
+      throw new Error('RESEND_FROM_EMAIL must be set in production');
     }
   } else if (process.env.PUBLIC_BASE_URL) {
     if (!process.env.PUBLIC_BASE_URL.startsWith('http')) {

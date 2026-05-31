@@ -5,7 +5,10 @@ import {
   getUserUrls,
   deleteShortUrl,
   bulkDeleteUrls,
-  getUrlStats
+  getUrlStats,
+  updateShortUrl,
+  claimAnonymousShortUrls,
+  deleteAnonymousShortUrl
 } from '../controllers/shortUrl.controllers.js';
 import { isAuthenticated } from '../middleware/auth.middleware.js';
 import {
@@ -18,12 +21,16 @@ import {
   createCustomUrlSchema,
   deleteUrlSchema,
   getUserUrlsQuerySchema,
-  bulkDeleteUrlsSchema
+  bulkDeleteUrlsSchema,
+  updateUrlSchema,
+  claimAnonymousLinksSchema,
+  deleteAnonymousUrlSchema
 } from '../validation/schemas.js';
 import {
   rateLimiter,
   keyGenerators
 } from '../middleware/rateLimit.middleware.js';
+import { loadUserIfAuthenticated } from '../utils/attachUser.js';
 
 const router = express.Router();
 
@@ -52,7 +59,13 @@ const statsLimiter = rateLimiter({
 });
 
 // Public route - creates short URL, no authentication required
-router.post('/', createLimiter, validateBody(createUrlSchema), createShortUrl);
+router.post(
+  '/',
+  loadUserIfAuthenticated,
+  createLimiter,
+  validateBody(createUrlSchema),
+  createShortUrl
+);
 
 // Protected routes - require authentication
 router.post(
@@ -69,14 +82,27 @@ router.get(
   getUserUrls
 );
 router.get('/stats', isAuthenticated, statsLimiter, getUrlStats);
+router.post(
+  '/claim',
+  isAuthenticated,
+  validateBody(claimAnonymousLinksSchema),
+  claimAnonymousShortUrls
+);
+router.patch(
+  '/:id',
+  isAuthenticated,
+  validateParams(deleteUrlSchema),
+  validateBody(updateUrlSchema),
+  updateShortUrl
+);
+router.delete(
+  '/anonymous/:id',
+  validateParams(deleteUrlSchema),
+  validateBody(deleteAnonymousUrlSchema),
+  deleteAnonymousShortUrl
+);
 router.delete(
   '/bulk',
-  isAuthenticated,
-  validateBody(bulkDeleteUrlsSchema),
-  bulkDeleteUrls
-);
-router.post(
-  '/bulk-delete',
   isAuthenticated,
   validateBody(bulkDeleteUrlsSchema),
   bulkDeleteUrls

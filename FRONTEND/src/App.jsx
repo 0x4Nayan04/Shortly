@@ -8,6 +8,7 @@ import {
 } from 'react-router-dom';
 import { useDocumentMeta } from './hooks/useDocumentMeta';
 import { getUrlStats } from './api/shortUrl.api';
+import { claimStoredAnonymousLinks } from './utils/claimAnonymousLinks';
 import { getCurrentUser, logoutUser } from './api/user.api';
 import { getApiPayload } from './utils/axiosInstance';
 import {
@@ -37,6 +38,7 @@ const UserProfileModal = lazy(() => import('./components/UserProfileModal'));
 const PrivacyPage = lazy(() => import('./components/PrivacyPage'));
 const ForgotPassword = lazy(() => import('./components/ForgotPassword'));
 const ResetPassword = lazy(() => import('./components/ResetPassword'));
+const VerifyEmail = lazy(() => import('./components/VerifyEmail'));
 const NotFound = lazy(() => import('./components/NotFound'));
 
 const AuthPageShell = ({
@@ -224,6 +226,31 @@ const ResetPasswordPage = ({
   );
 };
 
+const VerifyEmailPage = ({ user, onLogout, onShowRegister, onShowProfile }) => {
+  if (user) {
+    return (
+      <Navigate
+        to='/dashboard'
+        replace
+      />
+    );
+  }
+
+  return (
+    <AuthPageShell
+      user={user}
+      sectionLabel='VERIFY'
+      headingId='verify-heading'
+      loadingMessage='Verifying your email'
+      skeletonVariant='compact'
+      onLogout={onLogout}
+      onShowRegister={onShowRegister}
+      onShowProfile={onShowProfile}>
+      <VerifyEmail />
+    </AuthPageShell>
+  );
+};
+
 /** Preload lazy protected-route chunks during auth so refresh shows one loader. */
 const PROTECTED_ROUTE_PRELOADS = {
   '/dashboard': () => import('./components/Dashboard'),
@@ -342,11 +369,13 @@ const App = () => {
         if (cancelled) return;
         if (userData) {
           setUser(userData);
+          await claimStoredAnonymousLinks();
           if (
             location.pathname === '/login' ||
             location.pathname === '/register' ||
             location.pathname === '/forgot-password' ||
-            location.pathname.startsWith('/reset-password/')
+            location.pathname.startsWith('/reset-password/') ||
+            location.pathname.startsWith('/verify-email/')
           ) {
             navigate('/dashboard');
           }
@@ -407,12 +436,29 @@ const App = () => {
           return;
         }
       }
+
+      const claimResult = await claimStoredAnonymousLinks();
+      if (claimResult.claimed.length > 0) {
+        showToast.success(
+          `Added ${claimResult.claimed.length} anonymous link${claimResult.claimed.length === 1 ? '' : 's'} to your dashboard`
+        );
+      }
+
       announce('Successfully signed in. Redirecting to dashboard.');
       showToast.success('Welcome back! You have been signed in.');
       navigate('/dashboard');
     },
     [navigate, announce]
   );
+
+  const handleProfileUpdated = useCallback((updatedUser) => {
+    setUser(updatedUser);
+  }, []);
+
+  const handleAccountDeleted = useCallback(() => {
+    setUser(null);
+    navigate('/');
+  }, [navigate]);
 
   const handleLogout = useCallback(async () => {
     const confirmed = await confirmLogout.confirm({
@@ -559,6 +605,8 @@ const App = () => {
                     onShowAuth={showAuth}
                     onShowRegister={showRegister}
                     onShowProfile={handleShowProfile}
+                    onProfileUpdated={handleProfileUpdated}
+                    onAccountDeleted={handleAccountDeleted}
                   />
                 }
               />
@@ -606,6 +654,25 @@ const App = () => {
                 />
               ) : (
                 <ResetPasswordPage
+                  user={user}
+                  onLogout={handleLogout}
+                  onShowAuth={showAuth}
+                  onShowRegister={showRegister}
+                  onShowProfile={handleShowProfile}
+                />
+              )
+            }
+          />
+          <Route
+            path='/verify-email/:token'
+            element={
+              authChecked && user ? (
+                <Navigate
+                  to='/dashboard'
+                  replace
+                />
+              ) : (
+                <VerifyEmailPage
                   user={user}
                   onLogout={handleLogout}
                   onShowAuth={showAuth}

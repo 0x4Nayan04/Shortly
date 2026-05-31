@@ -146,6 +146,7 @@ const LoginForm = ({
         showToast.error(response.message || 'Login failed');
       }
     } catch (err) {
+      const status = err?.response?.status;
       const data = err?.response ? err.response.data : err;
       if (data && typeof data === 'object' && Array.isArray(data.errors)) {
         const backendErrors = {};
@@ -158,6 +159,12 @@ const LoginForm = ({
         const errorMsg = getApiErrorMessage(err, 'Invalid email or password');
         setError(errorMsg);
         showToast.error(errorMsg);
+        if (status === 403 && /verify/i.test(errorMsg)) {
+          setFieldErrors((prev) => ({
+            ...prev,
+            email: 'Verify your email before signing in.'
+          }));
+        }
       }
     } finally {
       setLoading(false);
