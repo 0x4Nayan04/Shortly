@@ -1,5 +1,13 @@
+import {
+  getLandingCatalogShortHost,
+  getPublicShortBaseUrl
+} from '../../utils/publicShortUrl';
+
 const SiteFooterBar = () => {
   const year = new Date().getFullYear();
+  const host = getLandingCatalogShortHost();
+  const base = getPublicShortBaseUrl();
+  const href = base ? base : `https://${host}`;
 
   return (
     <footer className='bg-surface'>
@@ -8,11 +16,11 @@ const SiteFooterBar = () => {
           © {year} Shortly
         </span>
         <a
-          href='https://shortly.nayan04.me'
+          href={href}
           className='landing-footer-bar__domain tabular-nums text-muted outline-none hover:text-primary'
           target='_blank'
           rel='noopener noreferrer'>
-          shortly.nayan04.me
+          {host}
         </a>
       </div>
     </footer>

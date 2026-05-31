@@ -21,10 +21,10 @@ const CATALOG_ITEMS = [
   },
   {
     num: '03',
-    title: 'Traffic analytics',
-    slug: 'traffic',
-    eyebrow: 'Dashboard · 7-day breakdown',
-    stat: 'Clicks, countries & referrers',
+    title: 'Click analytics',
+    slug: 'k9Xm2p',
+    eyebrow: 'Clicks over time · Last 7 days',
+    stat: 'Total clicks · Countries · Referrers',
     visual: 'analytics'
   },
   {
@@ -38,9 +38,9 @@ const CATALOG_ITEMS = [
   {
     num: '05',
     title: 'Saved links',
-    slug: 'saved',
-    eyebrow: 'Dashboard · manage URLs',
-    detail: 'Copy, delete, or bulk remove',
+    slug: 'k9Xm2p',
+    eyebrow: 'Your links · All links',
+    detail: 'Copy · Share · Delete selected',
     visual: 'manage'
   }
 ];

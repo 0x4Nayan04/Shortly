@@ -6,7 +6,7 @@ import ShortlyLogo from '../ShortlyLogo';
 import { LandingFrameInner } from './LandingFrame';
 
 const FooterInlineLink = ({ link }) => {
-  const className = 'landing-text-link outline-none';
+  const className = 'nav-landing-link landing-footer-link outline-none';
 
   if (link.href) {
     return (
@@ -84,59 +84,50 @@ const LandingFooter = ({ user }) => {
     <footer className='landing-footer border-t border-border bg-surface'>
       <LandingFrameInner className='landing-footer-inner'>
         <div className='landing-footer-main'>
-          <div className='landing-footer-top'>
-            <a
-              href='/'
-              className='nav-landing-logo landing-footer-logo outline-none'
-              aria-label='Shortly — home'>
-              <ShortlyLogo
-                variant='full'
-                className='shortly-logo--footer hidden md:inline-flex'
-              />
-              <ShortlyLogo
-                variant='mark'
-                className='shortly-logo--footer md:hidden'
-              />
-            </a>
-
-            <div
-              className='landing-footer-social'
-              aria-label='Social links'>
-              {SOCIAL_ICON_LINKS.map(({ label, href, icon }) => (
-                <a
-                  key={label}
-                  href={href}
-                  target='_blank'
-                  rel='noopener noreferrer'
-                  className='landing-icon-btn outline-none'
-                  aria-label={label}>
-                  {createElement(icon, {
-                    className: 'h-4 w-4',
-                    'aria-hidden': true
-                  })}
-                </a>
-              ))}
-            </div>
-          </div>
+          <a
+            href='/'
+            className='nav-landing-logo landing-footer-logo outline-none'
+            aria-label='Shortly — home'>
+            <ShortlyLogo
+              variant='full'
+              className='shortly-logo--footer hidden md:inline-flex'
+            />
+            <ShortlyLogo
+              variant='mark'
+              className='shortly-logo--footer md:hidden'
+            />
+          </a>
 
           <nav
             className='landing-footer-inline-nav'
             aria-label='Footer'>
             <ul className='landing-footer-inline-links'>
-              {footerLinks.map((link, index) => (
+              {footerLinks.map((link) => (
                 <li key={link.label}>
-                  {index > 0 ? (
-                    <span
-                      className='landing-footer-inline-sep'
-                      aria-hidden='true'>
-                      ·
-                    </span>
-                  ) : null}
                   <FooterInlineLink link={link} />
                 </li>
               ))}
             </ul>
           </nav>
+
+          <div
+            className='landing-footer-social'
+            aria-label='Social links'>
+            {SOCIAL_ICON_LINKS.map(({ label, href, icon }) => (
+              <a
+                key={label}
+                href={href}
+                target='_blank'
+                rel='noopener noreferrer'
+                className='landing-icon-btn outline-none'
+                aria-label={label}>
+                {createElement(icon, {
+                  className: 'h-4 w-4',
+                  'aria-hidden': true
+                })}
+              </a>
+            ))}
+          </div>
         </div>
       </LandingFrameInner>
     </footer>

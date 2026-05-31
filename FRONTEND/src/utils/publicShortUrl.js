@@ -53,11 +53,9 @@ export function getShortLinkDisplayParts(slug) {
   }
 }
 
-const LANDING_SHORT_HOST_FALLBACK = 'shortly.nayan04.me';
-
 /**
- * Host string for landing catalog visuals — readable short-link previews.
- * Uses VITE_LANDING_SHORT_HOST, else production host when env points at localhost.
+ * Host string for landing catalog visuals — uses the same origin as short links.
+ * VITE_LANDING_SHORT_HOST overrides; otherwise VITE_PUBLIC_SHORT_URL / dev origin.
  */
 export function getLandingCatalogShortHost() {
   const override = import.meta.env.VITE_LANDING_SHORT_HOST?.trim();
@@ -66,27 +64,20 @@ export function getLandingCatalogShortHost() {
   }
 
   const base = getPublicShortBaseUrl();
-  if (!base) return LANDING_SHORT_HOST_FALLBACK;
+  if (!base) return 'localhost';
 
-  const host = base.replace(/^https?:\/\//, '').replace(/\/$/, '');
-  const isLocal =
-    /^localhost(:\d+)?$/i.test(host) ||
-    /^127\.0\.0\.1(:\d+)?$/i.test(host) ||
-    host.endsWith('.local');
-
-  if (isLocal) return LANDING_SHORT_HOST_FALLBACK;
-
-  return host;
+  return base.replace(/^https?:\/\//, '').replace(/\/$/, '');
 }
 
-/** Split host for mono display: shortly + .nayan04.me */
+/** Split host for mono display: brand label + TLD (e.g. shortly + .app). */
 export function splitShortHostForDisplay(host) {
-  if (!host) return { lead: LANDING_SHORT_HOST_FALLBACK, trail: '' };
+  if (!host) return { lead: 'localhost', trail: '' };
 
   const isSingleLabel =
     !host.includes('.') ||
     /^localhost(:\d+)?$/i.test(host) ||
-    /^127\.0\.0\.1(:\d+)?$/i.test(host);
+    /^\d{1,3}(\.\d{1,3}){3}(:\d+)?$/.test(host) ||
+    host.endsWith('.local');
 
   if (isSingleLabel) {
     return { lead: host, trail: '' };

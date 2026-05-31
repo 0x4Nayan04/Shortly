@@ -271,92 +271,129 @@
     }
   }
   .landing-footer-main {
-    display: flex;
-    flex-wrap: nowrap;
+    display: grid;
+    width: 100%;
+    grid-template-columns: 1fr auto 1fr;
     align-items: center;
-    justify-content: space-between;
-    gap: 1.5rem;
-  }
-  .landing-footer-top {
-    display: contents;
+    gap: 1rem;
   }
   .landing-footer-logo {
+    justify-self: start;
     flex-shrink: 0;
   }
   .landing-footer-inline-nav {
-    flex: 1 1 auto;
+    justify-self: center;
     min-width: 0;
   }
   .landing-footer-inline-links {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
+    justify-content: center;
     margin: 0;
     padding: 0;
     list-style: none;
+    gap: 0.125rem;
   }
   .landing-footer-inline-links li {
+    display: flex;
+    align-items: center;
+  }
+  .landing-footer-inline-links li + li::before {
+    content: '·';
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
-  }
-  .landing-footer-inline-sep {
+    align-self: center;
+    margin-inline: 0.125rem;
     color: var(--color-muted);
+    font-size: 0.875em;
+    line-height: 1;
     pointer-events: none;
     user-select: none;
+  }
+  .landing-footer-link {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.5rem 0.875rem;
   }
   .landing-footer-social {
     display: flex;
     flex-shrink: 0;
     align-items: center;
+    justify-self: end;
     gap: 0.375rem;
   }
   @media (min-width: 768px) {
-    .landing-footer-logo {
-      order: 1;
-    }
-    .landing-footer-inline-nav {
-      order: 2;
-    }
-    .landing-footer-social {
-      order: 3;
-    }
     .landing-footer-inline-links {
-      justify-content: center;
+      flex-wrap: nowrap;
+      white-space: nowrap;
     }
   }
   @media (max-width: 767px) {
-    .landing-footer-main {
-      flex-direction: column;
-      align-items: stretch;
-      gap: 0.625rem;
+    .landing-footer-inner {
+      padding-block: 0.75rem;
     }
-    .landing-footer-top {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 0.75rem;
+    .landing-footer-main {
+      grid-template-columns: 1fr auto;
+      grid-template-rows: auto auto;
+      row-gap: 0.5rem;
+      column-gap: 0.5rem;
+    }
+    .landing-footer-logo {
+      grid-column: 1;
+      grid-row: 1;
+      align-self: center;
+    }
+    .landing-footer-social {
+      grid-column: 2;
+      grid-row: 1;
+      align-self: center;
     }
     .landing-footer-inline-nav {
-      flex: none;
-      width: 100%;
+      grid-column: 1 / -1;
+      grid-row: 2;
+      justify-self: stretch;
+      padding-top: 0.5rem;
+      border-top: 1px solid var(--color-border);
     }
     .landing-footer-inline-links {
-      display: flex;
-      flex-wrap: wrap;
-      column-gap: 1rem;
-      row-gap: 0.375rem;
+      flex-wrap: nowrap;
+      justify-content: center;
+      gap: 0;
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
     }
-    .landing-footer-inline-links li {
-      display: flex;
-      align-items: center;
-      min-height: 1.75rem;
-    }
-    .landing-footer-inline-sep {
+    .landing-footer-inline-links::-webkit-scrollbar {
       display: none;
+    }
+    .landing-footer-inline-links li + li::before {
+      margin-inline: 0.0625rem;
+    }
+    .landing-footer-link {
+      padding: 0.375rem 0.5rem;
+      font-size: 14px;
+      line-height: 1.35;
+      white-space: nowrap;
+    }
+    .landing-footer .landing-icon-btn {
+      height: 1.75rem;
+      width: 1.75rem;
     }
     .shortly-logo--footer .shortly-logo-img {
       height: 22px;
+    }
+  }
+  @media (max-width: 399px) {
+    .landing-footer-inline-links {
+      flex-wrap: wrap;
+      justify-content: center;
+      row-gap: 0.125rem;
+      overflow-x: visible;
+    }
+    .landing-footer-link {
+      padding: 0.375rem 0.375rem;
     }
   }
   .landing-section-block {
@@ -5744,20 +5781,7 @@
       flex-wrap: wrap;
     }
 
-    /* 6. Footer — stacked layout on small screens */
-    .landing-footer-inner {
-      padding-block: 0.75rem;
-    }
-
-    .landing-footer-inline-links .landing-text-link {
-      font-size: 14px;
-      line-height: 1.35;
-    }
-
-    .landing-footer .landing-icon-btn {
-      height: 1.75rem;
-      width: 1.75rem;
-    }
+    /* 6. Footer — mobile rules live with .landing-footer-* above */
 
     /* 7. Feature row tap targets — 44px min for mobile touch */
     .catalog-scrolly-step-inner {
