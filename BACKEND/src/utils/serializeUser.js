@@ -8,7 +8,6 @@ const PRIVATE_USER_FIELDS = new Set([
   '__v'
 ]);
 
-/** Public user shape for API responses. */
 export function serializeUser(user) {
   if (!user) return null;
 

@@ -362,9 +362,7 @@ export const updateOwnedShortUrl = async (userId, id, updates) => {
 
   if (updates.short_url !== undefined) {
     const nextSlug = normalizeSlug(updates.short_url);
-    if (nextSlug === url.short_url) {
-      // no-op
-    } else {
+    if (nextSlug !== url.short_url) {
       if (!nextSlug || nextSlug.length < 3 || nextSlug.length > 20) {
         throw new AppError(
           'Custom URL must be between 3 and 20 characters long.',

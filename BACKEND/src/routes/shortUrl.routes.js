@@ -58,7 +58,6 @@ const statsLimiter = rateLimiter({
   failClosed: false
 });
 
-// Public route - creates short URL, no authentication required
 router.post(
   '/',
   loadUserIfAuthenticated,
@@ -67,7 +66,6 @@ router.post(
   createShortUrl
 );
 
-// Protected routes - require authentication
 router.post(
   '/custom',
   isAuthenticated,

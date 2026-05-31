@@ -1,13 +1,11 @@
 import User from '../schema/user.model.js';
 
 export const findUserByEmail = async (email) => {
-  const user = await User.findOne({ email: email });
-  return user; // Return user or null if not found
+  return User.findOne({ email: email });
 };
 
 export const findUserById = async (id) => {
-  const user = await User.findById(id);
-  return user; // Return user or null if not found
+  return User.findById(id);
 };
 
 export const createUser = async (name, email, password) => {

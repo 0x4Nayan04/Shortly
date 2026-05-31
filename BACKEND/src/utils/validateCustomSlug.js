@@ -9,7 +9,6 @@ export const CUSTOM_SLUG_MAX_LENGTH = 20;
 
 const CUSTOM_SLUG_PATTERN = /^[a-z0-9_-]+$/;
 
-/** Validates and returns a normalized custom slug, or throws with a message. */
 export function validateCustomSlug(slug) {
   const normalized = normalizeSlug(slug);
 

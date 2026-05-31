@@ -1,14 +1,11 @@
-/**
- * Standardized response messages for consistent user communication
- */
-
 export const ERROR_MESSAGES = {
   VALIDATION: {
     REQUIRED_FIELDS: 'Required fields are missing',
     INVALID_EMAIL: 'Please provide a valid email address',
     INVALID_URL: 'Please provide a valid URL',
     PASSWORD_TOO_SHORT: 'Password must be at least 6 characters long',
-    INVALID_CUSTOM_URL: 'Custom URL must be 3-20 characters, letters and numbers only'
+    INVALID_CUSTOM_URL:
+      'Custom URL must be 3-20 characters, letters and numbers only'
   },
   AUTH: {
     INVALID_CREDENTIALS: 'Invalid email or password',
@@ -19,7 +16,8 @@ export const ERROR_MESSAGES = {
   },
   URL: {
     NOT_FOUND: 'Short URL not found',
-    ALREADY_EXISTS: 'This custom URL already exists. Please choose a different one',
+    ALREADY_EXISTS:
+      'This custom URL already exists. Please choose a different one',
     TOO_MANY_REQUESTS: 'Too many URLs created. Please try again later',
     DELETION_FAILED: 'Failed to delete URL',
     PERMISSION_DENIED: 'You can only delete your own URLs'
@@ -40,7 +38,7 @@ export const SUCCESS_MESSAGES = {
   URL: {
     CREATED: 'Short URL created successfully',
     CUSTOM_CREATED: 'Custom short URL created successfully',
-    DELETED: 'URL deleted successfully',
+    DELETED: 'URL deleted successfully'
   },
   USER: {
     PROFILE_UPDATED: 'Profile updated successfully',
@@ -48,10 +46,12 @@ export const SUCCESS_MESSAGES = {
   }
 };
 
-/**
- * Helper function to create consistent API responses
- */
-export const createResponse = (success, message, data = null, errors = null) => {
+export const createResponse = (
+  success,
+  message,
+  data = null,
+  errors = null
+) => {
   const response = {
     success,
     message
@@ -68,16 +68,10 @@ export const createResponse = (success, message, data = null, errors = null) => 
   return response;
 };
 
-/**
- * Helper function for success responses
- */
 export const successResponse = (message, data = null) => {
   return createResponse(true, message, data);
 };
 
-/**
- * Helper function for error responses
- */
 export const errorResponse = (message, errors = null) => {
   return createResponse(false, message, null, errors);
 };

@@ -67,7 +67,6 @@ const meLimiter = rateLimiter({
   failClosed: false
 });
 
-// Public routes
 router.post(
   '/register',
   registerLimiter,
@@ -82,10 +81,8 @@ router.post(
   verifyEmail
 );
 
-// Logout should clear cookie even if token expired
 router.post('/logout', logoutUser);
 
-// Public password reset routes
 router.post(
   '/forgot-password',
   forgotPasswordLimiter,
@@ -99,7 +96,6 @@ router.post(
   resetPassword
 );
 
-// Protected routes (require authentication)
 router.get('/me', isAuthenticated, meLimiter, getUserProfile);
 router.patch(
   '/me',

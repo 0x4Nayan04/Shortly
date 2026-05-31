@@ -3,9 +3,6 @@ import Click from '../schema/click.model.js';
 import { logger } from '../utils/logger.js';
 import { normalizeUrl } from '../utils/normalizeUrl.js';
 
-/**
- * Normalize anonymous links: missing `user` field → explicit null.
- */
 export const backfillAnonymousShortUrlUsers = async () => {
   const result = await short_urlModel.updateMany(
     { user: { $exists: false } },
@@ -122,7 +119,6 @@ async function hasDuplicateUserCanonicalPairs() {
   return duplicates.length > 0;
 }
 
-/** Runs only work that is still needed (cheap checks first). */
 export const migrateShortUrlData = async () => {
   const needsUserBackfill = await short_urlModel.exists({
     user: { $exists: false }

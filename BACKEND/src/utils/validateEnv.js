@@ -1,7 +1,3 @@
-/**
- * Environment variable validation utility
- */
-
 import { logger } from './logger.js';
 
 const requiredEnvVars = ['MONGODB_URI', 'JWT_SECRET', 'FRONT_END_URL', 'PORT'];
@@ -36,9 +32,6 @@ export const validateEnvironment = () => {
   logger.info('Environment validation passed');
 };
 
-/**
- * Optional: Validate environment variable formats
- */
 export const validateEnvFormats = () => {
   if (
     process.env.MONGODB_URI &&

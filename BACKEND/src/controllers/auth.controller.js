@@ -65,13 +65,11 @@ export const loginUser = asyncHandler(async (req, res, _next) => {
 export const logoutUser = asyncHandler(async (req, res, _next) => {
   const token = getTokenFromRequest(req);
   if (token) {
-    try {
-      const decoded = await verifyToken(token);
+    const decoded = await verifyToken(token).catch(() => null);
+    if (decoded) {
       await User.findByIdAndUpdate(decoded.id, {
         $inc: { tokenVersion: 1 }
       });
-    } catch {
-      // Invalid or expired token — still clear the cookie.
     }
   }
 

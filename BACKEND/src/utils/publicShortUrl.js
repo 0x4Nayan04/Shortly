@@ -1,7 +1,4 @@
-/**
- * Public base URL for short links (redirect host). Prefer PUBLIC_BASE_URL when
- * API and redirect domains differ; otherwise derive from the incoming request.
- */
+// Prefer PUBLIC_BASE_URL when API and redirect hosts differ.
 export function getPublicShortBaseUrl(req) {
   const configured = process.env.PUBLIC_BASE_URL?.trim();
   if (configured) {

@@ -1,10 +1,5 @@
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-/**
- * Runs an async fn with exponential backoff between failures.
- * @param {() => Promise<void>} fn
- * @param {{ retries?: number, baseDelayMs?: number, onFinalError?: (err: Error) => void }} options
- */
 export async function retryWithBackoff(
   fn,
   { retries = 2, baseDelayMs = 100, onFinalError } = {}

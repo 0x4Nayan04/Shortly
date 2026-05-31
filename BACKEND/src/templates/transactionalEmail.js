@@ -1,8 +1,5 @@
 /**
- * Transactional email layout — tokens aligned with Design/supermemory-ai-variables.css
- * and FRONTEND/src/styles/shortly-design-tokens.css.
- *
- * Uses table layout + inline styles for broad email client support.
+ * Transactional email layout — table + inline styles for email client support.
  */
 
 /** @type {Readonly<Record<string, string>>} */
@@ -102,18 +99,6 @@ function buildEmailHeaderHtml({ homeUrl, logoUrl, tokens: t }) {
               </table>`;
 }
 
-/**
- * @param {{
- *   preheader: string;
- *   headline: string;
- *   intro: string;
- *   ctaLabel: string;
- *   ctaUrl: string;
- *   safetyNote: string;
- *   expiryNote: string;
- *   frontEndUrl: string;
- * }} options
- */
 export function buildTransactionalEmailHtml({
   preheader,
   headline,
@@ -219,16 +204,6 @@ export function buildTransactionalEmailHtml({
 </html>`;
 }
 
-/**
- * @param {{
- *   headline: string;
- *   intro: string;
- *   ctaLabel: string;
- *   ctaUrl: string;
- *   safetyNote: string;
- *   expiryNote: string;
- * }} options
- */
 export function buildTransactionalEmailText({
   headline,
   intro,
