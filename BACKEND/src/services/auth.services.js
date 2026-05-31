@@ -1,13 +1,5 @@
 import crypto from 'crypto';
-import {
-  createUser,
-  findUserByEmail,
-  findUserById,
-  findUserByResetToken,
-  findUserByVerificationToken,
-  deleteUserById,
-  updateUser
-} from '../dao/user.dao.js';
+import User from '../schema/user.model.js';
 import short_urlModel from '../schema/shortUrl.model.js';
 import { signToken } from '../utils/helper.js';
 import { AppError } from '../utils/errorHandler.js';
@@ -22,13 +14,14 @@ const GENERIC_RESET_MESSAGE =
   'If an account with that email exists, a reset link has been sent.';
 
 export const registerUser = async (name, email, password) => {
-  const existingUser = await findUserByEmail(email);
+  const existingUser = await User.findOne({ email });
 
   if (existingUser) {
     throw new AppError('User already exists with this email', 409);
   }
 
-  const newUser = await createUser(name, email, password);
+  const newUser = new User({ name, email, password });
+  await newUser.save();
 
   if (isPasswordResetEmailConfigured()) {
     const verificationToken = newUser.generateEmailVerificationToken();
@@ -37,11 +30,10 @@ export const registerUser = async (name, email, password) => {
     try {
       await sendVerificationEmail(email, verificationToken);
     } catch (error) {
-      await deleteUserById(newUser._id);
+      await User.findByIdAndDelete(newUser._id);
       throw error;
     }
 
-    newUser.password = undefined;
     return { user: newUser, verificationRequired: true };
   }
 
@@ -53,13 +45,15 @@ export const registerUser = async (name, email, password) => {
     tokenVersion: newUser.tokenVersion ?? 0
   });
 
-  newUser.password = undefined;
   return { token, user: newUser };
 };
 
 export const verifyEmail = async (token) => {
   const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
-  const user = await findUserByVerificationToken(hashedToken);
+  const user = await User.findOne({
+    emailVerificationToken: hashedToken,
+    emailVerificationExpires: { $gt: new Date() }
+  });
   if (!user) {
     throw new AppError('Invalid or expired verification token', 400);
   }
@@ -69,12 +63,11 @@ export const verifyEmail = async (token) => {
   user.emailVerificationExpires = null;
   await user.save();
 
-  user.password = undefined;
   return { user };
 };
 
 export const loginUser = async (email, password) => {
-  const user = await findUserByEmail(email);
+  const user = await User.findOne({ email });
 
   if (!user) {
     throw new AppError('Invalid Credentials', 401);
@@ -95,13 +88,11 @@ export const loginUser = async (email, password) => {
     tokenVersion: user.tokenVersion ?? 0
   });
 
-  user.password = undefined;
-
   return { token, user };
 };
 
 export const changePassword = async (userId, oldPassword, newPassword) => {
-  const user = await findUserById(userId);
+  const user = await User.findById(userId);
   if (!user) {
     throw new AppError('User not found', 404);
   }
@@ -125,32 +116,30 @@ export const changePassword = async (userId, oldPassword, newPassword) => {
     tokenVersion: user.tokenVersion ?? 0
   });
 
-  user.password = undefined;
   return { token, user };
 };
 
 export const updateUserProfile = async (userId, { name }) => {
-  const user = await updateUser(userId, { name });
+  const user = await User.findByIdAndUpdate(userId, { name }, { new: true, runValidators: true });
   if (!user) {
     throw new AppError('User not found', 404);
   }
 
-  user.password = undefined;
   return { user };
 };
 
 export const deleteUserAccount = async (userId) => {
-  const user = await findUserById(userId);
+  const user = await User.findById(userId);
   if (!user) {
     throw new AppError('User not found', 404);
   }
 
   await short_urlModel.deleteMany({ user: userId });
-  await deleteUserById(userId);
+  await User.findByIdAndDelete(userId);
 };
 
 export const requestPasswordReset = async (email) => {
-  const user = await findUserByEmail(email);
+  const user = await User.findOne({ email });
   if (!user) {
     return { message: GENERIC_RESET_MESSAGE };
   }
@@ -182,7 +171,10 @@ export const requestPasswordReset = async (email) => {
 
 export const resetPassword = async (token, newPassword) => {
   const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
-  const user = await findUserByResetToken(hashedToken);
+  const user = await User.findOne({
+    resetPasswordToken: hashedToken,
+    resetPasswordExpires: { $gt: new Date() }
+  });
   if (!user) {
     throw new AppError('Invalid or expired reset token', 400);
   }
@@ -193,6 +185,5 @@ export const resetPassword = async (token, newPassword) => {
   user.tokenVersion = (user.tokenVersion ?? 0) + 1;
   await user.save();
 
-  user.password = undefined;
   return { user };
 };

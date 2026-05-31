@@ -1,8 +1,4 @@
 import crypto from 'crypto';
-import {
-  isReservedSlug,
-  RESERVED_SLUG_MESSAGE
-} from '../constants/reservedSlugs.js';
 import { MAX_LINKS_PER_USER } from '../constants/shortUrlLimits.js';
 import {
   countActiveLinksForUser,
@@ -30,10 +26,6 @@ const generateUniqueShortUrl = async () => {
   while (!isUnique && attempts < maxAttempts) {
     short_url = generateNanoId(7);
 
-    if (!short_url) {
-      throw new AppError('Failed to generate short URL', 500);
-    }
-
     if (await isSlugAvailable(short_url)) {
       isUnique = true;
     }
@@ -50,39 +42,16 @@ const generateUniqueShortUrl = async () => {
   return normalizeSlug(short_url);
 };
 
-const findExistingShortUrlForCanonical = async (canonical_url, userId) => {
+const findExistingLinkForCanonical = async (canonical_url, userId) => {
   const query = userId
     ? { canonical_url, user: userId, ...activeLinkFilter }
     : { canonical_url, user: null, ...activeLinkFilter };
-  const existing = await short_urlModel
-    .findOne(query)
-    .sort({ createdAt: 1 })
-    .select('short_url')
-    .lean();
-  return existing?.short_url ?? null;
-};
-
-const findExistingLinkForCanonical = async (canonical_url, userId) => {
-  const short_url = await findExistingShortUrlForCanonical(
-    canonical_url,
-    userId
-  );
-  if (!short_url) {
-    return null;
-  }
-
-  const query = userId
-    ? { short_url, user: userId, ...activeLinkFilter }
-    : { short_url, user: null, ...activeLinkFilter };
   const doc = await short_urlModel
     .findOne(query)
+    .sort({ createdAt: 1 })
     .select('_id short_url manage_token')
     .lean();
-
-  if (!doc) {
-    return null;
-  }
-
+  if (!doc) return null;
   return {
     short_url: doc.short_url,
     id: doc._id?.toString(),
@@ -129,25 +98,12 @@ const saveShortUrlWithRetry = async ({
     const keys = err.keyPattern ? Object.keys(err.keyPattern) : [];
     if (keys.includes('short_url')) {
       if (userId) {
-        const existing = await findExistingShortUrlForCanonical(
+        const existing = await findExistingLinkForCanonical(
           canonical_url,
           userId
         );
         if (existing) {
-          const doc = await short_urlModel
-            .findOne({
-              short_url: existing,
-              user: userId,
-              deletedAt: null
-            })
-            .select('_id short_url')
-            .lean();
-          return {
-            short_url: existing,
-            id: doc?._id?.toString(),
-            created: false,
-            reused: true
-          };
+          return existing;
         }
       }
       const fallback = await generateUniqueShortUrl();
@@ -164,40 +120,24 @@ const saveShortUrlWithRetry = async ({
   }
 };
 
-export const createShortUrlWithoutUser = async (full_url) => {
+export const createShortUrl = async (full_url, userId = null) => {
   const canonical_url = normalizeUrl(full_url);
-  const existing = await findExistingLinkForCanonical(canonical_url, null);
-  if (existing) {
-    return existing;
-  }
+  const existing = await findExistingLinkForCanonical(canonical_url, userId);
+  if (existing) return existing;
+
+  if (userId) await assertUserLinkCapacity(userId);
 
   const short_url = await generateUniqueShortUrl();
-  const manage_token = generateManageToken();
+  const manage_token = userId ? null : generateManageToken();
   const saved = await saveShortUrlWithRetry({
     short_url,
     full_url: canonical_url,
     canonical_url,
-    userId: null,
+    userId,
     manage_token
   });
-  return { ...saved, manage_token };
-};
 
-export const createShortUrlWithUser = async (full_url, userId) => {
-  const canonical_url = normalizeUrl(full_url);
-  const existing = await findExistingLinkForCanonical(canonical_url, userId);
-  if (existing) {
-    return existing;
-  }
-
-  await assertUserLinkCapacity(userId);
-  const short_url = await generateUniqueShortUrl();
-  return saveShortUrlWithRetry({
-    short_url,
-    full_url: canonical_url,
-    canonical_url,
-    userId
-  });
+  return manage_token ? { ...saved, manage_token } : saved;
 };
 
 export const createCustomShortUrl = async (full_url, custom_url, userId) => {
@@ -248,15 +188,11 @@ export const getShortUrl = async (short_url) => {
       deletedAt: null,
       disabled: { $ne: true }
     })
-    .select('_id full_url disabled')
+    .select('_id full_url')
     .lean();
 
   if (!shortUrlData) {
     throw new NotFoundError('Short URL not found');
-  }
-
-  if (shortUrlData.disabled) {
-    throw new AppError('This short link has been disabled', 410);
   }
 
   return shortUrlData;
@@ -265,55 +201,50 @@ export const getShortUrl = async (short_url) => {
 export const claimAnonymousLinks = async (userId, claims) => {
   await assertUserLinkCapacity(userId);
 
-  const claimed = [];
-  const skipped = [];
+  const results = await Promise.all(
+    claims.map(async ({ id, manage_token }) => {
+      if (!id || !manage_token) {
+        return { type: 'skipped', id, reason: 'missing_id_or_token' };
+      }
 
-  for (const { id, manage_token } of claims) {
-    if (!id || !manage_token) {
-      skipped.push({ id, reason: 'missing_id_or_token' });
-      continue;
-    }
+      const doc = await short_urlModel
+        .findOne({
+          _id: id,
+          user: null,
+          deletedAt: null,
+          manage_token
+        })
+        .select('_id short_url canonical_url')
+        .lean();
 
-    const doc = await short_urlModel
-      .findOne({
-        _id: id,
-        user: null,
-        deletedAt: null,
-        manage_token
-      })
-      .select('_id short_url canonical_url')
-      .lean();
+      if (!doc) {
+        return { type: 'skipped', id, reason: 'not_found_or_invalid_token' };
+      }
 
-    if (!doc) {
-      skipped.push({ id, reason: 'not_found_or_invalid_token' });
-      continue;
-    }
+      const ownedDuplicate = await short_urlModel.exists({
+        user: userId,
+        canonical_url: doc.canonical_url,
+        deletedAt: null
+      });
 
-    const ownedDuplicate = await short_urlModel.exists({
-      user: userId,
-      canonical_url: doc.canonical_url,
-      deletedAt: null
-    });
+      if (ownedDuplicate) {
+        await short_urlModel.updateOne(
+          { _id: doc._id },
+          { $set: { deletedAt: new Date() } }
+        );
+        return { type: 'skipped', id, reason: 'duplicate_destination', short_url: doc.short_url };
+      }
 
-    if (ownedDuplicate) {
       await short_urlModel.updateOne(
         { _id: doc._id },
-        { $set: { deletedAt: new Date() } }
+        { $set: { user: userId }, $unset: { manage_token: 1 } }
       );
-      skipped.push({
-        id,
-        reason: 'duplicate_destination',
-        short_url: doc.short_url
-      });
-      continue;
-    }
+      return { type: 'claimed', id, short_url: doc.short_url };
+    })
+  );
 
-    await short_urlModel.updateOne(
-      { _id: doc._id },
-      { $set: { user: userId }, $unset: { manage_token: 1 } }
-    );
-    claimed.push({ id, short_url: doc.short_url });
-  }
+  const claimed = results.filter((r) => r.type === 'claimed').map(({ type: _type, ...rest }) => rest);
+  const skipped = results.filter((r) => r.type === 'skipped').map(({ type: _type, ...rest }) => rest);
 
   return { claimed, skipped };
 };
@@ -363,20 +294,10 @@ export const updateOwnedShortUrl = async (userId, id, updates) => {
   if (updates.short_url !== undefined) {
     const nextSlug = normalizeSlug(updates.short_url);
     if (nextSlug !== url.short_url) {
-      if (!nextSlug || nextSlug.length < 3 || nextSlug.length > 20) {
-        throw new AppError(
-          'Custom URL must be between 3 and 20 characters long.',
-          400
-        );
-      }
-      if (!/^[a-z0-9_-]+$/.test(nextSlug)) {
-        throw new AppError(
-          'Custom URL can only contain letters, numbers, hyphens, and underscores.',
-          400
-        );
-      }
-      if (isReservedSlug(nextSlug)) {
-        throw new AppError(RESERVED_SLUG_MESSAGE, 400);
+      try {
+        validateCustomSlug(nextSlug);
+      } catch (err) {
+        throw new AppError(err.message, 400);
       }
       if (!(await isSlugAvailable(nextSlug))) {
         throw new AppError(
@@ -408,4 +329,4 @@ export const updateOwnedShortUrl = async (userId, id, updates) => {
   return short_urlModel.findById(id).lean();
 };
 
-export { normalizeUrl };
+

@@ -1,5 +1,5 @@
 import { AppError } from '../utils/errorHandler.js';
-import { findUserById } from '../dao/user.dao.js';
+import User from '../schema/user.model.js';
 import { verifyToken } from '../utils/helper.js';
 import {
   getTokenFromRequest,
@@ -33,7 +33,7 @@ export const isAuthenticated = async (req, res, next) => {
     return next();
   }
 
-  const user = await findUserById(decoded.id);
+  const user = await User.findById(decoded.id);
 
   if (!user) {
     return next(new AppError('Invalid token. Please login again.', 401));

@@ -31,8 +31,9 @@ test('createShortUrl delegates dedup to the service layer', async () => {
   const createStart = controller.indexOf('export const createShortUrl');
   const createFn = controller.slice(createStart, createStart + 900);
   assert.doesNotMatch(createFn, /short_urlModel\.findOne/);
-  assert.match(createFn, /createShortUrlWithUser/);
-  assert.match(createFn, /createShortUrlWithoutUser/);
+  assert.match(createFn, /createShortUrlService/);
+  assert.doesNotMatch(createFn, /createShortUrlWithUser/);
+  assert.doesNotMatch(createFn, /createShortUrlWithoutUser/);
 });
 
 test('getUrlStats consolidates short_url aggregations with $facet', async () => {

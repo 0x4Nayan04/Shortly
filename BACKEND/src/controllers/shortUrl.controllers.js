@@ -1,15 +1,14 @@
 import mongoose from 'mongoose';
 import short_urlModel from '../schema/shortUrl.model.js';
 import {
-  createShortUrlWithoutUser,
-  createShortUrlWithUser,
+  createShortUrl as createShortUrlService,
   createCustomShortUrl as createCustomShortUrlService,
   getShortUrl,
   claimAnonymousLinks as claimAnonymousLinksService,
   deleteAnonymousLink as deleteAnonymousLinkService,
-  updateOwnedShortUrl,
-  normalizeUrl
+  updateOwnedShortUrl
 } from '../services/shortUrl.services.js';
+import { normalizeUrl } from '../utils/normalizeUrl.js';
 import { getClickAggregates } from '../services/analytics.service.js';
 import Click from '../schema/click.model.js';
 import { CLICK_RETENTION_DAYS } from '../constants/shortUrlLimits.js';
@@ -45,9 +44,7 @@ export const createShortUrl = asyncHandler(async (req, res, _next) => {
   const canonical_url = resolveCanonicalUrl(full_url);
   const userId = req.user ? req.user._id : null;
 
-  const result = userId
-    ? await createShortUrlWithUser(canonical_url, userId)
-    : await createShortUrlWithoutUser(canonical_url);
+  const result = await createShortUrlService(canonical_url, userId);
 
   const payload = {
     id: result.id,

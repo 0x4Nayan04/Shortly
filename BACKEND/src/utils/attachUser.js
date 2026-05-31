@@ -1,4 +1,4 @@
-import { findUserById } from '../dao/user.dao.js';
+import User from '../schema/user.model.js';
 import { verifyToken } from './helper.js';
 import { getTokenFromRequest, isTokenVersionValid } from './authToken.js';
 
@@ -33,7 +33,7 @@ export const loadUserIfAuthenticated = async (req, res, next) => {
   }
 
   try {
-    const user = await findUserById(req.authUserId);
+    const user = await User.findById(req.authUserId);
     if (
       !user ||
       !isTokenVersionValid(user, { tokenVersion: req.authTokenVersion })

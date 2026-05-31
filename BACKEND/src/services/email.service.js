@@ -55,102 +55,73 @@ async function sendTransactionalEmail({ to, subject, html, text }) {
   });
 }
 
-export const sendVerificationEmail = async (email, verificationToken) => {
-  const verifyUrl = buildFrontEndUrl(
-    frontEndBase(),
-    `/verify-email/${verificationToken}`
-  );
+async function sendTemplateEmail({ email, subject, ctaUrl, errorLabel, templateInput }) {
   const resend = getResendClient();
 
   if (!resend) {
-    logger.warn('Verification email skipped: RESEND_API_KEY not configured', {
+    logger.warn(`${errorLabel} skipped: RESEND_API_KEY not configured`, {
       email,
-      ...(process.env.NODE_ENV !== 'production' && { verifyUrl })
+      ...(process.env.NODE_ENV !== 'production' && { ctaUrl })
     });
-    throw new AppError(
-      'Email verification is unavailable: email service not configured.',
-      503
-    );
+    throw new AppError(`${errorLabel} is unavailable: email service not configured.`, 503);
   }
-
-  const templateInput = {
-    preheader: 'Confirm your email to start using Shortly.',
-    headline: 'Verify your email',
-    intro:
-      'Thanks for signing up for Shortly. Confirm your email address to activate your account and start shortening links.',
-    ctaLabel: 'Verify email',
-    ctaUrl: verifyUrl,
-    safetyNote:
-      "If you didn't create a Shortly account, you can safely ignore this email.",
-    expiryNote: 'This verification link expires in 24 hours.',
-    frontEndUrl: frontEndBase()
-  };
 
   try {
     await sendTransactionalEmail({
       to: email,
-      subject: 'Verify your Shortly account',
+      subject,
       html: buildTransactionalEmailHtml(templateInput),
       text: buildTransactionalEmailText(templateInput)
     });
   } catch (err) {
-    logger.error('Failed to send verification email', {
+    logger.error(`Failed to send ${errorLabel.toLowerCase()}`, {
       error: err.message,
       email
     });
-    throw new AppError(
-      'Failed to send verification email. Try again later.',
-      500
-    );
+    throw new AppError(`Failed to send ${errorLabel.toLowerCase()}. Try again later.`, 500);
   }
+}
+
+export const sendVerificationEmail = async (email, verificationToken) => {
+  const ctaUrl = buildFrontEndUrl(frontEndBase(), `/verify-email/${verificationToken}`);
+  await sendTemplateEmail({
+    email,
+    subject: 'Verify your Shortly account',
+    errorLabel: 'Verification email',
+    ctaUrl,
+    templateInput: {
+      preheader: 'Confirm your email to start using Shortly.',
+      headline: 'Verify your email',
+      intro:
+        'Thanks for signing up for Shortly. Confirm your email address to activate your account and start shortening links.',
+      ctaLabel: 'Verify email',
+      ctaUrl,
+      safetyNote:
+        "If you didn't create a Shortly account, you can safely ignore this email.",
+      expiryNote: 'This verification link expires in 24 hours.',
+      frontEndUrl: frontEndBase()
+    }
+  });
 };
 
 export const sendPasswordResetEmail = async (email, resetToken) => {
-  const resetUrl = buildFrontEndUrl(
-    frontEndBase(),
-    `/reset-password/${resetToken}`
-  );
-  const resend = getResendClient();
-
-  if (!resend) {
-    logger.warn('Password reset email skipped: RESEND_API_KEY not configured', {
-      email,
-      ...(process.env.NODE_ENV !== 'production' && { resetUrl })
-    });
-    throw new AppError(
-      'Password reset is unavailable: email service not configured.',
-      503
-    );
-  }
-
-  const templateInput = {
-    preheader: 'Reset your Shortly password securely.',
-    headline: 'Reset your password',
-    intro:
-      'We received a request to reset the password for your Shortly account. Use the button below to choose a new password.',
-    ctaLabel: 'Reset password',
-    ctaUrl: resetUrl,
-    safetyNote:
-      "If you didn't request a password reset, you can safely ignore this email. Your password will stay the same.",
-    expiryNote: 'This reset link expires in 1 hour.',
-    frontEndUrl: frontEndBase()
-  };
-
-  try {
-    await sendTransactionalEmail({
-      to: email,
-      subject: 'Reset your Shortly password',
-      html: buildTransactionalEmailHtml(templateInput),
-      text: buildTransactionalEmailText(templateInput)
-    });
-  } catch (err) {
-    logger.error('Failed to send password reset email', {
-      error: err.message,
-      email
-    });
-    throw new AppError(
-      'Failed to send password reset email. Try again later.',
-      500
-    );
-  }
+  const ctaUrl = buildFrontEndUrl(frontEndBase(), `/reset-password/${resetToken}`);
+  await sendTemplateEmail({
+    email,
+    subject: 'Reset your Shortly password',
+    errorLabel: 'Password reset email',
+    ctaUrl,
+    templateInput: {
+      preheader: 'Reset your Shortly password securely.',
+      headline: 'Reset your password',
+      intro:
+        'We received a request to reset the password for your Shortly account. Use the button below to choose a new password.',
+      ctaLabel: 'Reset password',
+      ctaUrl,
+      safetyNote:
+        "If you didn't request a password reset, you can safely ignore this email. Your password will stay the same.",
+      expiryNote: 'This reset link expires in 1 hour.',
+      frontEndUrl: frontEndBase()
+    }
+  });
 };
