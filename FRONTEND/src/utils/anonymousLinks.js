@@ -28,7 +28,11 @@ export function clearClaimedAnonymousLinks(claimedIds = []) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(remaining));
 }
 
-export function removeAnonymousLink(id) {
-  const remaining = readAnonymousLinks().filter((link) => link.id !== id);
+export function clearAnonymousLinksByIds(ids = []) {
+  if (!ids.length) return;
+  const processed = new Set(ids);
+  const remaining = readAnonymousLinks().filter(
+    (link) => !processed.has(link.id)
+  );
   localStorage.setItem(STORAGE_KEY, JSON.stringify(remaining));
 }

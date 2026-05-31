@@ -3,7 +3,8 @@ import {
   bulkDeleteUrls,
   deleteShortUrl,
   getMyUrls,
-  getUrlStats
+  getUrlStats,
+  updateShortUrl
 } from '../api/shortUrl.api';
 import { getApiPayload } from '../utils/axiosInstance';
 import { LiveRegion, useAnnouncement } from './Accessibility';
@@ -33,6 +34,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [deletingUrl, setDeletingUrl] = useState(null);
+  const [updatingUrl, setUpdatingUrl] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
@@ -186,6 +188,109 @@ const Dashboard = () => {
     [fetchMyUrls, fetchStats, announce, confirmDialog, isOnline]
   );
 
+  const handleEditUrl = useCallback(
+    async (url) => {
+      const nextDestination = window.prompt(
+        'Update destination URL',
+        url.full_url
+      );
+      if (nextDestination === null) return;
+
+      const trimmedDestination = nextDestination.trim();
+      if (!trimmedDestination) {
+        showToast.error('Destination URL is required');
+        return;
+      }
+
+      const nextSlug = window.prompt('Update short alias', url.short_url);
+      if (nextSlug === null) return;
+
+      const trimmedSlug = nextSlug.trim();
+      if (!trimmedSlug) {
+        showToast.error('Short alias is required');
+        return;
+      }
+
+      const updates = {};
+      if (trimmedDestination !== url.full_url) {
+        updates.full_url = trimmedDestination;
+      }
+      if (trimmedSlug.toLowerCase() !== url.short_url) {
+        updates.short_url = trimmedSlug;
+      }
+
+      if (Object.keys(updates).length === 0) return;
+
+      if (!isOnline) {
+        showToast.error("You're offline. Cannot update link.");
+        return;
+      }
+
+      setUpdatingUrl(url._id);
+      const updateToast = showToast.loading('Updating link...');
+      try {
+        await updateShortUrl(url._id, updates);
+        showToast.dismiss(updateToast);
+        showToast.success('Link updated');
+        announce('Link updated');
+        fetchMyUrls();
+        fetchStats();
+      } catch (err) {
+        showToast.dismiss(updateToast);
+        showToast.error(
+          err?.response?.data?.message || 'Failed to update link'
+        );
+        console.error('Error updating URL:', err);
+      } finally {
+        setUpdatingUrl(null);
+      }
+    },
+    [announce, fetchMyUrls, fetchStats, isOnline]
+  );
+
+  const handleToggleDisabled = useCallback(
+    async (url) => {
+      const nextDisabled = !url.disabled;
+      const confirmed = await confirmDialog.confirm({
+        title: nextDisabled ? 'Disable link' : 'Enable link',
+        message: nextDisabled
+          ? `Disable "${url.short_url}"? Visitors will get a not found response until you enable it again.`
+          : `Enable "${url.short_url}" so visitors can use it again?`,
+        confirmLabel: nextDisabled ? 'Disable' : 'Enable',
+        cancelLabel: 'Cancel',
+        variant: nextDisabled ? 'danger' : 'default'
+      });
+      if (!confirmed) return;
+
+      if (!isOnline) {
+        showToast.error("You're offline. Cannot update link.");
+        return;
+      }
+
+      setUpdatingUrl(url._id);
+      const updateToast = showToast.loading(
+        nextDisabled ? 'Disabling link...' : 'Enabling link...'
+      );
+      try {
+        await updateShortUrl(url._id, { disabled: nextDisabled });
+        showToast.dismiss(updateToast);
+        showToast.success(nextDisabled ? 'Link disabled' : 'Link enabled');
+        announce(nextDisabled ? 'Link disabled' : 'Link enabled');
+        fetchMyUrls();
+        fetchStats();
+      } catch (err) {
+        showToast.dismiss(updateToast);
+        showToast.error(
+          err?.response?.data?.message || 'Failed to update link'
+        );
+        console.error('Error updating URL:', err);
+      } finally {
+        setUpdatingUrl(null);
+      }
+    },
+    [announce, confirmDialog, fetchMyUrls, fetchStats, isOnline]
+  );
+
   const handleSelectUrl = useCallback((id, selected) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
@@ -333,11 +438,14 @@ const Dashboard = () => {
               debouncedSearch={debouncedSearch}
               isCopied={isCopied}
               deletingUrl={deletingUrl}
+              updatingUrl={updatingUrl}
               selectedIds={selectedIds}
               onCopy={copyToClipboard}
               onDelete={handleDeleteUrl}
               onSelect={handleSelectUrl}
               onShare={handleShareUrl}
+              onEdit={handleEditUrl}
+              onToggleDisabled={handleToggleDisabled}
               currentPage={currentPage}
               totalPages={totalPages}
               onPageChange={handlePageChange}

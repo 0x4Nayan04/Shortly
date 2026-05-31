@@ -5,7 +5,6 @@ import {
   createCustomShortUrl as createCustomShortUrlService,
   getShortUrl,
   claimAnonymousLinks as claimAnonymousLinksService,
-  deleteAnonymousLink as deleteAnonymousLinkService,
   updateOwnedShortUrl
 } from '../services/shortUrl.services.js';
 import { normalizeUrl } from '../utils/normalizeUrl.js';
@@ -247,15 +246,6 @@ export const deleteShortUrl = asyncHandler(async (req, res, next) => {
     { _id: id, user: userId },
     { $set: { deletedAt: new Date() } }
   );
-
-  res.json(successResponse(SUCCESS_MESSAGES.URL.DELETED));
-});
-
-export const deleteAnonymousShortUrl = asyncHandler(async (req, res, _next) => {
-  const { id } = req.validatedParams;
-  const { manage_token } = req.validatedBody;
-
-  await deleteAnonymousLinkService(id, manage_token);
 
   res.json(successResponse(SUCCESS_MESSAGES.URL.DELETED));
 });

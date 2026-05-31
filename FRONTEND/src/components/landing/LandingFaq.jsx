@@ -27,7 +27,7 @@ const FAQ_ITEMS = [
   },
   {
     q: 'Where do my links live?',
-    a: 'Anonymous links work immediately. Signed-in links appear in your dashboard so you can copy, share, or delete them anytime.',
+    a: 'Anonymous links work immediately and are saved on this device. Sign in to move them to your dashboard where you can copy, share, or delete them anytime.',
     category: 'links'
   }
 ];

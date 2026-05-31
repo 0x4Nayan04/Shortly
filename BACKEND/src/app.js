@@ -1,7 +1,7 @@
 import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
-import express, { urlencoded } from 'express';
+import express from 'express';
 import helmet from 'helmet';
 import { errorHandler, AppError, NotFoundError } from './utils/errorHandler.js';
 import { isReservedSlug } from './constants/reservedSlugs.js';
@@ -21,6 +21,7 @@ import {
 } from './middleware/rateLimit.middleware.js';
 import { requestIdMiddleware } from './middleware/requestId.middleware.js';
 import { latencyMiddleware } from './middleware/latency.middleware.js';
+import { csrfProtection } from './middleware/csrf.middleware.js';
 import {
   validateParams,
   validateQuery
@@ -147,8 +148,8 @@ export function createApp() {
   app.use(cors(corsOptions));
 
   app.use(express.json({ limit: '16kb' }));
-  app.use(urlencoded({ extended: true, limit: '16kb' }));
   app.use(cookieParser());
+  app.use(csrfProtection);
   app.use(attachUser);
 
   app.use('/api/health', healthRoutes);

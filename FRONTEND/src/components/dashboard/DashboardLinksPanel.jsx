@@ -35,11 +35,14 @@ const DashboardLinksPanel = ({
   debouncedSearch,
   isCopied,
   deletingUrl,
+  updatingUrl,
   selectedIds,
   onCopy,
   onDelete,
   onSelect,
   onShare,
+  onEdit,
+  onToggleDisabled,
   currentPage,
   totalPages,
   onPageChange,
@@ -109,11 +112,14 @@ const DashboardLinksPanel = ({
               url={url}
               isCopied={isCopied(buildPublicShortUrl(url.short_url))}
               isDeleting={deletingUrl === url._id}
+              isUpdating={updatingUrl === url._id}
               isSelected={selectedIds.has(url._id)}
               onCopy={onCopy}
               onDelete={onDelete}
               onSelect={onSelect}
               onShare={onShare}
+              onEdit={onEdit}
+              onToggleDisabled={onToggleDisabled}
             />
           ))}
         </ul>
@@ -125,13 +131,16 @@ const DashboardLinksPanel = ({
     myUrls,
     isCopied,
     deletingUrl,
+    updatingUrl,
     selectedIds,
     onCopy,
     onDelete,
     onSelect,
     onRetry,
     debouncedSearch,
-    onShare
+    onShare,
+    onEdit,
+    onToggleDisabled
   ]);
 
   return (

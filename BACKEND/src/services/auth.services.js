@@ -13,6 +13,9 @@ import { logger } from '../utils/logger.js';
 const GENERIC_RESET_MESSAGE =
   'If an account with that email exists, a reset link has been sent.';
 
+const GENERIC_RESEND_VERIFICATION_MESSAGE =
+  'If your account needs verification, a new link has been sent.';
+
 export const registerUser = async (name, email, password) => {
   const existingUser = await User.findOne({ email });
 
@@ -46,6 +49,36 @@ export const registerUser = async (name, email, password) => {
   });
 
   return { token, user: newUser };
+};
+
+export const resendVerificationEmail = async (email) => {
+  const user = await User.findOne({ email });
+
+  if (!user || user.isEmailVerified !== false) {
+    return { message: GENERIC_RESEND_VERIFICATION_MESSAGE };
+  }
+
+  if (!isPasswordResetEmailConfigured()) {
+    logger.warn(
+      'Verification resend requested but email service is not configured',
+      { email }
+    );
+    return { message: GENERIC_RESEND_VERIFICATION_MESSAGE };
+  }
+
+  const verificationToken = user.generateEmailVerificationToken();
+  await user.save();
+
+  try {
+    await sendVerificationEmail(email, verificationToken);
+  } catch (error) {
+    user.emailVerificationToken = null;
+    user.emailVerificationExpires = null;
+    await user.save();
+    throw error;
+  }
+
+  return { message: GENERIC_RESEND_VERIFICATION_MESSAGE };
 };
 
 export const verifyEmail = async (token) => {
@@ -120,7 +153,11 @@ export const changePassword = async (userId, oldPassword, newPassword) => {
 };
 
 export const updateUserProfile = async (userId, { name }) => {
-  const user = await User.findByIdAndUpdate(userId, { name }, { new: true, runValidators: true });
+  const user = await User.findByIdAndUpdate(
+    userId,
+    { name },
+    { new: true, runValidators: true }
+  );
   if (!user) {
     throw new AppError('User not found', 404);
   }

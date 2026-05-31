@@ -24,6 +24,11 @@ export const deleteShortUrl = async (urlId) => {
   return data;
 };
 
+export const updateShortUrl = async (urlId, updates) => {
+  const { data } = await axiosinstance.patch(`api/create/${urlId}`, updates);
+  return data;
+};
+
 /**
  * Fetch user's URLs with search, sort, and pagination options
  * @param {Object} options - Query options

@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { Mail } from 'lucide-react';
 import AuthSubmitButton from './AuthSubmitButton';
-import { registerUser } from '../api/user.api';
+import { registerUser, resendVerificationEmail } from '../api/user.api';
 import { getApiErrorMessage } from '../utils/axiosInstance';
 import {
   formAlertClass,
@@ -23,6 +23,7 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
   const [error, setError] = useState('');
   const [verificationPending, setVerificationPending] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState('');
+  const [resendingVerification, setResendingVerification] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { isOnline } = useOnlineStatus();
@@ -144,6 +145,30 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
     }
   };
 
+  const handleResendVerification = async () => {
+    if (!registeredEmail) return;
+
+    if (!isOnline) {
+      showToast.error("You're offline. Cannot resend verification email.");
+      return;
+    }
+
+    setResendingVerification(true);
+    try {
+      const response = await resendVerificationEmail(registeredEmail);
+      showToast.success(
+        response.message ||
+          'If your account needs verification, a new link has been sent.'
+      );
+    } catch (err) {
+      showToast.error(
+        getApiErrorMessage(err, 'Failed to resend verification email.')
+      );
+    } finally {
+      setResendingVerification(false);
+    }
+  };
+
   if (verificationPending) {
     return (
       <div className='app-panel text-center'>
@@ -161,12 +186,21 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
           <strong className='text-ink'>{registeredEmail}</strong>. Open it to
           activate your account, then sign in.
         </p>
-        <button
-          type='button'
-          onClick={switchToLogin}
-          className='sm-btn sm-btn-primary'>
-          Go to sign in
-        </button>
+        <div className='flex flex-col gap-3 sm:flex-row sm:justify-center'>
+          <button
+            type='button'
+            onClick={handleResendVerification}
+            disabled={resendingVerification}
+            className='sm-btn sm-btn-secondary disabled:opacity-50'>
+            {resendingVerification ? 'Sending…' : 'Resend verification email'}
+          </button>
+          <button
+            type='button'
+            onClick={switchToLogin}
+            className='sm-btn sm-btn-primary'>
+            Go to sign in
+          </button>
+        </div>
       </div>
     );
   }

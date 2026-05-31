@@ -55,6 +55,13 @@ export const verifyEmail = async (token) => {
   return data;
 };
 
+export const resendVerificationEmail = async (email) => {
+  const { data } = await axiosinstance.post(`api/auth/resend-verification`, {
+    email
+  });
+  return data;
+};
+
 export const updateProfile = async (name) => {
   const { data } = await axiosinstance.patch(`api/auth/me`, { name });
   return data;

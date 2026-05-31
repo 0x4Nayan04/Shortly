@@ -1,5 +1,14 @@
 import { memo } from 'react';
-import { Check, Copy, Loader2, Share2, Trash2 } from 'lucide-react';
+import {
+  Check,
+  Copy,
+  Loader2,
+  Pencil,
+  Power,
+  PowerOff,
+  Share2,
+  Trash2
+} from 'lucide-react';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import {
   buildPublicShortUrl,
@@ -13,9 +22,12 @@ const DashboardLinkRow = memo(
     onDelete,
     isCopied,
     isDeleting,
+    isUpdating,
     isSelected,
     onSelect,
-    onShare
+    onShare,
+    onEdit,
+    onToggleDisabled
   }) => {
     const showMeta = !useMediaQuery('(max-width: 767px)');
     const shortUrlFull = buildPublicShortUrl(url.short_url);
@@ -34,7 +46,7 @@ const DashboardLinkRow = memo(
 
     return (
       <li
-        className={`dashboard-link-item${isSelected ? ' dashboard-link-item--selected' : ''}`}>
+        className={`dashboard-link-item${isSelected ? ' dashboard-link-item--selected' : ''}${url.disabled ? ' dashboard-link-item--disabled' : ''}`}>
         <div className='dashboard-link-item__main'>
           <input
             type='checkbox'
@@ -71,6 +83,9 @@ const DashboardLinkRow = memo(
               title={url.full_url}>
               {url.full_url}
             </p>
+            {url.disabled && (
+              <span className='dashboard-link-item__status'>Disabled</span>
+            )}
           </div>
 
           {showMeta && (
@@ -120,6 +135,7 @@ const DashboardLinkRow = memo(
               onClick={() =>
                 onShare({ short_url: url.short_url, full_url: url.full_url })
               }
+              disabled={isUpdating}
               className='dashboard-link-item__action'
               aria-label={`Share ${url.short_url}`}>
               <Share2
@@ -129,8 +145,50 @@ const DashboardLinkRow = memo(
             </button>
             <button
               type='button'
+              onClick={() => onEdit(url)}
+              disabled={isUpdating || isDeleting}
+              className='dashboard-link-item__action'
+              aria-label={`Edit ${url.short_url}`}
+              title='Edit destination or alias'>
+              {isUpdating ? (
+                <Loader2
+                  className='h-[1.125rem] w-[1.125rem] animate-spin'
+                  aria-hidden='true'
+                />
+              ) : (
+                <Pencil
+                  className='h-[1.125rem] w-[1.125rem]'
+                  aria-hidden='true'
+                />
+              )}
+            </button>
+            <button
+              type='button'
+              onClick={() => onToggleDisabled(url)}
+              disabled={isUpdating || isDeleting}
+              className='dashboard-link-item__action'
+              aria-label={
+                url.disabled
+                  ? `Enable ${url.short_url}`
+                  : `Disable ${url.short_url}`
+              }
+              title={url.disabled ? 'Enable link' : 'Disable link'}>
+              {url.disabled ? (
+                <Power
+                  className='h-[1.125rem] w-[1.125rem]'
+                  aria-hidden='true'
+                />
+              ) : (
+                <PowerOff
+                  className='h-[1.125rem] w-[1.125rem]'
+                  aria-hidden='true'
+                />
+              )}
+            </button>
+            <button
+              type='button'
               onClick={() => onDelete(url._id, url.short_url)}
-              disabled={isDeleting}
+              disabled={isDeleting || isUpdating}
               className='dashboard-link-item__action dashboard-link-item__action--danger'
               aria-busy={isDeleting}
               aria-label={

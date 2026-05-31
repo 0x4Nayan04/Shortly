@@ -5,6 +5,7 @@ import {
   requestPasswordReset as requestPasswordResetService,
   resetPassword as resetPasswordService,
   verifyEmail as verifyEmailService,
+  resendVerificationEmail as resendVerificationEmailService,
   updateUserProfile as updateUserProfileService,
   deleteUserAccount as deleteUserAccountService
 } from '../services/auth.services.js';
@@ -46,6 +47,12 @@ export const verifyEmail = asyncHandler(async (req, res, _next) => {
       user: serializeUser(user)
     })
   );
+});
+
+export const resendVerificationEmail = asyncHandler(async (req, res, _next) => {
+  const { email } = req.validatedBody;
+  const result = await resendVerificationEmailService(email);
+  res.status(200).json(successResponse(result.message));
 });
 
 export const loginUser = asyncHandler(async (req, res, _next) => {

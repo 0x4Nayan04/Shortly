@@ -7,8 +7,7 @@ import {
   bulkDeleteUrls,
   getUrlStats,
   updateShortUrl,
-  claimAnonymousShortUrls,
-  deleteAnonymousShortUrl
+  claimAnonymousShortUrls
 } from '../controllers/shortUrl.controllers.js';
 import { isAuthenticated } from '../middleware/auth.middleware.js';
 import {
@@ -23,8 +22,7 @@ import {
   getUserUrlsQuerySchema,
   bulkDeleteUrlsSchema,
   updateUrlSchema,
-  claimAnonymousLinksSchema,
-  deleteAnonymousUrlSchema
+  claimAnonymousLinksSchema
 } from '../validation/schemas.js';
 import {
   rateLimiter,
@@ -92,12 +90,6 @@ router.patch(
   validateParams(deleteUrlSchema),
   validateBody(updateUrlSchema),
   updateShortUrl
-);
-router.delete(
-  '/anonymous/:id',
-  validateParams(deleteUrlSchema),
-  validateBody(deleteAnonymousUrlSchema),
-  deleteAnonymousShortUrl
 );
 router.delete(
   '/bulk',

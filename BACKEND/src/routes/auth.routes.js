@@ -8,6 +8,7 @@ import {
   requestPasswordReset,
   resetPassword,
   verifyEmail,
+  resendVerificationEmail,
   updateUserProfile,
   deleteAccount
 } from '../controllers/auth.controller.js';
@@ -79,6 +80,12 @@ router.post(
   verifyEmailLimiter,
   validateBody(verifyEmailSchema),
   verifyEmail
+);
+router.post(
+  '/resend-verification',
+  forgotPasswordLimiter,
+  validateBody(forgotPasswordSchema),
+  resendVerificationEmail
 );
 
 router.post('/logout', logoutUser);

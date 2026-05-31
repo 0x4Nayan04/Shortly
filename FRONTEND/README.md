@@ -6,7 +6,7 @@ shortener.
 ## Prerequisites
 
 - Node.js 18+
-- Backend running on port 3001 (see repo root `README.md`)
+- Backend running on port 3001 (see repo root [README.md](../README.md))
 
 ## Setup
 
@@ -30,7 +30,7 @@ CORS setup needed.
 
 | Command             | Description                                   |
 | ------------------- | --------------------------------------------- |
-| `npm run dev`       | Start dev server at `http://localhost:5173`   |
+| `npm run dev`       | Start dev server at `http://127.0.0.1:5173`   |
 | `npm run build`     | Production build → `dist/`                    |
 | `npm run preview`   | Preview production build                      |
 | `npm run lint`      | ESLint                                        |
@@ -42,28 +42,86 @@ From the repo root:
 npm run dev:frontend
 npm run build:frontend
 npm run lint:frontend
+npm run css:check
 ```
+
+## Routes
+
+| Path                     | Access    | Component        |
+| ------------------------ | --------- | ---------------- |
+| `/`                      | Public    | LandingPage      |
+| `/login`                 | Guest     | LoginForm        |
+| `/register`              | Guest     | RegisterForm     |
+| `/verify-email/:token`   | Guest     | VerifyEmail      |
+| `/forgot-password`       | Guest     | ForgotPassword   |
+| `/reset-password/:token` | Guest     | ResetPassword    |
+| `/dashboard`             | Protected | Dashboard        |
+| `/settings`              | Protected | AccountSettings  |
+| `/privacy`               | Public    | PrivacyPage      |
+| `/:short_url`            | Public    | Proxied redirect |
 
 ## Project structure
 
 ```
 src/
-├── api/              # Axios API modules (return flat merged payloads)
+├── api/
+│   ├── shortUrl.api.js   # Create, list, stats, claim, bulk delete, update
+│   └── user.api.js       # Auth, verify/resend email, profile, password
 ├── components/
-│   ├── app/          # App shell, navbar
-│   ├── dashboard/    # Dashboard zones, charts, pagination
-│   ├── landing/      # Marketing pages
-│   ├── urlForm/      # URL shortening form pieces
-│   └── ux/           # Toasts, dialogs, offline banner, etc.
-├── contexts/         # AuthContext
-├── hooks/            # Shared hooks (form validation, unsaved guard, …)
-├── layouts/          # Route layouts (auth, catalog shell, …)
-├── routes/           # React Router config
+│   ├── app/              # App shell, navbar
+│   ├── dashboard/        # Stats zone, links panel, charts, pagination
+│   ├── landing/          # Hero, FAQ, features catalog, footer
+│   ├── urlForm/          # URL shortening form pieces
+│   ├── ux/               # Toasts, dialogs, offline banner, copy, …
+│   ├── ClickAnalytics.jsx
+│   ├── Dashboard.jsx
+│   ├── VerifyEmail.jsx
+│   ├── PrivacyPage.jsx
+│   └── …
+├── contexts/
+│   └── AuthContext.jsx   # Session + claimStoredAnonymousLinks on login
+├── hooks/
+├── layouts/              # Auth, protected, guest-only, catalog shell
+├── routes/
 ├── styles/
-│   ├── domains/      # Split CSS by surface (tokens, auth, dashboard, …)
-│   └── shortly-design-tokens.css  # Entry that @imports domains
-└── utils/            # axiosInstance, validation, helpers
+│   ├── domains/          # Split CSS by surface (tokens, dashboard, mobile, …)
+│   └── shortly-design-tokens.css
+└── utils/
+    ├── anonymousLinks.js      # localStorage for guest manage_token + id
+    ├── claimAnonymousLinks.js # POST /api/create/claim after sign-in
+    └── axiosInstance.js
 ```
+
+## Key flows
+
+### Anonymous shortening
+
+1. `UrlForm` calls `POST /api/create`.
+2. Guest responses include `manage_token` → saved via `rememberAnonymousLink()`.
+3. On login/register, `AuthContext` calls `claimStoredAnonymousLinks()` to
+   attach links to the account.
+
+Guest links are device-local. There is no guest delete UI — sign in to claim,
+then manage/delete from the dashboard.
+
+### Email verification
+
+When the backend has `RESEND_API_KEY` configured:
+
+1. Register shows a “Check your email” screen with **Resend verification
+   email**.
+2. Login with an unverified account shows the same resend option.
+3. `/verify-email/:token` calls `POST /api/auth/verify-email`.
+
+Without Resend, registration auto-verifies and logs in immediately.
+
+### Dashboard analytics
+
+- Overview stats from `GET /api/create/stats`.
+- Per-account **Click analytics** tab: clicks over time (7D / 30D / All stored
+  days), countries, devices/browsers/OS.
+- Raw click events are retained server-side for up to 30 days; the chart note
+  explaining this is hidden on mobile viewports.
 
 ## Design system
 
@@ -87,6 +145,7 @@ helpers from `utils/axiosInstance.js`:
 - `getApiPayload(response)` — normalize axios response or module return
 - `getApiUser(payload)` — read `user` field
 - `getApiMessage(payload, fallback)` — read `message` field
+- `getApiErrorMessage(err, fallback)` — read error message from failed requests
 
 ## Dev notes
 

@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import AuthSubmitButton from './AuthSubmitButton';
-import { loginUser } from '../api/user.api';
+import { loginUser, resendVerificationEmail } from '../api/user.api';
 import { getApiErrorMessage } from '../utils/axiosInstance';
 import {
   formAlertClass,
@@ -22,6 +22,8 @@ const LoginForm = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [verificationBlocked, setVerificationBlocked] = useState(false);
+  const [resendingVerification, setResendingVerification] = useState(false);
   const { isOnline } = useOnlineStatus();
   const emailRef = useRef(null);
   const passwordRef = useRef(null);
@@ -69,6 +71,7 @@ const LoginForm = ({
 
     setLoading(true);
     setError('');
+    setVerificationBlocked(false);
 
     try {
       const response = await loginUser(email, password);
@@ -100,11 +103,40 @@ const LoginForm = ({
         setError(errorMsg);
         showToast.error(errorMsg);
         if (status === 403 && /verify/i.test(errorMsg)) {
+          setVerificationBlocked(true);
           mergeFieldErrors({ email: 'Verify your email before signing in.' });
         }
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    if (!email.trim()) {
+      showToast.error('Enter your email address first.');
+      emailRef.current?.focus();
+      return;
+    }
+
+    if (!isOnline) {
+      showToast.error("You're offline. Cannot resend verification email.");
+      return;
+    }
+
+    setResendingVerification(true);
+    try {
+      const response = await resendVerificationEmail(email.trim());
+      showToast.success(
+        response.message ||
+          'If your account needs verification, a new link has been sent.'
+      );
+    } catch (err) {
+      showToast.error(
+        getApiErrorMessage(err, 'Failed to resend verification email.')
+      );
+    } finally {
+      setResendingVerification(false);
     }
   };
 
@@ -240,6 +272,21 @@ const LoginForm = ({
           role='alert'
           aria-live='assertive'>
           {error}
+        </div>
+      )}
+
+      {verificationBlocked && (
+        <div className='mt-4 text-center'>
+          <p className='text-sm text-muted-strong mb-3'>
+            Didn&apos;t get the email? Check spam, or request a new link.
+          </p>
+          <button
+            type='button'
+            onClick={handleResendVerification}
+            disabled={resendingVerification}
+            className='landing-text-link text-sm font-medium disabled:opacity-50'>
+            {resendingVerification ? 'Sending…' : 'Resend verification email'}
+          </button>
         </div>
       )}
 

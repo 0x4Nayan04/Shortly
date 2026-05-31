@@ -1,7 +1,7 @@
 import { claimAnonymousLinks } from '../api/shortUrl.api';
 import { getApiPayload } from './axiosInstance';
 import {
-  clearClaimedAnonymousLinks,
+  clearAnonymousLinksByIds,
   readAnonymousLinks
 } from './anonymousLinks';
 
@@ -13,8 +13,12 @@ export async function claimStoredAnonymousLinks() {
     const response = await claimAnonymousLinks(links);
     const payload = getApiPayload(response);
     const claimed = payload?.claimed || [];
-    clearClaimedAnonymousLinks(claimed.map((entry) => entry.id));
-    return { claimed, skipped: payload?.skipped || [] };
+    const skipped = payload?.skipped || [];
+    clearAnonymousLinksByIds([
+      ...claimed.map((entry) => entry.id),
+      ...skipped.map((entry) => entry.id)
+    ]);
+    return { claimed, skipped };
   } catch {
     return { claimed: [], skipped: links.map((link) => ({ id: link.id })) };
   }

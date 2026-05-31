@@ -251,12 +251,6 @@ export const claimAnonymousLinksSchema = Joi.object({
     .required()
 });
 
-export const deleteAnonymousUrlSchema = Joi.object({
-  manage_token: Joi.string().min(16).required().messages({
-    'any.required': 'Manage token is required'
-  })
-});
-
 export const qrQuerySchema = Joi.object({
   format: Joi.string().valid('png', 'svg').optional()
 });

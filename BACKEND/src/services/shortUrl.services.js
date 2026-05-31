@@ -232,7 +232,12 @@ export const claimAnonymousLinks = async (userId, claims) => {
           { _id: doc._id },
           { $set: { deletedAt: new Date() } }
         );
-        return { type: 'skipped', id, reason: 'duplicate_destination', short_url: doc.short_url };
+        return {
+          type: 'skipped',
+          id,
+          reason: 'duplicate_destination',
+          short_url: doc.short_url
+        };
       }
 
       await short_urlModel.updateOne(
@@ -243,26 +248,14 @@ export const claimAnonymousLinks = async (userId, claims) => {
     })
   );
 
-  const claimed = results.filter((r) => r.type === 'claimed').map(({ type: _type, ...rest }) => rest);
-  const skipped = results.filter((r) => r.type === 'skipped').map(({ type: _type, ...rest }) => rest);
+  const claimed = results
+    .filter((r) => r.type === 'claimed')
+    .map(({ type: _type, ...rest }) => rest);
+  const skipped = results
+    .filter((r) => r.type === 'skipped')
+    .map(({ type: _type, ...rest }) => rest);
 
   return { claimed, skipped };
-};
-
-export const deleteAnonymousLink = async (id, manage_token) => {
-  const result = await short_urlModel.updateOne(
-    {
-      _id: id,
-      user: null,
-      deletedAt: null,
-      manage_token
-    },
-    { $set: { deletedAt: new Date() } }
-  );
-
-  if (result.modifiedCount === 0) {
-    throw new NotFoundError('Anonymous link not found');
-  }
 };
 
 export const updateOwnedShortUrl = async (userId, id, updates) => {
@@ -328,5 +321,3 @@ export const updateOwnedShortUrl = async (userId, id, updates) => {
 
   return short_urlModel.findById(id).lean();
 };
-
-
