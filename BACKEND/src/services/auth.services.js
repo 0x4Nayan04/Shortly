@@ -99,10 +99,7 @@ export const requestPasswordReset = async (email) => {
         email
       }
     );
-    throw new AppError(
-      'Password reset is unavailable: email service not configured.',
-      503
-    );
+    return { message: GENERIC_RESET_MESSAGE };
   }
 
   const resetToken = user.generateResetToken();

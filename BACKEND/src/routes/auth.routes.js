@@ -56,7 +56,7 @@ router.post(
   validateBody(registerSchema),
   registerUser
 );
-router.post('/login', validateBody(loginSchema), loginLimiter, loginUser);
+router.post('/login', loginLimiter, validateBody(loginSchema), loginUser);
 
 // Logout should clear cookie even if token expired
 router.post('/logout', logoutUser);
@@ -64,8 +64,8 @@ router.post('/logout', logoutUser);
 // Public password reset routes
 router.post(
   '/forgot-password',
-  validateBody(forgotPasswordSchema),
   forgotPasswordLimiter,
+  validateBody(forgotPasswordSchema),
   requestPasswordReset
 );
 router.post(
