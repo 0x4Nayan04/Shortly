@@ -2,6 +2,7 @@ import { createRoot } from 'react-dom/client';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import './index.css';
 import App from './App.jsx';
+import ConfigError from './components/ConfigError.jsx';
 import ErrorBoundary from './components/ErrorBoundary.jsx';
 import { AuthProvider } from './contexts/AuthContext.jsx';
 import {
@@ -9,27 +10,34 @@ import {
   OnlineStatusProvider,
   OfflineBanner
 } from './components/UxEnhancements.jsx';
+import { apiConfigError } from './config/api.js';
 
-const router = createBrowserRouter([
-  {
-    path: '*',
-    element: (
-      <>
-        <AuthProvider>
-          <App />
-        </AuthProvider>
-        <OfflineBanner />
-      </>
-    )
-  }
-]);
+const root = createRoot(document.getElementById('root'));
 
-createRoot(document.getElementById('root')).render(
-  <ErrorBoundary>
-    <OnlineStatusProvider>
-      <ToastProvider>
-        <RouterProvider router={router} />
-      </ToastProvider>
-    </OnlineStatusProvider>
-  </ErrorBoundary>
-);
+if (apiConfigError) {
+  root.render(<ConfigError message={apiConfigError} />);
+} else {
+  const router = createBrowserRouter([
+    {
+      path: '*',
+      element: (
+        <>
+          <AuthProvider>
+            <App />
+          </AuthProvider>
+          <OfflineBanner />
+        </>
+      )
+    }
+  ]);
+
+  root.render(
+    <ErrorBoundary>
+      <OnlineStatusProvider>
+        <ToastProvider>
+          <RouterProvider router={router} />
+        </ToastProvider>
+      </OnlineStatusProvider>
+    </ErrorBoundary>
+  );
+}

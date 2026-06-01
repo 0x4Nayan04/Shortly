@@ -67,8 +67,8 @@ export function createApp() {
       contentSecurityPolicy: {
         directives: {
           defaultSrc: ["'self'"],
-          scriptSrc: ["'self'", "'unsafe-inline'"],
-          styleSrc: ["'self'", "'unsafe-inline'"],
+          scriptSrc: ["'self'"],
+          styleSrc: ["'self'"],
           imgSrc: ["'self'", 'data:', 'https://*.gravatar.com'],
           connectSrc: ["'self'"],
           fontSrc: ["'self'"],
@@ -105,7 +105,7 @@ export function createApp() {
         : [process.env.FRONT_END_URL];
       const allowedOrigins = configured.filter(Boolean);
       const allowWildcard =
-        process.env.NODE_ENV !== 'production' && allowedOrigins.includes('*');
+        process.env.NODE_ENV === 'development' && allowedOrigins.includes('*');
       if (
         isLocalDevOrigin(origin) ||
         allowWildcard ||

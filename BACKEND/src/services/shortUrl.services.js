@@ -12,6 +12,10 @@ import { AppError, NotFoundError } from '../utils/errorHandler.js';
 import { normalizeSlug } from '../utils/normalizeSlug.js';
 import { normalizeUrl } from '../utils/normalizeUrl.js';
 import { validateCustomSlug } from '../utils/validateCustomSlug.js';
+import {
+  getCachedRedirectTarget,
+  setCachedRedirectTarget
+} from '../utils/redirectSlugCache.js';
 
 const generateManageToken = () => crypto.randomBytes(24).toString('hex');
 
@@ -195,6 +199,17 @@ export const getShortUrl = async (short_url) => {
     throw new NotFoundError('Short URL not found');
   }
 
+  return shortUrlData;
+};
+
+export const resolveRedirectTarget = async (short_url) => {
+  const cached = getCachedRedirectTarget(short_url);
+  if (cached) {
+    return cached;
+  }
+
+  const shortUrlData = await getShortUrl(short_url);
+  setCachedRedirectTarget(short_url, shortUrlData);
   return shortUrlData;
 };
 

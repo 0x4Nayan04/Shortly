@@ -3,7 +3,7 @@ import short_urlModel from '../schema/shortUrl.model.js';
 import {
   createShortUrl as createShortUrlService,
   createCustomShortUrl as createCustomShortUrlService,
-  getShortUrl,
+  resolveRedirectTarget,
   claimAnonymousLinks as claimAnonymousLinksService,
   updateOwnedShortUrl
 } from '../services/shortUrl.services.js';
@@ -24,11 +24,7 @@ import { escapeRegExp } from '../utils/escapeRegExp.js';
 import { logger } from '../utils/logger.js';
 import { isSafeRedirectUrl } from '../utils/safeRedirectUrl.js';
 import { normalizeSlug } from '../utils/normalizeSlug.js';
-import {
-  getCachedRedirectTarget,
-  setCachedRedirectTarget,
-  invalidateRedirectSlugCache
-} from '../utils/redirectSlugCache.js';
+import { invalidateRedirectSlugCache } from '../utils/redirectSlugCache.js';
 
 const activeLinkFilter = { deletedAt: null };
 
@@ -69,11 +65,7 @@ export const createShortUrl = asyncHandler(async (req, res, _next) => {
 export const redirectFromShortUrl = asyncHandler(async (req, res, next) => {
   const { short_url } = req.validatedParams;
 
-  let shortUrlData = getCachedRedirectTarget(short_url);
-  if (!shortUrlData) {
-    shortUrlData = await getShortUrl(short_url);
-    setCachedRedirectTarget(short_url, shortUrlData);
-  }
+  const shortUrlData = await resolveRedirectTarget(short_url);
 
   if (!isSafeRedirectUrl(shortUrlData.full_url)) {
     logger.warn('Blocked unsafe redirect destination', {

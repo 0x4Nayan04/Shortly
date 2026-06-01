@@ -1,7 +1,7 @@
 import axiosinstance from '../utils/axiosInstance';
 
 export const loginUser = async (email, password) => {
-  const { data } = await axiosinstance.post(`api/auth/login`, {
+  const { data } = await axiosinstance.post(`/api/auth/login`, {
     email,
     password
   });
@@ -9,7 +9,7 @@ export const loginUser = async (email, password) => {
 };
 
 export const registerUser = async (name, email, password) => {
-  const { data } = await axiosinstance.post(`api/auth/register`, {
+  const { data } = await axiosinstance.post(`/api/auth/register`, {
     name,
     email,
     password
@@ -18,17 +18,17 @@ export const registerUser = async (name, email, password) => {
 };
 
 export const logoutUser = async () => {
-  const { data } = await axiosinstance.post(`api/auth/logout`);
+  const { data } = await axiosinstance.post(`/api/auth/logout`);
   return data;
 };
 
 export const getCurrentUser = async () => {
-  const { data } = await axiosinstance.get(`api/auth/me`);
+  const { data } = await axiosinstance.get(`/api/auth/me`);
   return data;
 };
 
 export const changePassword = async (oldPassword, newPassword) => {
-  const { data } = await axiosinstance.post(`api/auth/change-password`, {
+  const { data } = await axiosinstance.post(`/api/auth/change-password`, {
     oldPassword,
     newPassword
   });
@@ -36,14 +36,14 @@ export const changePassword = async (oldPassword, newPassword) => {
 };
 
 export const forgotPassword = async (email) => {
-  const { data } = await axiosinstance.post(`api/auth/forgot-password`, {
+  const { data } = await axiosinstance.post(`/api/auth/forgot-password`, {
     email
   });
   return data;
 };
 
 export const resetPassword = async (token, password) => {
-  const { data } = await axiosinstance.post(`api/auth/reset-password`, {
+  const { data } = await axiosinstance.post(`/api/auth/reset-password`, {
     token,
     password
   });
@@ -51,23 +51,25 @@ export const resetPassword = async (token, password) => {
 };
 
 export const verifyEmail = async (token) => {
-  const { data } = await axiosinstance.post(`api/auth/verify-email`, { token });
+  const { data } = await axiosinstance.post(`/api/auth/verify-email`, {
+    token
+  });
   return data;
 };
 
 export const resendVerificationEmail = async (email) => {
-  const { data } = await axiosinstance.post(`api/auth/resend-verification`, {
+  const { data } = await axiosinstance.post(`/api/auth/resend-verification`, {
     email
   });
   return data;
 };
 
 export const updateProfile = async (name) => {
-  const { data } = await axiosinstance.patch(`api/auth/me`, { name });
+  const { data } = await axiosinstance.patch(`/api/auth/me`, { name });
   return data;
 };
 
 export const deleteAccount = async () => {
-  const { data } = await axiosinstance.delete(`api/auth/me`);
+  const { data } = await axiosinstance.delete(`/api/auth/me`);
   return data;
 };

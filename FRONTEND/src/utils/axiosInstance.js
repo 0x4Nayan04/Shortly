@@ -3,15 +3,7 @@ import {
   isAuthApiPath,
   shouldSuppressSessionExpired
 } from '../constants/routes';
-
-const apiBaseUrl =
-  import.meta.env.VITE_APP_URL?.trim() || (import.meta.env.DEV ? '/' : '');
-
-if (!import.meta.env.DEV && !import.meta.env.VITE_APP_URL?.trim()) {
-  console.error(
-    '[Shortly] VITE_APP_URL is not set. Production API requests will use the SPA origin. Set VITE_APP_URL to your API host before deploying.'
-  );
-}
+import { apiBaseUrl } from '../config/api.js';
 
 const axiosInstance = axios.create({
   baseURL: apiBaseUrl,
@@ -88,11 +80,27 @@ export function getApiMessage(payload, fallback = '') {
   return getApiPayload(payload)?.message || fallback;
 }
 
+function isHtmlResponse(error) {
+  const contentType = error?.response?.headers?.['content-type'];
+  return (
+    typeof contentType === 'string' &&
+    contentType.toLowerCase().includes('text/html')
+  );
+}
+
 export function getApiErrorMessage(error, fallback = 'Something went wrong') {
+  if (isHtmlResponse(error)) {
+    return fallback;
+  }
+
   const raw = error?.response?.data;
   const data = raw && typeof raw === 'object' ? mergeApiEnvelope(raw) : raw;
-  if (typeof data === 'string') return data;
-  if (data && typeof data === 'object' && data.message) return data.message;
+  if (typeof data === 'string' && data.trim()) {
+    return data;
+  }
+  if (data && typeof data === 'object' && data.message) {
+    return data.message;
+  }
   if (error?.message && !error.message.startsWith('Request failed')) {
     return error.message;
   }

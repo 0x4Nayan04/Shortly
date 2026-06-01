@@ -60,41 +60,49 @@ function shortUrlProxyPlugin() {
   };
 }
 
-export default defineConfig({
-  plugins: [react(), tailwindcss(), shortUrlProxyPlugin()],
-  build: {
-    rollupOptions: {
-      output: {
-        manualChunks(id) {
-          if (!id.includes('node_modules')) return;
-          if (
-            id.includes('/react-dom/') ||
-            id.includes('/react/') ||
-            id.includes('\\react-dom\\') ||
-            id.includes('\\react\\')
-          ) {
-            return 'react-vendor';
+export default defineConfig(({ mode }) => {
+  if (mode === 'production' && !process.env.VITE_APP_URL?.trim()) {
+    throw new Error(
+      '[Shortly] VITE_APP_URL is required for production builds. Set it to your API origin (e.g. https://api.example.com).'
+    );
+  }
+
+  return {
+    plugins: [react(), tailwindcss(), shortUrlProxyPlugin()],
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (!id.includes('node_modules')) return;
+            if (
+              id.includes('/react-dom/') ||
+              id.includes('/react/') ||
+              id.includes('\\react-dom\\') ||
+              id.includes('\\react\\')
+            ) {
+              return 'react-vendor';
+            }
+            if (id.includes('react-router')) return 'router-vendor';
+            if (id.includes('lucide-react')) return 'lucide-vendor';
+            if (id.includes('/axios/')) return 'axios-vendor';
           }
-          if (id.includes('react-router')) return 'router-vendor';
-          if (id.includes('lucide-react')) return 'lucide-vendor';
-          if (id.includes('/axios/')) return 'axios-vendor';
+        }
+      }
+    },
+    optimizeDeps: {
+      include: ['lucide-react']
+    },
+    server: {
+      host: true, // 0.0.0.0 — required for Windows browser → WSL (mirrored or not)
+      port: 5173,
+      strictPort: true,
+      // Same-origin API in dev — no CORS, cookies work on localhost:5173
+      proxy: {
+        '/api': {
+          target: BACKEND_ORIGIN,
+          changeOrigin: true
         }
       }
     }
-  },
-  optimizeDeps: {
-    include: ['lucide-react']
-  },
-  server: {
-    host: true, // 0.0.0.0 — required for Windows browser → WSL (mirrored or not)
-    port: 5173,
-    strictPort: true,
-    // Same-origin API in dev — no CORS, cookies work on localhost:5173
-    proxy: {
-      '/api': {
-        target: BACKEND_ORIGIN,
-        changeOrigin: true
-      }
-    }
-  }
+  };
 });

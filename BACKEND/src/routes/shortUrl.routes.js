@@ -56,6 +56,12 @@ const statsLimiter = rateLimiter({
   failClosed: false
 });
 
+const claimLimiter = rateLimiter({
+  windowMs: 5 * 60 * 1000,
+  max: 30,
+  keyGenerator: keyGenerators.userId
+});
+
 router.post(
   '/',
   loadUserIfAuthenticated,
@@ -81,6 +87,7 @@ router.get('/stats', isAuthenticated, statsLimiter, getUrlStats);
 router.post(
   '/claim',
   isAuthenticated,
+  claimLimiter,
   validateBody(claimAnonymousLinksSchema),
   claimAnonymousShortUrls
 );
