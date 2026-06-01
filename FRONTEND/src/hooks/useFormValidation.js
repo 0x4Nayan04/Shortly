@@ -24,6 +24,8 @@ export function useFormValidation(fieldNames, getRules, options = {}) {
   const [touched, setTouched] = useState(() => falseTouchedState(fieldNames));
   const touchedRef = useRef(touched);
   touchedRef.current = touched;
+  const fieldNamesRef = useRef(fieldNames);
+  fieldNamesRef.current = fieldNames;
 
   const validateSingle = useCallback(
     (field, values) => {
@@ -77,14 +79,14 @@ export function useFormValidation(fieldNames, getRules, options = {}) {
       const rules = getRules(values);
       const errors = validateForm(values, rules);
       setFieldErrors(errors);
-      const fieldsToTouch = touchFields ?? fieldNames;
+      const fieldsToTouch = touchFields ?? fieldNamesRef.current;
       setTouched((prev) => ({
         ...prev,
         ...Object.fromEntries(fieldsToTouch.map((name) => [name, true]))
       }));
       return { valid: !hasErrors(errors), errors };
     },
-    [getRules, fieldNames]
+    [getRules]
   );
 
   const mergeFieldErrors = useCallback((partial) => {
@@ -92,7 +94,7 @@ export function useFormValidation(fieldNames, getRules, options = {}) {
   }, []);
 
   const resetValidation = useCallback(
-    (names = fieldNames) => {
+    (names = fieldNamesRef.current) => {
       setFieldErrors((prev) => ({
         ...prev,
         ...Object.fromEntries(names.map((name) => [name, null]))
@@ -102,7 +104,7 @@ export function useFormValidation(fieldNames, getRules, options = {}) {
         ...Object.fromEntries(names.map((name) => [name, false]))
       }));
     },
-    [fieldNames]
+    []
   );
 
   return {
