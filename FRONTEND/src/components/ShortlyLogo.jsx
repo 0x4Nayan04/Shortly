@@ -23,6 +23,7 @@ const ShortlyLogo = ({ variant = 'full', className = '' }) => {
         className='shortly-logo-img shortly-logo-img--default'
         width={width}
         height={28}
+        sizes={isMark ? '28px' : '124px'}
         decoding='async'
       />
       <img
@@ -31,6 +32,7 @@ const ShortlyLogo = ({ variant = 'full', className = '' }) => {
         className='shortly-logo-img shortly-logo-img--hover'
         width={width}
         height={28}
+        sizes={isMark ? '28px' : '124px'}
         decoding='async'
       />
     </span>

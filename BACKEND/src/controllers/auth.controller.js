@@ -87,7 +87,7 @@ export const logoutUser = asyncHandler(async (req, res, _next) => {
 export const getUserProfile = asyncHandler(async (req, res, _next) => {
   res.status(200).json(
     successResponse('User profile fetched', {
-      user: serializeUser(req.user)
+      user: req.user ? serializeUser(req.user) : null
     })
   );
 });

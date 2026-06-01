@@ -1,4 +1,4 @@
-import { useId, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Minus, Plus } from 'lucide-react';
 import { LandingFrameInner } from './LandingFrame';
 
@@ -11,21 +11,25 @@ const FAQ_CATEGORIES = [
 
 const FAQ_ITEMS = [
   {
+    id: 'account-required',
     q: 'Do I need an account to shorten a URL?',
     a: 'No. Paste a link on the homepage and shorten it instantly. Sign in when you want saved links, custom aliases, and click analytics.',
     category: 'accounts'
   },
   {
+    id: 'custom-alias',
     q: 'Can I use my own short path?',
     a: 'Yes — after you sign in, turn on custom alias and choose a slug between 3 and 20 characters (letters, numbers, hyphens, underscores).',
     category: 'links'
   },
   {
+    id: 'pricing',
     q: 'Is Shortly free?',
     a: 'Core shortening is free for everyone. Accounts add management, analytics, and QR downloads at no extra complexity.',
     category: 'pricing'
   },
   {
+    id: 'link-storage',
     q: 'Where do my links live?',
     a: 'Anonymous links work immediately and are saved on this device. Sign in to move them to your dashboard where you can copy, share, or delete them anytime.',
     category: 'links'
@@ -81,7 +85,6 @@ const FaqItem = ({
 );
 
 const LandingFaq = () => {
-  const baseId = useId();
   const [activeCategory, setActiveCategory] = useState('all');
   const [openKey, setOpenKey] = useState(FAQ_ITEMS[0].q);
 
@@ -144,15 +147,15 @@ const LandingFaq = () => {
       <div className='faq-list'>
         {visibleItems.map((item, index) => (
           <FaqItem
-            key={item.q}
+            key={item.id}
             item={item}
             displayIndex={index}
             isOpen={openKey === item.q}
             onToggle={() =>
               setOpenKey((prev) => (prev === item.q ? '' : item.q))
             }
-            buttonId={`${baseId}-btn-${item.q}`}
-            panelId={`${baseId}-panel-${item.q}`}
+            buttonId={`faq-btn-${item.id}`}
+            panelId={`faq-panel-${item.id}`}
           />
         ))}
       </div>

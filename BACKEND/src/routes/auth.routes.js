@@ -12,7 +12,10 @@ import {
   updateUserProfile,
   deleteAccount
 } from '../controllers/auth.controller.js';
-import { isAuthenticated } from '../middleware/auth.middleware.js';
+import {
+  isAuthenticated,
+  optionalAuthenticate
+} from '../middleware/auth.middleware.js';
 import { validateBody } from '../middleware/validation.middleware.js';
 import {
   registerSchema,
@@ -103,7 +106,7 @@ router.post(
   resetPassword
 );
 
-router.get('/me', isAuthenticated, meLimiter, getUserProfile);
+router.get('/me', optionalAuthenticate, meLimiter, getUserProfile);
 router.patch(
   '/me',
   isAuthenticated,
