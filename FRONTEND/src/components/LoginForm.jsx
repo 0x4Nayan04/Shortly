@@ -7,6 +7,7 @@ import {
   getDesignInputClass
 } from '../utils/designFormClasses';
 import { validators } from '../utils/validation';
+import { mapBackendFieldErrors } from '../utils/apiErrors';
 import { useFormValidation } from '../hooks/useFormValidation';
 import { useUnsavedNavigationGuard } from '../hooks/useUnsavedNavigationGuard';
 import PasswordVisibilityToggle from './PasswordVisibilityToggle';
@@ -92,10 +93,7 @@ const LoginForm = ({
       const status = err?.response?.status;
       const data = err?.response ? err.response.data : err;
       if (data && typeof data === 'object' && Array.isArray(data.errors)) {
-        const backendErrors = {};
-        data.errors.forEach((e) => {
-          backendErrors[e.field] = e.message;
-        });
+        const backendErrors = mapBackendFieldErrors(data.errors);
         mergeFieldErrors(backendErrors);
         showToast.error('Please check your credentials.');
       } else {

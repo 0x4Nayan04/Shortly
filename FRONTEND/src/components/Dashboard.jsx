@@ -3,11 +3,12 @@ import {
   bulkDeleteUrls,
   deleteShortUrl,
   getMyUrls,
-  getUrlStats,
   updateShortUrl
 } from '../api/shortUrl.api';
 import { getApiPayload } from '../utils/axiosInstance';
+import { useUrlStats } from '../hooks/useUrlStats';
 import { LiveRegion, useAnnouncement } from './Accessibility';
+import EditLinkModal from './EditLinkModal';
 import ShareModal from './ShareModal';
 import AppCatalogShell, {
   LandingFrameInner,
@@ -45,8 +46,7 @@ const Dashboard = () => {
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
   const [shareUrl, setShareUrl] = useState(null);
-  const [stats, setStats] = useState(null);
-  const [statsLoading, setStatsLoading] = useState(true);
+  const [editingLink, setEditingLink] = useState(null);
 
   const [linkTab, setLinkTab] = useState('links');
   const [announcement, announce] = useAnnouncement();
@@ -99,27 +99,24 @@ const Dashboard = () => {
     }
   }, [announce, isOnline, currentPage, debouncedSearch, sortBy, sortOrder]);
 
-  const fetchStats = useCallback(async () => {
-    if (!isOnline) return;
-    setStatsLoading(true);
-    const response = await getUrlStats().catch(() => null);
-    const payload = response ? getApiPayload(response) : null;
-    if (payload) setStats(payload);
-    setStatsLoading(false);
-  }, [isOnline]);
+  const { stats, loading: statsLoading, refetch: refetchStats } = useUrlStats();
+
+  const refresh = useCallback(() => {
+    fetchMyUrls();
+    refetchStats();
+  }, [fetchMyUrls, refetchStats]);
 
   const handleUrlCreated = useCallback(() => {
-    fetchMyUrls();
-    fetchStats();
-  }, [fetchMyUrls, fetchStats]);
+    refresh();
+  }, [refresh]);
 
   useEffect(() => {
     if (user?._id) fetchMyUrls();
   }, [user?._id, fetchMyUrls]);
 
   useEffect(() => {
-    if (user?._id) fetchStats();
-  }, [user?._id, fetchStats]);
+    if (user?._id) refetchStats();
+  }, [user?._id, refetchStats]);
 
   const handlePageChange = useCallback((page) => {
     setCurrentPage(page);
@@ -166,7 +163,7 @@ const Dashboard = () => {
         showToast.dismiss(deleteToast);
         showToast.success('Link deleted');
         announce('Link deleted');
-        fetchStats();
+        refetchStats();
       } catch {
         showToast.dismiss(deleteToast);
         showToast.error('Failed to delete link');
@@ -176,66 +173,39 @@ const Dashboard = () => {
         setDeletingUrl(null);
       }
     },
-    [fetchMyUrls, fetchStats, announce, confirmDialog, isOnline]
+    [fetchMyUrls, refetchStats, announce, confirmDialog, isOnline]
   );
 
-  const handleEditUrl = useCallback(
-    async (url) => {
-      const nextDestination = window.prompt(
-        'Update destination URL',
-        url.full_url
-      );
-      if (nextDestination === null) return;
+  const handleEditUrl = useCallback((url) => {
+    setEditingLink(url);
+  }, []);
 
-      const trimmedDestination = nextDestination.trim();
-      if (!trimmedDestination) {
-        showToast.error('Destination URL is required');
+  const handleSaveEdit = useCallback(
+    async (updates) => {
+      if (!editingLink) return;
+
+      const apiUpdates = {};
+      if (updates.full_url !== editingLink.full_url) {
+        apiUpdates.full_url = updates.full_url;
+      }
+      if (updates.short_url.toLowerCase() !== editingLink.short_url) {
+        apiUpdates.short_url = updates.short_url;
+      }
+
+      if (Object.keys(apiUpdates).length === 0) {
+        setEditingLink(null);
         return;
       }
 
-      const nextSlug = window.prompt('Update short alias', url.short_url);
-      if (nextSlug === null) return;
-
-      const trimmedSlug = nextSlug.trim();
-      if (!trimmedSlug) {
-        showToast.error('Short alias is required');
-        return;
-      }
-
-      const updates = {};
-      if (trimmedDestination !== url.full_url) {
-        updates.full_url = trimmedDestination;
-      }
-      if (trimmedSlug.toLowerCase() !== url.short_url) {
-        updates.short_url = trimmedSlug;
-      }
-
-      if (Object.keys(updates).length === 0) return;
-
-      if (!isOnline) {
-        showToast.error("You're offline. Cannot update link.");
-        return;
-      }
-
-      setUpdatingUrl(url._id);
-      const updateToast = showToast.loading('Updating link...');
+      setUpdatingUrl(editingLink._id);
       try {
-        await updateShortUrl(url._id, updates);
-        showToast.dismiss(updateToast);
-        showToast.success('Link updated');
-        announce('Link updated');
-        fetchMyUrls();
-        fetchStats();
-      } catch (err) {
-        showToast.dismiss(updateToast);
-        showToast.error(
-          err?.response?.data?.message || 'Failed to update link'
-        );
+        await updateShortUrl(editingLink._id, apiUpdates);
+        refresh();
       } finally {
         setUpdatingUrl(null);
       }
     },
-    [announce, fetchMyUrls, fetchStats, isOnline]
+    [editingLink, refresh]
   );
 
   const handleToggleDisabled = useCallback(
@@ -266,8 +236,7 @@ const Dashboard = () => {
         showToast.dismiss(updateToast);
         showToast.success(nextDisabled ? 'Link disabled' : 'Link enabled');
         announce(nextDisabled ? 'Link disabled' : 'Link enabled');
-        fetchMyUrls();
-        fetchStats();
+        refresh();
       } catch (err) {
         showToast.dismiss(updateToast);
         showToast.error(
@@ -277,7 +246,7 @@ const Dashboard = () => {
         setUpdatingUrl(null);
       }
     },
-    [announce, confirmDialog, fetchMyUrls, fetchStats, isOnline]
+    [announce, confirmDialog, refresh, isOnline]
   );
 
   const handleSelectUrl = useCallback((id, selected) => {
@@ -329,8 +298,7 @@ const Dashboard = () => {
       }
       announce(`Deleted ${deletedCount} links`);
       setSelectedIds(new Set());
-      fetchMyUrls();
-      fetchStats();
+      refresh();
     } catch {
       showToast.dismiss(deleteToast);
       showToast.error('Failed to delete some links');
@@ -339,7 +307,7 @@ const Dashboard = () => {
     } finally {
       setIsBulkDeleting(false);
     }
-  }, [selectedIds, confirmDialog, isOnline, fetchMyUrls, fetchStats, announce]);
+  }, [selectedIds, confirmDialog, isOnline, refresh, fetchMyUrls, announce]);
 
   const handleSortByChange = useCallback((value) => {
     setSortBy(value);
@@ -450,6 +418,13 @@ const Dashboard = () => {
         onClose={() => setShareUrl(null)}
         shortUrl={shareUrl?.short_url}
         fullUrl={shareUrl?.full_url}
+      />
+
+      <EditLinkModal
+        isOpen={!!editingLink}
+        onClose={() => setEditingLink(null)}
+        link={editingLink}
+        onSave={handleSaveEdit}
       />
     </AppCatalogShell>
   );

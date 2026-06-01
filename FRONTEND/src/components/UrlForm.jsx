@@ -4,6 +4,7 @@ import ShareModal from './ShareModal';
 import { createShortUrl, createCustomShortUrl } from '../api/shortUrl.api';
 import { getApiErrorMessage, getApiPayload } from '../utils/axiosInstance';
 import { rememberAnonymousLink } from '../utils/anonymousLinks';
+import { mapBackendFieldErrors } from '../utils/apiErrors';
 import { buildPublicShortUrl } from '../utils/publicShortUrl';
 import { validators } from '../utils/validation';
 import { useFormValidation } from '../hooks/useFormValidation';
@@ -170,15 +171,9 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth, variant = 'default' }) => {
       showToast.dismiss(loadingToast);
       const data = err?.response ? err.response.data : err;
       if (data && typeof data === 'object' && Array.isArray(data.errors)) {
-        const backendErrors = {};
-        data.errors.forEach((e) => {
-          const fieldName =
-            e.field === 'full_url'
-              ? 'url'
-              : e.field === 'custom_url'
-                ? 'customAlias'
-                : e.field;
-          backendErrors[fieldName] = e.message;
+        const backendErrors = mapBackendFieldErrors(data.errors, {
+          full_url: 'url',
+          custom_url: 'customAlias'
         });
         mergeFieldErrors(backendErrors);
         showToast.error('Please check the form for errors.');

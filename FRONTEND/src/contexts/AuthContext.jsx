@@ -10,7 +10,7 @@ import {
   useState
 } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { getUrlStats } from '../api/shortUrl.api';
+import { useUrlStats } from '../hooks/useUrlStats';
 import { getCurrentUser, logoutUser } from '../api/user.api';
 import { useAnnouncement } from '../components/Accessibility';
 import {
@@ -35,25 +35,12 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
-  const [userStats, setUserStats] = useState({
-    totalUrls: 0,
-    totalClicks: 0
-  });
   const [announcement, announce] = useAnnouncement();
   const confirmLogout = useConfirmDialog();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const fetchUserStats = useCallback(async () => {
-    const response = await getUrlStats().catch(() => null);
-    const payload = response ? getApiPayload(response) : null;
-    if (payload?.stats) {
-      setUserStats({
-        totalUrls: payload.stats.totalUrls || 0,
-        totalClicks: payload.stats.totalClicks || 0
-      });
-    }
-  }, []);
+  const { stats, refetch: refetchUserStats } = useUrlStats();
 
   useEffect(() => {
     let cancelled = false;
@@ -173,9 +160,9 @@ export function AuthProvider({ children }) {
   const openRegister = useCallback(() => navigate(ROUTES.REGISTER), [navigate]);
 
   const openProfile = useCallback(() => {
-    fetchUserStats();
+    refetchUserStats();
     setShowProfileModal(true);
-  }, [fetchUserStats]);
+  }, [refetchUserStats]);
 
   const closeProfile = useCallback(() => setShowProfileModal(false), []);
 
@@ -218,7 +205,7 @@ export function AuthProvider({ children }) {
             isOpen={showProfileModal}
             onClose={closeProfile}
             user={user}
-            userStats={userStats}
+            userStats={stats?.stats}
           />
         </Suspense>
       )}
