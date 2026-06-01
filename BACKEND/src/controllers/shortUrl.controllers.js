@@ -24,6 +24,11 @@ import { escapeRegExp } from '../utils/escapeRegExp.js';
 import { logger } from '../utils/logger.js';
 import { isSafeRedirectUrl } from '../utils/safeRedirectUrl.js';
 import { normalizeSlug } from '../utils/normalizeSlug.js';
+import {
+  getCachedRedirectTarget,
+  setCachedRedirectTarget,
+  invalidateRedirectSlugCache
+} from '../utils/redirectSlugCache.js';
 
 const activeLinkFilter = { deletedAt: null };
 
@@ -63,7 +68,12 @@ export const createShortUrl = asyncHandler(async (req, res, _next) => {
 
 export const redirectFromShortUrl = asyncHandler(async (req, res, next) => {
   const { short_url } = req.validatedParams;
-  const shortUrlData = await getShortUrl(short_url);
+
+  let shortUrlData = getCachedRedirectTarget(short_url);
+  if (!shortUrlData) {
+    shortUrlData = await getShortUrl(short_url);
+    setCachedRedirectTarget(short_url, shortUrlData);
+  }
 
   if (!isSafeRedirectUrl(shortUrlData.full_url)) {
     logger.warn('Blocked unsafe redirect destination', {
@@ -80,11 +90,11 @@ export const redirectFromShortUrl = asyncHandler(async (req, res, next) => {
     return;
   }
 
-  const referrer = req.get('referer') || req.get('referrer') || '';
-  const country = getCountryFromRequest(req);
-  const { user_agent, device_type, browser, os } = parseUserAgent(req);
-
   const recordClick = async () => {
+    const referrer = req.get('referer') || req.get('referrer') || '';
+    const country = getCountryFromRequest(req);
+    const { user_agent, device_type, browser, os } = parseUserAgent(req);
+
     const session = await mongoose.startSession();
     try {
       await session.withTransaction(async () => {
@@ -208,10 +218,31 @@ export const updateShortUrl = asyncHandler(async (req, res, next) => {
     updates.short_url = normalizeSlug(updates.short_url);
   }
 
+  const affectsRedirect =
+    updates.full_url !== undefined ||
+    updates.short_url !== undefined ||
+    updates.disabled !== undefined;
+
+  let previousSlug;
+  if (affectsRedirect) {
+    const existing = await short_urlModel
+      .findById(id)
+      .select('short_url')
+      .lean();
+    previousSlug = existing?.short_url;
+  }
+
   const updated = await updateOwnedShortUrl(userId, id, updates);
 
   if (!updated) {
     return next(new NotFoundError('URL not found'));
+  }
+
+  if (affectsRedirect) {
+    if (previousSlug) invalidateRedirectSlugCache(previousSlug);
+    if (updated.short_url && updated.short_url !== previousSlug) {
+      invalidateRedirectSlugCache(updated.short_url);
+    }
   }
 
   res.json(
@@ -247,6 +278,8 @@ export const deleteShortUrl = asyncHandler(async (req, res, next) => {
     { $set: { deletedAt: new Date() } }
   );
 
+  invalidateRedirectSlugCache(urlToDelete.short_url);
+
   res.json(successResponse(SUCCESS_MESSAGES.URL.DELETED));
 });
 
@@ -269,7 +302,7 @@ export const bulkDeleteUrls = asyncHandler(async (req, res, _next) => {
 
   const urlsToDelete = await short_urlModel
     .find({ _id: { $in: ids }, user: userId, ...activeLinkFilter })
-    .select('_id')
+    .select('_id short_url')
     .lean();
 
   const foundIds = urlsToDelete.map((url) => url._id.toString());
@@ -285,6 +318,10 @@ export const bulkDeleteUrls = asyncHandler(async (req, res, _next) => {
     { _id: { $in: foundIds }, user: userId },
     { $set: { deletedAt: new Date() } }
   );
+
+  for (const url of urlsToDelete) {
+    invalidateRedirectSlugCache(url.short_url);
+  }
 
   res.json(
     successResponse(`Deleted ${result.modifiedCount} of ${ids.length} URL(s)`, {

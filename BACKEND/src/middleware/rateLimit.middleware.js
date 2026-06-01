@@ -90,6 +90,43 @@ function normalizeEmail(email) {
   return email.toLowerCase().trim().slice(0, 254);
 }
 
+/** In-process limiter for hot paths (e.g. redirects). Not shared across server instances. */
+export const memoryRateLimiter = ({ windowMs, max, keyGenerator }) => {
+  const buckets = new Map();
+
+  return (req, res, next) => {
+    const key = keyGenerator(req);
+    const now = Date.now();
+    let bucket = buckets.get(key);
+
+    if (!bucket || bucket.resetAt <= now) {
+      bucket = { count: 0, resetAt: now + windowMs };
+      buckets.set(key, bucket);
+    }
+
+    bucket.count += 1;
+
+    const remaining = Math.max(0, max - bucket.count);
+    const resetSeconds = Math.max(1, Math.ceil((bucket.resetAt - now) / 1000));
+
+    res.setHeader('X-RateLimit-Limit', max);
+    res.setHeader('X-RateLimit-Remaining', remaining);
+    res.setHeader('X-RateLimit-Reset', Math.ceil(bucket.resetAt / 1000));
+
+    if (bucket.count > max) {
+      res.setHeader('Retry-After', resetSeconds);
+      return next(
+        new AppError(
+          `Too many requests. Try again in ${resetSeconds} seconds.`,
+          429
+        )
+      );
+    }
+
+    next();
+  };
+};
+
 export const keyGenerators = {
   ip: (req) => `ip:${req.ip}`,
   emailIp: (req) =>

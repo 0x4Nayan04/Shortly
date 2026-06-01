@@ -17,6 +17,7 @@ import {
 } from './utils/validateEnv.js';
 import {
   rateLimiter,
+  memoryRateLimiter,
   keyGenerators
 } from './middleware/rateLimit.middleware.js';
 import { requestIdMiddleware } from './middleware/requestId.middleware.js';
@@ -29,7 +30,7 @@ import {
 import { shortUrlParamsSchema, qrQuerySchema } from './validation/schemas.js';
 import { logger } from './utils/logger.js';
 
-const redirectLimiter = rateLimiter({
+const redirectLimiter = memoryRateLimiter({
   windowMs: 60 * 1000,
   max: 60,
   keyGenerator: keyGenerators.ipPerEndpoint('redirect')
