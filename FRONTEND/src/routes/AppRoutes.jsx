@@ -23,12 +23,12 @@ const NotFound = lazy(() => import('../components/NotFound'));
 const AppRoutes = () => (
   <Suspense fallback={<CatalogPageLoader message='Loading page…' />}>
     <Routes>
-      <Route
-        path={ROUTES.HOME}
-        element={<LandingPage />}
-      />
-
       <Route element={<GuestOnlyLayout />}>
+        <Route
+          path={ROUTES.HOME}
+          element={<LandingPage />}
+        />
+
         <Route element={<AuthPageLayout />}>
           <Route
             path={ROUTES.LOGIN}
