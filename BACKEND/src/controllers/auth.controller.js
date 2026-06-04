@@ -1,28 +1,29 @@
-import {
-  registerUser as registerUserService,
-  loginUser as loginUserService,
-  changePassword as changePasswordService,
-  requestPasswordReset as requestPasswordResetService,
-  resetPassword as resetPasswordService,
-  verifyEmail as verifyEmailService,
-  resendVerificationEmail as resendVerificationEmailService,
-  updateUserProfile as updateUserProfileService,
-  deleteUserAccount as deleteUserAccountService
-} from '../services/auth.services.js';
 import { cookieOptions } from '../config/config.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import {
-  SUCCESS_MESSAGES,
-  successResponse
+  successResponse,
+  SUCCESS_MESSAGES
 } from '../utils/responseMessages.js';
 import { serializeUser } from '../utils/serializeUser.js';
 import { getTokenFromRequest } from '../utils/authToken.js';
-import { verifyToken } from '../utils/helper.js';
-import User from '../schema/user.model.js';
+import {
+  registerUser as registerUserService,
+  loginUser as loginUserService,
+  verifyEmail as verifyEmailService,
+  resendVerificationEmail as resendVerificationEmailService,
+  logoutUser as logoutUserService
+} from '../services/auth.service.js';
+import {
+  changePassword as changePasswordService,
+  updateProfile as updateProfileService,
+  deleteAccount as deleteAccountService,
+  requestPasswordReset as requestPasswordResetService,
+  resetPassword as resetPasswordService
+} from '../services/account.service.js';
 
 export const registerUser = asyncHandler(async (req, res, _next) => {
   const { name, email, password } = req.validatedBody;
-  const result = await registerUserService(name, email, password);
+  const result = await registerUserService({ name, email, password });
 
   if (result.token) {
     res.cookie('token', result.token, cookieOptions);
@@ -41,7 +42,7 @@ export const registerUser = asyncHandler(async (req, res, _next) => {
 
 export const verifyEmail = asyncHandler(async (req, res, _next) => {
   const { token } = req.validatedBody;
-  const { user } = await verifyEmailService(token);
+  const { user } = await verifyEmailService({ token });
   res.status(200).json(
     successResponse('Email verified successfully', {
       user: serializeUser(user)
@@ -51,13 +52,13 @@ export const verifyEmail = asyncHandler(async (req, res, _next) => {
 
 export const resendVerificationEmail = asyncHandler(async (req, res, _next) => {
   const { email } = req.validatedBody;
-  const result = await resendVerificationEmailService(email);
+  const result = await resendVerificationEmailService({ email });
   res.status(200).json(successResponse(result.message));
 });
 
 export const loginUser = asyncHandler(async (req, res, _next) => {
   const { email, password } = req.validatedBody;
-  const { token, user } = await loginUserService(email, password);
+  const { token, user } = await loginUserService({ email, password });
 
   res
     .cookie('token', token, cookieOptions)
@@ -71,14 +72,7 @@ export const loginUser = asyncHandler(async (req, res, _next) => {
 
 export const logoutUser = asyncHandler(async (req, res, _next) => {
   const token = getTokenFromRequest(req);
-  if (token) {
-    const decoded = await verifyToken(token).catch(() => null);
-    if (decoded) {
-      await User.findByIdAndUpdate(decoded.id, {
-        $inc: { tokenVersion: 1 }
-      });
-    }
-  }
+  await logoutUserService({ token });
 
   res.clearCookie('token', { ...cookieOptions });
   res.status(200).json(successResponse(SUCCESS_MESSAGES.AUTH.LOGOUT_SUCCESS));
@@ -94,7 +88,7 @@ export const getUserProfile = asyncHandler(async (req, res, _next) => {
 
 export const updateUserProfile = asyncHandler(async (req, res, _next) => {
   const { name } = req.validatedBody;
-  const { user } = await updateUserProfileService(req.user._id, { name });
+  const { user } = await updateProfileService({ userId: req.user._id, name });
   res.status(200).json(
     successResponse(SUCCESS_MESSAGES.USER.PROFILE_UPDATED, {
       user: serializeUser(user)
@@ -103,18 +97,18 @@ export const updateUserProfile = asyncHandler(async (req, res, _next) => {
 });
 
 export const deleteAccount = asyncHandler(async (req, res, _next) => {
-  await deleteUserAccountService(req.user._id);
+  await deleteAccountService({ userId: req.user._id });
   res.clearCookie('token', { ...cookieOptions });
   res.status(200).json(successResponse('Account deleted successfully'));
 });
 
 export const changePassword = asyncHandler(async (req, res, _next) => {
   const { oldPassword, newPassword } = req.validatedBody;
-  const { token, user } = await changePasswordService(
-    req.user._id,
+  const { token, user } = await changePasswordService({
+    userId: req.user._id,
     oldPassword,
     newPassword
-  );
+  });
   res
     .cookie('token', token, cookieOptions)
     .status(200)
@@ -127,12 +121,12 @@ export const changePassword = asyncHandler(async (req, res, _next) => {
 
 export const requestPasswordReset = asyncHandler(async (req, res, _next) => {
   const { email } = req.validatedBody;
-  const result = await requestPasswordResetService(email);
+  const result = await requestPasswordResetService({ email });
   res.status(200).json(successResponse(result.message));
 });
 
 export const resetPassword = asyncHandler(async (req, res, _next) => {
   const { token, password } = req.validatedBody;
-  await resetPasswordService(token, password);
+  await resetPasswordService({ token, newPassword: password });
   res.status(200).json(successResponse('Password reset successfully'));
 });

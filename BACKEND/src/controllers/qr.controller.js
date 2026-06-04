@@ -1,49 +1,42 @@
 import QRCode from 'qrcode';
-import short_urlModel from '../schema/shortUrl.model.js';
 import asyncHandler from '../utils/asyncHandler.js';
-import { NotFoundError } from '../utils/errorHandler.js';
 import { buildPublicShortUrl } from '../utils/publicShortUrl.js';
 import { normalizeSlug } from '../utils/normalizeSlug.js';
+import { getShortUrl } from '../services/shortUrl.services.js';
 
-export const getQrCode = asyncHandler(async (req, res, next) => {
+const PNG_OPTIONS = {
+  type: 'png',
+  margin: 2,
+  color: { dark: '#000000', light: '#ffffff' }
+};
+
+const SVG_OPTIONS = {
+  type: 'svg',
+  margin: 2,
+  color: { dark: '#000000', light: '#ffffff' }
+};
+
+export const getQrCode = asyncHandler(async (req, res, _next) => {
   const { short_url } = req.validatedParams;
   const { format } = req.validatedQuery;
   const slug = normalizeSlug(short_url);
 
-  const exists = await short_urlModel.exists({
-    short_url: slug,
-    deletedAt: null,
-    disabled: { $ne: true }
-  });
+  await getShortUrl(slug);
 
-  if (!exists) {
-    return next(new NotFoundError('Short URL not found'));
-  }
-
-  const qrPayload = buildPublicShortUrl(short_url, req);
+  const qrPayload = buildPublicShortUrl(slug, req);
 
   if (format === 'png') {
-    const buf = await QRCode.toBuffer(qrPayload, {
-      type: 'png',
-      margin: 2,
-      color: { dark: '#000000', light: '#ffffff' }
-    });
-
+    const buf = await QRCode.toBuffer(qrPayload, PNG_OPTIONS);
     res.setHeader('Content-Type', 'image/png');
     res.setHeader(
       'Content-Disposition',
-      `attachment; filename="shortly-qr-${short_url}.png"`
+      `attachment; filename="shortly-qr-${slug}.png"`
     );
     res.setHeader('Cache-Control', 'public, max-age=86400');
     return res.send(buf);
   }
 
-  const svg = await QRCode.toString(qrPayload, {
-    type: 'svg',
-    margin: 2,
-    color: { dark: '#000000', light: '#ffffff' }
-  });
-
+  const svg = await QRCode.toString(qrPayload, SVG_OPTIONS);
   res.setHeader('Content-Type', 'image/svg+xml');
   res.setHeader('Cache-Control', 'public, max-age=86400');
   res.send(svg);

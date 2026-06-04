@@ -1,32 +1,25 @@
-import mongoose from 'mongoose';
-import short_urlModel from '../schema/shortUrl.model.js';
+import asyncHandler from '../utils/asyncHandler.js';
+import { AppError, NotFoundError } from '../utils/errorHandler.js';
+import { isSafeRedirectUrl } from '../utils/safeRedirectUrl.js';
+import { normalizeSlug } from '../utils/normalizeSlug.js';
+import { normalizeUrl } from '../utils/normalizeUrl.js';
+import { logger } from '../utils/logger.js';
+import {
+  successResponse,
+  SUCCESS_MESSAGES
+} from '../utils/responseMessages.js';
 import {
   createShortUrl as createShortUrlService,
   createCustomShortUrl as createCustomShortUrlService,
   resolveRedirectTarget,
   claimAnonymousLinks as claimAnonymousLinksService,
-  updateOwnedShortUrl
+  updateOwnedShortUrl,
+  listLinksForUser,
+  softDeleteLink,
+  softDeleteLinks,
+  getStatsForUser
 } from '../services/shortUrl.services.js';
-import { normalizeUrl } from '../utils/normalizeUrl.js';
-import { getClickAggregates } from '../services/analytics.service.js';
-import Click from '../schema/click.model.js';
-import { CLICK_RETENTION_DAYS } from '../constants/shortUrlLimits.js';
-import { AppError, NotFoundError } from '../utils/errorHandler.js';
-import asyncHandler from '../utils/asyncHandler.js';
-import { getCountryFromRequest } from '../utils/geoip.js';
-import { parseUserAgent } from '../utils/userAgent.js';
-import { isBotUserAgent } from '../utils/isBotUserAgent.js';
-import {
-  SUCCESS_MESSAGES,
-  successResponse
-} from '../utils/responseMessages.js';
-import { escapeRegExp } from '../utils/escapeRegExp.js';
-import { logger } from '../utils/logger.js';
-import { isSafeRedirectUrl } from '../utils/safeRedirectUrl.js';
-import { normalizeSlug } from '../utils/normalizeSlug.js';
-import { invalidateRedirectSlugCache } from '../utils/redirectSlugCache.js';
-
-const activeLinkFilter = { deletedAt: null };
+import { recordClickFromRequest } from '../services/click.service.js';
 
 const resolveCanonicalUrl = (full_url) => {
   const canonical_url = normalizeUrl(full_url);
@@ -44,7 +37,7 @@ export const createShortUrl = asyncHandler(async (req, res, _next) => {
   const canonical_url = resolveCanonicalUrl(full_url);
   const userId = req.user ? req.user._id : null;
 
-  const result = await createShortUrlService(canonical_url, userId);
+  const result = await createShortUrlService({ full_url: canonical_url, userId });
 
   const payload = {
     id: result.id,
@@ -76,100 +69,37 @@ export const redirectFromShortUrl = asyncHandler(async (req, res, next) => {
   }
 
   res.redirect(302, shortUrlData.full_url);
-
-  const userAgent = req.headers['user-agent'] || '';
-  if (isBotUserAgent(userAgent)) {
-    return;
-  }
-
-  const recordClick = async () => {
-    const referrer = req.get('referer') || req.get('referrer') || '';
-    const country = getCountryFromRequest(req);
-    const { user_agent, device_type, browser, os } = parseUserAgent(req);
-
-    const session = await mongoose.startSession();
-    try {
-      await session.withTransaction(async () => {
-        await short_urlModel.updateOne(
-          { _id: shortUrlData._id },
-          { $inc: { click: 1 } },
-          { session }
-        );
-        await Click.create(
-          [
-            {
-              short_url_id: shortUrlData._id,
-              referrer,
-              country,
-              user_agent,
-              device_type,
-              browser,
-              os,
-              timestamp: new Date()
-            }
-          ],
-          { session }
-        );
-      });
-    } catch (error) {
-      logger.error('Error recording click', {
-        error: error.message,
-        short_url
-      });
-    } finally {
-      await session.endSession();
-    }
-  };
-
-  res.once('finish', recordClick);
+  res.once('finish', () => {
+    recordClickFromRequest({ shortUrlId: shortUrlData._id, req });
+  });
 });
 
 export const getUserUrls = asyncHandler(async (req, res, _next) => {
   const userId = req.user._id;
-  const query = req.validatedQuery;
-  const limit = query.limit;
-  const skip = query.skip;
-  const search = query.search;
-  const sortBy = query.sortBy;
-  const sortOrder = query.sortOrder === 'asc' ? 1 : -1;
+  const { limit, skip, search, sortBy, sortOrder } = req.validatedQuery;
 
-  const baseQuery = { user: userId, ...activeLinkFilter };
+  const result = await listLinksForUser({
+    userId,
+    limit,
+    skip,
+    search,
+    sortBy,
+    sortOrder
+  });
 
-  if (search && search.trim()) {
-    const searchRegex = new RegExp(escapeRegExp(search.trim()), 'i');
-    baseQuery.$or = [{ full_url: searchRegex }, { short_url: searchRegex }];
-  }
-
-  const sortOptions = {};
-  sortOptions[sortBy] = sortOrder;
-
-  const [userUrls, totalCount] = await Promise.all([
-    short_urlModel
-      .find(baseQuery)
-      .sort(sortOptions)
-      .skip(skip)
-      .limit(limit)
-      .select('full_url short_url click createdAt disabled')
-      .lean(),
-    short_urlModel.countDocuments(baseQuery)
-  ]);
-
-  const currentPage = Math.floor(skip / limit) + 1;
-  const totalPages = Math.ceil(totalCount / limit);
-
-  res.setHeader('X-Page', currentPage);
-  res.setHeader('X-Per-Page', limit);
-  res.setHeader('X-Total-Count', totalCount);
-  res.setHeader('X-Total-Pages', totalPages);
+  res.setHeader('X-Page', result.currentPage);
+  res.setHeader('X-Per-Page', result.perPage);
+  res.setHeader('X-Total-Count', result.totalCount);
+  res.setHeader('X-Total-Pages', result.totalPages);
 
   res.json(
     successResponse('User URLs fetched', {
-      count: userUrls.length,
-      totalCount,
-      totalPages,
-      currentPage,
-      hasMore: skip + limit < totalCount,
-      urls: userUrls
+      count: result.urls.length,
+      totalCount: result.totalCount,
+      totalPages: result.totalPages,
+      currentPage: result.currentPage,
+      hasMore: result.hasMore,
+      urls: result.urls
     })
   );
 });
@@ -179,20 +109,16 @@ export const createCustomShortUrl = asyncHandler(async (req, res, _next) => {
   const userId = req.user._id;
   const canonical_url = resolveCanonicalUrl(full_url);
 
-  const short_url = await createCustomShortUrlService(
-    canonical_url,
+  const result = await createCustomShortUrlService({
+    full_url: canonical_url,
     custom_url,
     userId
-  );
+  });
 
   res.json(
     successResponse(SUCCESS_MESSAGES.URL.CUSTOM_CREATED, {
-      short_url,
-      full_url: canonical_url,
-      custom_url: normalizeSlug(custom_url),
-      user_authenticated: true,
-      created: true,
-      reused: false
+      ...result,
+      custom_url: normalizeSlug(custom_url)
     })
   );
 });
@@ -210,31 +136,10 @@ export const updateShortUrl = asyncHandler(async (req, res, next) => {
     updates.short_url = normalizeSlug(updates.short_url);
   }
 
-  const affectsRedirect =
-    updates.full_url !== undefined ||
-    updates.short_url !== undefined ||
-    updates.disabled !== undefined;
-
-  let previousSlug;
-  if (affectsRedirect) {
-    const existing = await short_urlModel
-      .findById(id)
-      .select('short_url')
-      .lean();
-    previousSlug = existing?.short_url;
-  }
-
-  const updated = await updateOwnedShortUrl(userId, id, updates);
+  const updated = await updateOwnedShortUrl({ userId, id, updates });
 
   if (!updated) {
     return next(new NotFoundError('URL not found'));
-  }
-
-  if (affectsRedirect) {
-    if (previousSlug) invalidateRedirectSlugCache(previousSlug);
-    if (updated.short_url && updated.short_url !== previousSlug) {
-      invalidateRedirectSlugCache(updated.short_url);
-    }
   }
 
   res.json(
@@ -251,26 +156,11 @@ export const updateShortUrl = asyncHandler(async (req, res, next) => {
   );
 });
 
-export const deleteShortUrl = asyncHandler(async (req, res, next) => {
+export const deleteShortUrl = asyncHandler(async (req, res, _next) => {
   const { id } = req.validatedParams;
   const userId = req.user._id;
 
-  const urlToDelete = await short_urlModel.findById(id).lean();
-
-  if (!urlToDelete || urlToDelete.deletedAt) {
-    return next(new NotFoundError('URL not found'));
-  }
-
-  if (!urlToDelete.user || urlToDelete.user.toString() !== userId.toString()) {
-    return next(new AppError('You can only delete your own URLs', 403));
-  }
-
-  await short_urlModel.updateOne(
-    { _id: id, user: userId },
-    { $set: { deletedAt: new Date() } }
-  );
-
-  invalidateRedirectSlugCache(urlToDelete.short_url);
+  await softDeleteLink({ userId, id });
 
   res.json(successResponse(SUCCESS_MESSAGES.URL.DELETED));
 });
@@ -278,7 +168,7 @@ export const deleteShortUrl = asyncHandler(async (req, res, next) => {
 export const claimAnonymousShortUrls = asyncHandler(async (req, res, _next) => {
   const userId = req.user._id;
   const { links } = req.validatedBody;
-  const result = await claimAnonymousLinksService(userId, links);
+  const result = await claimAnonymousLinksService({ userId, claims: links });
 
   res.json(
     successResponse('Anonymous links processed', {
@@ -292,101 +182,30 @@ export const bulkDeleteUrls = asyncHandler(async (req, res, _next) => {
   const { ids } = req.validatedBody;
   const userId = req.user._id;
 
-  const urlsToDelete = await short_urlModel
-    .find({ _id: { $in: ids }, user: userId, ...activeLinkFilter })
-    .select('_id short_url')
-    .lean();
+  const result = await softDeleteLinks({ userId, ids });
 
-  const foundIds = urlsToDelete.map((url) => url._id.toString());
-  const skippedIds = ids.filter((id) => !foundIds.includes(id));
-
-  if (foundIds.length === 0) {
+  if (result.deletedCount === 0) {
     throw new AppError('No matching URLs found to delete', 404, true, {
-      skippedIds
+      skippedIds: result.skippedIds
     });
   }
 
-  const result = await short_urlModel.updateMany(
-    { _id: { $in: foundIds }, user: userId },
-    { $set: { deletedAt: new Date() } }
-  );
-
-  for (const url of urlsToDelete) {
-    invalidateRedirectSlugCache(url.short_url);
-  }
-
   res.json(
-    successResponse(`Deleted ${result.modifiedCount} of ${ids.length} URL(s)`, {
-      deletedCount: result.modifiedCount,
-      deletedIds: foundIds,
-      skippedIds
-    })
+    successResponse(
+      `Deleted ${result.deletedCount} of ${ids.length} URL(s)`,
+      {
+        deletedCount: result.deletedCount,
+        deletedIds: result.deletedIds,
+        skippedIds: result.skippedIds.map((entry) => entry.id)
+      }
+    )
   );
 });
 
 export const getUrlStats = asyncHandler(async (req, res, _next) => {
   const userId = req.user._id;
-  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
-  const [urlFacet, topUrls, clickStats] = await Promise.all([
-    short_urlModel.aggregate([
-      { $match: { user: userId, deletedAt: null } },
-      {
-        $facet: {
-          overall: [
-            {
-              $group: {
-                _id: null,
-                totalUrls: { $sum: 1 },
-                totalClicksLifetime: { $sum: '$click' },
-                avgClicks: { $avg: '$click' }
-              }
-            }
-          ],
-          recentActivity: [
-            { $match: { createdAt: { $gte: sevenDaysAgo } } },
-            {
-              $group: {
-                _id: {
-                  $dateToString: { format: '%Y-%m-%d', date: '$createdAt' }
-                },
-                count: { $sum: 1 },
-                clicks: { $sum: '$click' }
-              }
-            },
-            { $sort: { _id: 1 } }
-          ]
-        }
-      }
-    ]),
-    short_urlModel
-      .find({ user: userId, ...activeLinkFilter })
-      .sort({ click: -1 })
-      .limit(5)
-      .select('full_url short_url click createdAt')
-      .lean(),
-    getClickAggregates(userId)
-  ]);
+  const result = await getStatsForUser({ userId });
 
-  const facet = urlFacet[0] || { overall: [], recentActivity: [] };
-  const overallStats = facet.overall[0] || {
-    totalUrls: 0,
-    totalClicksLifetime: 0,
-    avgClicks: 0
-  };
-  const recentActivity = facet.recentActivity;
-
-  res.json(
-    successResponse('URL stats fetched', {
-      stats: {
-        totalUrls: overallStats.totalUrls,
-        totalClicks: overallStats.totalClicksLifetime,
-        avgClicksPerUrl: Math.round(overallStats.avgClicks * 100) / 100,
-        clickEventRetentionDays: CLICK_RETENTION_DAYS
-      },
-      recentActivity,
-      topUrls,
-      clickAnalytics: clickStats
-    })
-  );
+  res.json(successResponse('URL stats fetched', result));
 });

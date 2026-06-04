@@ -1,0 +1,118 @@
+import {
+  create as createUser,
+  findByEmail as findUserByEmail,
+  findByIdAndDelete as findUserByIdAndDelete,
+  findByVerificationToken,
+  incrementTokenVersionById
+} from '../dao/user.dao.js';
+import { signToken, verifyToken } from '../utils/helper.js';
+import { AppError } from '../utils/errorHandler.js';
+import {
+  dispatchVerificationForUser,
+  isEmailServiceConfigured
+} from './email.service.js';
+import { logger } from '../utils/logger.js';
+
+const GENERIC_RESEND_VERIFICATION_MESSAGE =
+  'If your account needs verification, a new link has been sent.';
+
+export const registerUser = async ({ name, email, password }) => {
+  const existing = await findUserByEmail(email);
+  if (existing) {
+    throw new AppError('User already exists with this email', 409);
+  }
+
+  const newUser = await createUser({ name, email, password });
+
+  if (!isEmailServiceConfigured()) {
+    newUser.isEmailVerified = true;
+    await newUser.save();
+    const token = await signToken({
+      id: newUser._id,
+      tokenVersion: newUser.tokenVersion ?? 0
+    });
+    return { token, user: newUser };
+  }
+
+  try {
+    await dispatchVerificationForUser(newUser);
+    return { user: newUser, verificationRequired: true };
+  } catch (error) {
+    await findUserByIdAndDelete(newUser._id);
+    throw error;
+  }
+};
+
+export const resendVerificationEmail = async ({ email }) => {
+  const user = await findUserByEmail(email);
+
+  if (!user || user.isEmailVerified !== false) {
+    return { message: GENERIC_RESEND_VERIFICATION_MESSAGE };
+  }
+
+  if (!isEmailServiceConfigured()) {
+    logger.warn(
+      'Verification resend requested but email service is not configured',
+      { email }
+    );
+    return { message: GENERIC_RESEND_VERIFICATION_MESSAGE };
+  }
+
+  try {
+    await dispatchVerificationForUser(user);
+  } catch (error) {
+    logger.error('Failed to dispatch verification email', {
+      error: error.message,
+      email
+    });
+  }
+
+  return { message: GENERIC_RESEND_VERIFICATION_MESSAGE };
+};
+
+export const verifyEmail = async ({ token }) => {
+  const user = await findByVerificationToken(token);
+  if (!user) {
+    throw new AppError('Invalid or expired verification token', 400);
+  }
+
+  user.isEmailVerified = true;
+  user.emailVerificationToken = null;
+  user.emailVerificationExpires = null;
+  await user.save();
+
+  return { user };
+};
+
+export const loginUser = async ({ email, password }) => {
+  const user = await findUserByEmail(email);
+
+  if (!user) {
+    throw new AppError('Invalid Credentials', 401);
+  }
+
+  const isMatch = await user.comparePassword(password);
+  if (!isMatch) {
+    throw new AppError('Invalid Credentials', 401);
+  }
+
+  if (user.isEmailVerified === false) {
+    throw new AppError('Please verify your email before logging in.', 403);
+  }
+
+  const token = await signToken({
+    id: user._id,
+    tokenVersion: user.tokenVersion ?? 0
+  });
+
+  return { token, user };
+};
+
+export const logoutUser = async ({ token }) => {
+  if (!token) return;
+
+  const decoded = await verifyToken(token).catch(() => null);
+  if (!decoded?.id) return;
+
+  await incrementTokenVersionById(decoded.id);
+};

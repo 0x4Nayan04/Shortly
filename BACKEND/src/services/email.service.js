@@ -9,18 +9,14 @@ import {
 
 let resendClient = null;
 
-export const isPasswordResetEmailConfigured = () =>
+export const isEmailServiceConfigured = () =>
   Boolean(process.env.RESEND_API_KEY?.trim());
 
 const getResendClient = () => {
-  if (!isPasswordResetEmailConfigured()) {
-    return null;
-  }
-
+  if (!isEmailServiceConfigured()) return null;
   if (!resendClient) {
     resendClient = new Resend(process.env.RESEND_API_KEY);
   }
-
   return resendClient;
 };
 
@@ -125,3 +121,41 @@ export const sendPasswordResetEmail = async (email, resetToken) => {
     }
   });
 };
+
+export async function dispatchVerificationForUser(user) {
+  if (!isEmailServiceConfigured()) {
+    return { sent: false, reason: 'email_not_configured' };
+  }
+
+  const token = user.generateEmailVerificationToken();
+  await user.save();
+
+  try {
+    await sendVerificationEmail(user.email, token);
+    return { sent: true };
+  } catch (error) {
+    user.emailVerificationToken = null;
+    user.emailVerificationExpires = null;
+    await user.save();
+    throw error;
+  }
+}
+
+export async function dispatchPasswordResetForUser(user) {
+  if (!isEmailServiceConfigured()) {
+    return { sent: false, reason: 'email_not_configured' };
+  }
+
+  const token = user.generateResetToken();
+  await user.save();
+
+  try {
+    await sendPasswordResetEmail(user.email, token);
+    return { sent: true };
+  } catch (error) {
+    user.resetPasswordToken = null;
+    user.resetPasswordExpires = null;
+    await user.save();
+    throw error;
+  }
+}
