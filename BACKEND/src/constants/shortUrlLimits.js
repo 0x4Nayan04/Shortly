@@ -11,9 +11,3 @@ export const MAX_LINKS_PER_USER = parseInt(
   process.env.MAX_LINKS_PER_USER || '1000',
   10
 );
-
-/**
- * Short slugs are globally unique so root-path redirects (/:slug) resolve
- * without an account prefix. Per-account slugs would require a different URL shape.
- */
-export const SLUGS_ARE_GLOBALLY_UNIQUE = true;

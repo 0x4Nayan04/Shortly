@@ -1,8 +1,8 @@
-import mongoose from 'mongoose';
 import { getCountryFromRequest } from '../utils/geoip.js';
 import { parseUserAgent } from '../utils/userAgent.js';
 import { isBotUserAgent } from '../utils/isBotUserAgent.js';
 import { logger } from '../utils/logger.js';
+import { runWithTransaction } from '../utils/mongoTransaction.js';
 import { incrementClick } from '../dao/shortUrl.dao.js';
 import { insertClick } from '../dao/click.dao.js';
 
@@ -10,13 +10,12 @@ export async function recordClickFromRequest({ shortUrlId, req }) {
   if (!req) return false;
   if (isBotUserAgent(req.headers['user-agent'] || '')) return false;
 
-  const session = await mongoose.startSession();
   try {
     const referrer = req.get('referer') || req.get('referrer') || '';
     const country = getCountryFromRequest(req);
     const { user_agent, device_type, browser, os } = parseUserAgent(req);
 
-    await session.withTransaction(async () => {
+    await runWithTransaction(async (session) => {
       await incrementClick(shortUrlId, session);
       await insertClick(
         {
@@ -38,7 +37,5 @@ export async function recordClickFromRequest({ shortUrlId, req }) {
       shortUrlId
     });
     return false;
-  } finally {
-    await session.endSession();
   }
 }

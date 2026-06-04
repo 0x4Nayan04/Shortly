@@ -1,7 +1,6 @@
 import { logger } from './logger.js';
 
 const requiredEnvVars = ['MONGODB_URI', 'JWT_SECRET', 'FRONT_END_URL', 'PORT'];
-
 const optionalEnvVars = ['NODE_ENV', 'ALLOWED_ORIGINS', 'RESEND_API_KEY'];
 
 export const validateEnvironment = () => {

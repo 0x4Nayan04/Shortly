@@ -1,4 +1,4 @@
-export function resolveApiBaseUrl() {
+function resolveApiBaseUrl() {
   if (import.meta.env.DEV) {
     return '/';
   }

@@ -16,24 +16,25 @@ const ShortlyLogo = ({ variant = 'full', className = '' }) => {
   return (
     <span
       className={`shortly-logo ${isMark ? 'shortly-logo--mark' : 'shortly-logo--full'} ${className}`.trim()}
-      aria-hidden='true'>
+      aria-hidden="true"
+    >
       <img
         src={src}
-        alt=''
-        className='shortly-logo-img shortly-logo-img--default'
+        alt=""
+        className="shortly-logo-img shortly-logo-img--default"
         width={width}
         height={28}
         sizes={isMark ? '28px' : '124px'}
-        decoding='async'
+        decoding="async"
       />
       <img
         src={hoverSrc}
-        alt=''
-        className='shortly-logo-img shortly-logo-img--hover'
+        alt=""
+        className="shortly-logo-img shortly-logo-img--hover"
         width={width}
         height={28}
         sizes={isMark ? '28px' : '124px'}
-        decoding='async'
+        decoding="async"
       />
     </span>
   );

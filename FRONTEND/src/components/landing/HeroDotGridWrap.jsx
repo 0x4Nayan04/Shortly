@@ -19,16 +19,9 @@ const HeroDotGridWrap = ({ children, className = '', wrapClassName = '' }) => {
   const wrapRef = useRef(null);
 
   return (
-    <div
-      ref={wrapRef}
-      className={`hero-dot-grid-wrap ${wrapClassName}`.trim()}>
-      <div
-        className='hero-dot-grid-mask'
-        aria-hidden='true'>
-        <DotGridSpotlight
-          interactionRef={wrapRef}
-          {...DOT_GRID_DEFAULTS}
-        />
+    <div ref={wrapRef} className={`hero-dot-grid-wrap ${wrapClassName}`.trim()}>
+      <div className="hero-dot-grid-mask" aria-hidden="true">
+        <DotGridSpotlight interactionRef={wrapRef} {...DOT_GRID_DEFAULTS} />
       </div>
       <div className={`relative z-10 ${className}`.trim()}>{children}</div>
     </div>

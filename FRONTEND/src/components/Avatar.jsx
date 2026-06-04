@@ -24,7 +24,7 @@ const Avatar = memo(
         {src && !showFallback ? (
           <img
             src={src}
-            alt=''
+            alt=""
             width={width}
             height={height}
             className={imgClassName}
@@ -32,9 +32,7 @@ const Avatar = memo(
           />
         ) : null}
         {showFallback ? (
-          <span
-            className={fallbackClassName}
-            aria-hidden='true'>
+          <span className={fallbackClassName} aria-hidden="true">
             {fallbackTextClassName ? (
               <span className={fallbackTextClassName}>{initial}</span>
             ) : (

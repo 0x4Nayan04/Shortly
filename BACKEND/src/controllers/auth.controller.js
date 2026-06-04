@@ -7,19 +7,20 @@ import {
 import { serializeUser } from '../utils/serializeUser.js';
 import { getTokenFromRequest } from '../utils/authToken.js';
 import {
-  registerUser as registerUserService,
-  loginUser as loginUserService,
-  verifyEmail as verifyEmailService,
-  resendVerificationEmail as resendVerificationEmailService,
-  logoutUser as logoutUserService
+  registerUserService,
+  loginUserService,
+  verifyEmailService,
+  resendVerificationEmailService,
+  logoutUserService
 } from '../services/auth.service.js';
 import {
-  changePassword as changePasswordService,
-  updateProfile as updateProfileService,
-  deleteAccount as deleteAccountService,
-  requestPasswordReset as requestPasswordResetService,
-  resetPassword as resetPasswordService
+  changePasswordService,
+  updateProfileService,
+  deleteAccountService,
+  requestPasswordResetService,
+  resetPasswordService
 } from '../services/account.service.js';
+import { findById as findUserById } from '../dao/user.dao.js';
 
 export const registerUser = asyncHandler(async (req, res, _next) => {
   const { name, email, password } = req.validatedBody;
@@ -79,9 +80,12 @@ export const logoutUser = asyncHandler(async (req, res, _next) => {
 });
 
 export const getUserProfile = asyncHandler(async (req, res, _next) => {
+  const dbUser = req.user?._id ? await findUserById(req.user._id) : null;
+  res.set('Cache-Control', 'no-store');
+  res.set('ETag', false);
   res.status(200).json(
     successResponse('User profile fetched', {
-      user: req.user ? serializeUser(req.user) : null
+      user: dbUser ? serializeUser(dbUser) : null
     })
   );
 });
@@ -89,6 +93,8 @@ export const getUserProfile = asyncHandler(async (req, res, _next) => {
 export const updateUserProfile = asyncHandler(async (req, res, _next) => {
   const { name } = req.validatedBody;
   const { user } = await updateProfileService({ userId: req.user._id, name });
+  res.set('Cache-Control', 'no-store');
+  res.set('ETag', false);
   res.status(200).json(
     successResponse(SUCCESS_MESSAGES.USER.PROFILE_UPDATED, {
       user: serializeUser(user)

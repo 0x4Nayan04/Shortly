@@ -2,7 +2,7 @@ import QRCode from 'qrcode';
 import asyncHandler from '../utils/asyncHandler.js';
 import { buildPublicShortUrl } from '../utils/publicShortUrl.js';
 import { normalizeSlug } from '../utils/normalizeSlug.js';
-import { getShortUrl } from '../services/shortUrl.services.js';
+import { getShortUrlService } from '../services/shortUrl.services.js';
 
 const PNG_OPTIONS = {
   type: 'png',
@@ -21,7 +21,7 @@ export const getQrCode = asyncHandler(async (req, res, _next) => {
   const { format } = req.validatedQuery;
   const slug = normalizeSlug(short_url);
 
-  await getShortUrl(slug);
+  await getShortUrlService(slug);
 
   const qrPayload = buildPublicShortUrl(slug, req);
 

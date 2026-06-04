@@ -4,7 +4,7 @@ export const LANDING_SECTION_LINKS = [
   { label: 'FAQ', href: '#faq' }
 ];
 
-export const LANDING_NAV_LINKS = [
+const LANDING_NAV_LINKS = [
   ...LANDING_SECTION_LINKS,
   { label: 'Privacy', to: '/privacy' }
 ];

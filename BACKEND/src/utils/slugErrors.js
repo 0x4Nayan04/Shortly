@@ -3,7 +3,10 @@ import { AppError } from './errorHandler.js';
 export const CUSTOM_SLUG_TAKEN_MESSAGE =
   'Custom short URL already exists. Please choose a different one.';
 
-export async function withSlugConflictHandler(operation, message = CUSTOM_SLUG_TAKEN_MESSAGE) {
+export async function withSlugConflictHandler(
+  operation,
+  message = CUSTOM_SLUG_TAKEN_MESSAGE
+) {
   try {
     return await operation();
   } catch (err) {

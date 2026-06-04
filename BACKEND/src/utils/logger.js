@@ -8,7 +8,7 @@ function log(level, message, meta = {}) {
     timestamp: new Date().toISOString(),
     level,
     message,
-    ...meta,
+    ...meta
   });
   if (level === 'error') console.error(entry);
   else console.log(entry);
@@ -18,5 +18,5 @@ export const logger = {
   info: (msg, meta) => log('info', msg, meta),
   warn: (msg, meta) => log('warn', msg, meta),
   error: (msg, meta) => log('error', msg, meta),
-  debug: (msg, meta) => log('debug', msg, meta),
+  debug: (msg, meta) => log('debug', msg, meta)
 };

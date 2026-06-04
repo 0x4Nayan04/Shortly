@@ -20,19 +20,21 @@ export const ErrorRecovery = memo(
           description ||
           error?.message ||
           'An unexpected error occurred. Please try again.'
-        }>
+        }
+      >
         {canRetry && onRetry && (
           <button
-            type='button'
+            type="button"
             onClick={onRetry}
-            className={`${errorActionButtonClass} px-4 py-2`}>
-            <RotateCw className='w-3.5 h-3.5' />
+            className={`${errorActionButtonClass} px-4 py-2`}
+          >
+            <RotateCw className="w-3.5 h-3.5" />
             Try Again {retryCount > 0 && `(${retryCount}/${maxRetries})`}
           </button>
         )}
 
         {!canRetry && (
-          <p className='text-sm text-error'>
+          <p className="text-sm text-error">
             Maximum retry attempts reached. Please refresh the page or contact
             support.
           </p>

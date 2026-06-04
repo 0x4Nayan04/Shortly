@@ -1,15 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { showToast } from './toast';
+import { useCallback, useRef, useState } from 'react';
+import { showToast } from '../../utils/showToast';
 
 export const useCopyToClipboard = () => {
   const [copiedText, setCopiedText] = useState(null);
   const timeoutRef = useRef(null);
-
-  useEffect(() => {
-    return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    };
-  }, []);
 
   const copy = useCallback(
     async (text, successMessage = 'Copied to clipboard!') => {

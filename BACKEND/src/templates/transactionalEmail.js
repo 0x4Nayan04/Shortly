@@ -3,7 +3,7 @@
  */
 
 /** @type {Readonly<Record<string, string>>} */
-export const EMAIL_TOKENS = Object.freeze({
+const EMAIL_TOKENS = Object.freeze({
   primary: '#0562ef',
   primaryActive: '#0263ef',
   ink: '#0b1015',
@@ -28,7 +28,7 @@ function escapeHtml(value) {
     .replace(/"/g, '&quot;');
 }
 
-export function normalizeFrontEndBase(url) {
+function normalizeFrontEndBase(url) {
   return (url || '').replace(/\/+$/, '');
 }
 
@@ -56,7 +56,7 @@ function isPrivateOrigin(url) {
 }
 
 /** Public origin for email images (Gmail etc. cannot load localhost). */
-export function resolveEmailAssetBase(frontEndUrl) {
+function resolveEmailAssetBase(frontEndUrl) {
   const explicit = process.env.EMAIL_ASSET_BASE_URL?.trim();
   if (explicit) {
     return normalizeFrontEndBase(explicit);
@@ -70,7 +70,7 @@ export function resolveEmailAssetBase(frontEndUrl) {
   return null;
 }
 
-export function resolveEmailLogoUrl(frontEndUrl) {
+function resolveEmailLogoUrl(frontEndUrl) {
   const assetBase = resolveEmailAssetBase(frontEndUrl);
   if (!assetBase) {
     return null;

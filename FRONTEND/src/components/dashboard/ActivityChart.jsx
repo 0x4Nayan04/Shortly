@@ -1,10 +1,11 @@
-import { memo, useMemo, useState } from 'react';
+import { memo, useMemo } from 'react';
 import { BarChart3 } from 'lucide-react';
+import { useHoveredIndex } from '../../hooks/useHoveredIndex';
 
 const GRID_LINES = 3;
 
 const ActivityChart = memo(({ data }) => {
-  const [hoveredIdx, setHoveredIdx] = useState(null);
+  const { hoveredIdx, hoverHandlers } = useHoveredIndex();
 
   const last7Days = useMemo(() => {
     const days = [];
@@ -37,14 +38,14 @@ const ActivityChart = memo(({ data }) => {
 
   if (!hasAnyData) {
     return (
-      <div className='activity-chart activity-chart--empty'>
+      <div className="activity-chart activity-chart--empty">
         <BarChart3
-          className='activity-chart__empty-icon'
+          className="activity-chart__empty-icon"
           strokeWidth={1.5}
-          aria-hidden='true'
+          aria-hidden="true"
         />
-        <p className='activity-chart__empty-text'>No links created yet</p>
-        <p className='activity-chart__empty-hint'>
+        <p className="activity-chart__empty-text">No links created yet</p>
+        <p className="activity-chart__empty-hint">
           Shorten your first URL above to get started
         </p>
       </div>
@@ -52,42 +53,38 @@ const ActivityChart = memo(({ data }) => {
   }
 
   return (
-    <div className='activity-chart'>
-      <div className='activity-chart__summary'>
-        <div className='activity-chart__summary-main'>
-          <span className='activity-chart__total'>{totalLinks}</span>
-          <span className='activity-chart__total-label'>
+    <div className="activity-chart">
+      <div className="activity-chart__summary">
+        <div className="activity-chart__summary-main">
+          <span className="activity-chart__total">{totalLinks}</span>
+          <span className="activity-chart__total-label">
             link{totalLinks !== 1 ? 's' : ''} created this week
           </span>
         </div>
         {todayCount > 0 && (
-          <div className='activity-chart__today-badge'>{todayCount} today</div>
+          <div className="activity-chart__today-badge">{todayCount} today</div>
         )}
       </div>
 
-      <div className='activity-chart__body'>
-        <div
-          className='activity-chart__yaxis'
-          aria-hidden='true'>
+      <div className="activity-chart__body">
+        <div className="activity-chart__yaxis" aria-hidden="true">
           <span>{maxCount}</span>
           <span>{Math.round(maxCount / 2)}</span>
           <span>0</span>
         </div>
 
-        <div className='activity-chart__plot'>
-          <div
-            className='activity-chart__grid'
-            aria-hidden='true'>
+        <div className="activity-chart__plot">
+          <div className="activity-chart__grid" aria-hidden="true">
             {Array.from({ length: GRID_LINES + 1 }, (_, i) => (
               <div
                 key={i}
-                className='activity-chart__gridline'
+                className="activity-chart__gridline"
                 style={{ bottom: `${(i / GRID_LINES) * 100}%` }}
               />
             ))}
           </div>
 
-          <div className='activity-chart__bars'>
+          <div className="activity-chart__bars">
             {chartData.map((day, idx) => {
               const date = new Date(day._id + 'T00:00:00');
               const dayLabel = date.toLocaleDateString('en-US', {
@@ -104,18 +101,10 @@ const ActivityChart = memo(({ data }) => {
                 <div
                   key={day._id}
                   className={`activity-chart__col${day.isToday ? ' activity-chart__col--today' : ''}`}
-                  tabIndex={0}
-                  onMouseEnter={() => setHoveredIdx(idx)}
-                  onMouseLeave={() => setHoveredIdx(null)}
-                  onFocus={() => setHoveredIdx(idx)}
-                  onBlur={() => setHoveredIdx(null)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      setHoveredIdx(idx);
-                    }
-                  }}>
+                  {...hoverHandlers(idx)}
+                >
                   {isHovered && (
-                    <div className='activity-chart__tooltip'>
+                    <div className="activity-chart__tooltip">
                       <strong>
                         {day.count} link{day.count !== 1 ? 's' : ''}
                       </strong>
@@ -131,12 +120,13 @@ const ActivityChart = memo(({ data }) => {
 
                   {day.count > 0 && (
                     <span
-                      className={`activity-chart__value${isHovered ? ' activity-chart__value--visible' : ''}`}>
+                      className={`activity-chart__value${isHovered ? ' activity-chart__value--visible' : ''}`}
+                    >
                       {day.count}
                     </span>
                   )}
 
-                  <div className='activity-chart__bar-track'>
+                  <div className="activity-chart__bar-track">
                     <div
                       className={`activity-chart__bar${day.count === 0 ? ' activity-chart__bar--empty' : ''}${day.isToday ? ' activity-chart__bar--today' : ''}`}
                       style={{
@@ -146,7 +136,8 @@ const ActivityChart = memo(({ data }) => {
                   </div>
 
                   <span
-                    className={`activity-chart__day${day.isToday ? ' activity-chart__day--today' : ''}`}>
+                    className={`activity-chart__day${day.isToday ? ' activity-chart__day--today' : ''}`}
+                  >
                     {dayLabel}
                   </span>
                 </div>

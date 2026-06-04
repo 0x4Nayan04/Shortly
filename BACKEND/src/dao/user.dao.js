@@ -5,7 +5,8 @@ export const findByEmail = async (email) => User.findOne({ email });
 
 export const findById = async (id) => User.findById(id);
 
-export const findByIdAndDelete = async (id) => User.findByIdAndDelete(id);
+export const findByIdAndDelete = async (id, session = null) =>
+  User.findByIdAndDelete(id, session ? { session } : undefined);
 
 export const create = async ({ name, email, password }) => {
   const user = new User({ name, email, password });
@@ -13,8 +14,11 @@ export const create = async ({ name, email, password }) => {
   return user;
 };
 
-export const updateNameById = async (id, name, options = { new: true, runValidators: true }) =>
-  User.findByIdAndUpdate(id, { name }, options);
+export const updateNameById = async (
+  id,
+  name,
+  options = { new: true, runValidators: true }
+) => User.findByIdAndUpdate(id, { name }, options);
 
 export const incrementTokenVersionById = async (id) =>
   User.findByIdAndUpdate(id, { $inc: { tokenVersion: 1 } });

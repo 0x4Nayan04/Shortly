@@ -4,8 +4,7 @@ import { AlertTriangle } from 'lucide-react';
 const ICON_CIRCLE_STYLE = {
   backgroundColor:
     'color-mix(in srgb, var(--color-error) 10%, var(--color-surface))',
-  borderColor:
-    'color-mix(in srgb, var(--color-error) 30%, var(--color-border))'
+  borderColor: 'color-mix(in srgb, var(--color-error) 30%, var(--color-border))'
 };
 
 const PANEL_DOT_BG = {
@@ -54,14 +53,13 @@ export const ErrorPanel = memo(
           boxShadow: styles.shadow,
           ...PANEL_DOT_BG
         }}
-        role='alert'>
+        role="alert"
+      >
         <div
           className={`${styles.iconWrap} rounded-full flex items-center justify-center`}
-          style={ICON_CIRCLE_STYLE}>
-          <AlertTriangle
-            className='w-6 h-6 text-error'
-            aria-hidden='true'
-          />
+          style={ICON_CIRCLE_STYLE}
+        >
+          <AlertTriangle className="w-6 h-6 text-error" aria-hidden="true" />
         </div>
 
         {createElement(headingLevel, { className: styles.title }, title)}

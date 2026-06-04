@@ -1,17 +1,16 @@
 import LandingFaq from './landing/LandingFaq';
 import LandingFeaturesCatalog from './landing/LandingFeaturesCatalog';
 import LandingFooter from './landing/LandingFooter';
-import LandingFrame, { LandingSectionBlock } from './landing/LandingFrame';
+import LandingFrame from './landing/LandingFrame';
+import { LandingSectionBlock } from './landing/LandingSectionBlock';
 import LandingHero from './landing/LandingHero';
 import LandingNavbar from './landing/LandingNavbar';
 
 const LandingPage = () => (
-  <div className='landing-page flex min-h-screen flex-col'>
+  <div className="landing-page flex min-h-screen flex-col">
     <LandingFrame>
       <LandingNavbar />
-      <main
-        id='main-content'
-        className='flex-1'>
+      <main id="main-content" className="flex-1">
         <LandingSectionBlock>
           <LandingHero />
         </LandingSectionBlock>
@@ -22,7 +21,7 @@ const LandingPage = () => (
           <LandingFaq />
         </LandingSectionBlock>
       </main>
-      <LandingSectionBlock className='site-footer-block'>
+      <LandingSectionBlock className="site-footer-block">
         <LandingFooter />
       </LandingSectionBlock>
     </LandingFrame>

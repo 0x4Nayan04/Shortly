@@ -5,14 +5,33 @@ import { getApiPayload } from '../utils/axiosInstance';
 export function useUrlStats() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [hasFetched, setHasFetched] = useState(false);
 
   const refetch = useCallback(async () => {
     setLoading(true);
-    const response = await getUrlStats().catch(() => null);
-    const payload = response ? getApiPayload(response) : null;
-    if (payload) setStats(payload);
+    try {
+      const response = await getUrlStats();
+      const payload = getApiPayload(response);
+      if (payload) setStats(payload);
+    } catch {
+      setStats(null);
+    } finally {
+      setHasFetched(true);
+      setLoading(false);
+    }
+  }, []);
+
+  const reset = useCallback(() => {
+    setStats(null);
+    setHasFetched(false);
     setLoading(false);
   }, []);
 
-  return { stats, loading, refetch };
+  return {
+    stats,
+    loading,
+    hasFetched,
+    refetch,
+    reset
+  };
 }

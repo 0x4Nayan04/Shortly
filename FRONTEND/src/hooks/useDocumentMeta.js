@@ -54,8 +54,12 @@ export function useDocumentMeta(pathname) {
       ['meta[name="twitter:image"]', ogImageUrl]
     ];
 
+    const propertySelectors = new Set();
+    for (const [s] of ogTags) {
+      if (s.startsWith('meta[property=')) propertySelectors.add(s);
+    }
     for (const [selector, content] of ogTags) {
-      const isProperty = selector.includes('property=');
+      const isProperty = propertySelectors.has(selector);
       setMetaContent(selector, content, () => {
         const meta = document.createElement('meta');
         if (isProperty) {

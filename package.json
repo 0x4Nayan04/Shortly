@@ -10,6 +10,11 @@
     "build:frontend": "npm --prefix FRONTEND run build",
     "lint:frontend": "npm --prefix FRONTEND run lint",
     "lint:backend": "npm --prefix BACKEND run lint",
-    "css:check": "npm --prefix FRONTEND run css:check"
+    "css:check": "npm --prefix FRONTEND run css:check",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "prettier": "^3.6.2"
   }
 }

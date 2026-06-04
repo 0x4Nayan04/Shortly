@@ -13,13 +13,13 @@ export const ROUTES = {
 };
 
 /** Auth flows only available to signed-out users (redirect to dashboard when signed in). */
-export const GUEST_ONLY_PATHS = [
+const GUEST_ONLY_PATHS = [
   ROUTES.LOGIN,
   ROUTES.REGISTER,
   ROUTES.FORGOT_PASSWORD
 ];
 
-export function isGuestOnlyPath(pathname) {
+function isGuestOnlyPath(pathname) {
   if (GUEST_ONLY_PATHS.includes(pathname)) return true;
   return (
     pathname.startsWith(`${ROUTES.RESET_PASSWORD}/`) ||
@@ -27,14 +27,8 @@ export function isGuestOnlyPath(pathname) {
   );
 }
 
-export const PROTECTED_PATHS = [ROUTES.DASHBOARD, ROUTES.SETTINGS];
-
-export function isProtectedPath(pathname) {
-  return PROTECTED_PATHS.includes(pathname);
-}
-
 /** Auth API endpoints that must not trigger a session-expired redirect. */
-export const AUTH_API_PATHS = [
+const AUTH_API_PATHS = [
   '/auth/me',
   '/auth/login',
   '/auth/register',
@@ -48,4 +42,28 @@ export function isAuthApiPath(url) {
 /** Browser paths where a 401 should not dispatch `auth:expired`. */
 export function shouldSuppressSessionExpired(pathname) {
   return isGuestOnlyPath(pathname);
+}
+
+export function getSafeReturnPath(raw) {
+  if (!raw || typeof raw !== 'string') return null;
+
+  let decoded;
+  try {
+    decoded = decodeURIComponent(raw.trim());
+  } catch {
+    return null;
+  }
+
+  if (
+    !decoded.startsWith('/') ||
+    decoded.startsWith('//') ||
+    decoded.includes('://')
+  ) {
+    return null;
+  }
+
+  const pathname = decoded.split('?')[0].split('#')[0];
+  if (isGuestOnlyPath(pathname)) return null;
+
+  return decoded;
 }

@@ -9,15 +9,15 @@ import {
   SUCCESS_MESSAGES
 } from '../utils/responseMessages.js';
 import {
-  createShortUrl as createShortUrlService,
-  createCustomShortUrl as createCustomShortUrlService,
-  resolveRedirectTarget,
-  claimAnonymousLinks as claimAnonymousLinksService,
-  updateOwnedShortUrl,
-  listLinksForUser,
-  softDeleteLink,
-  softDeleteLinks,
-  getStatsForUser
+  createShortUrlService,
+  createCustomShortUrlService,
+  resolveRedirectTargetService,
+  claimAnonymousLinksService,
+  updateOwnedShortUrlService,
+  listLinksForUserService,
+  softDeleteLinkService,
+  softDeleteLinksService,
+  getStatsForUserService
 } from '../services/shortUrl.services.js';
 import { recordClickFromRequest } from '../services/click.service.js';
 
@@ -37,7 +37,10 @@ export const createShortUrl = asyncHandler(async (req, res, _next) => {
   const canonical_url = resolveCanonicalUrl(full_url);
   const userId = req.user ? req.user._id : null;
 
-  const result = await createShortUrlService({ full_url: canonical_url, userId });
+  const result = await createShortUrlService({
+    full_url: canonical_url,
+    userId
+  });
 
   const payload = {
     id: result.id,
@@ -58,7 +61,7 @@ export const createShortUrl = asyncHandler(async (req, res, _next) => {
 export const redirectFromShortUrl = asyncHandler(async (req, res, next) => {
   const { short_url } = req.validatedParams;
 
-  const shortUrlData = await resolveRedirectTarget(short_url);
+  const shortUrlData = await resolveRedirectTargetService(short_url);
 
   if (!isSafeRedirectUrl(shortUrlData.full_url)) {
     logger.warn('Blocked unsafe redirect destination', {
@@ -78,7 +81,7 @@ export const getUserUrls = asyncHandler(async (req, res, _next) => {
   const userId = req.user._id;
   const { limit, skip, search, sortBy, sortOrder } = req.validatedQuery;
 
-  const result = await listLinksForUser({
+  const result = await listLinksForUserService({
     userId,
     limit,
     skip,
@@ -136,7 +139,7 @@ export const updateShortUrl = asyncHandler(async (req, res, next) => {
     updates.short_url = normalizeSlug(updates.short_url);
   }
 
-  const updated = await updateOwnedShortUrl({ userId, id, updates });
+  const updated = await updateOwnedShortUrlService({ userId, id, updates });
 
   if (!updated) {
     return next(new NotFoundError('URL not found'));
@@ -160,7 +163,7 @@ export const deleteShortUrl = asyncHandler(async (req, res, _next) => {
   const { id } = req.validatedParams;
   const userId = req.user._id;
 
-  await softDeleteLink({ userId, id });
+  await softDeleteLinkService({ userId, id });
 
   res.json(successResponse(SUCCESS_MESSAGES.URL.DELETED));
 });
@@ -182,7 +185,7 @@ export const bulkDeleteUrls = asyncHandler(async (req, res, _next) => {
   const { ids } = req.validatedBody;
   const userId = req.user._id;
 
-  const result = await softDeleteLinks({ userId, ids });
+  const result = await softDeleteLinksService({ userId, ids });
 
   if (result.deletedCount === 0) {
     throw new AppError('No matching URLs found to delete', 404, true, {
@@ -191,21 +194,18 @@ export const bulkDeleteUrls = asyncHandler(async (req, res, _next) => {
   }
 
   res.json(
-    successResponse(
-      `Deleted ${result.deletedCount} of ${ids.length} URL(s)`,
-      {
-        deletedCount: result.deletedCount,
-        deletedIds: result.deletedIds,
-        skippedIds: result.skippedIds.map((entry) => entry.id)
-      }
-    )
+    successResponse(`Deleted ${result.deletedCount} of ${ids.length} URL(s)`, {
+      deletedCount: result.deletedCount,
+      deletedIds: result.deletedIds,
+      skippedIds: result.skippedIds.map((entry) => entry.id)
+    })
   );
 });
 
 export const getUrlStats = asyncHandler(async (req, res, _next) => {
   const userId = req.user._id;
 
-  const result = await getStatsForUser({ userId });
+  const result = await getStatsForUserService({ userId });
 
   res.json(successResponse('URL stats fetched', result));
 });

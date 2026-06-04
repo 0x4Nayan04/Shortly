@@ -1,8 +1,7 @@
-/* eslint-disable react-refresh/only-export-components */
-import { lazy } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { lazy, useCallback } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { ROUTES } from '../constants/routes';
+import { getSafeReturnPath, ROUTES } from '../constants/routes';
 
 const LoginForm = lazy(() => import('../components/LoginForm'));
 const RegisterForm = lazy(() => import('../components/RegisterForm'));
@@ -12,11 +11,18 @@ const VerifyEmail = lazy(() => import('../components/VerifyEmail'));
 
 export function LoginRoute() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { login } = useAuth();
+  const returnTo = getSafeReturnPath(searchParams.get('returnTo'));
+
+  const handleLoginSuccess = useCallback(
+    (response) => login(response, { returnTo }),
+    [login, returnTo]
+  );
 
   return (
     <LoginForm
-      onLoginSuccess={login}
+      onLoginSuccess={handleLoginSuccess}
       switchToRegister={() => navigate(ROUTES.REGISTER)}
       switchToForgotPassword={() => navigate(ROUTES.FORGOT_PASSWORD)}
     />
@@ -38,9 +44,7 @@ export function RegisterRoute() {
 export function ForgotPasswordRoute() {
   const navigate = useNavigate();
 
-  return (
-    <ForgotPassword switchToLogin={() => navigate(ROUTES.LOGIN)} />
-  );
+  return <ForgotPassword switchToLogin={() => navigate(ROUTES.LOGIN)} />;
 }
 
 export function ResetPasswordRoute() {
@@ -50,37 +54,3 @@ export function ResetPasswordRoute() {
 export function VerifyEmailRoute() {
   return <VerifyEmail />;
 }
-
-export const AUTH_PAGE_HANDLES = {
-  login: {
-    sectionLabel: 'SIGN IN',
-    headingId: 'login-heading',
-    loadingMessage: 'Loading sign in form',
-    skeletonVariant: 'login'
-  },
-  register: {
-    sectionLabel: 'REGISTER',
-    headingId: 'register-heading',
-    loadingMessage: 'Loading sign up form',
-    skeletonVariant: 'register'
-  },
-  forgotPassword: {
-    sectionLabel: 'RESET',
-    headingId: 'forgot-heading',
-    loadingMessage: 'Loading password reset form',
-    skeletonVariant: 'compact'
-  },
-  resetPassword: {
-    sectionLabel: 'NEW PASSWORD',
-    headingId: 'reset-heading',
-    loadingMessage: 'Loading new password form',
-    skeletonVariant: 'login',
-    skeletonForgotRow: false
-  },
-  verifyEmail: {
-    sectionLabel: 'VERIFY',
-    headingId: 'verify-heading',
-    loadingMessage: 'Verifying your email',
-    skeletonVariant: 'compact'
-  }
-};

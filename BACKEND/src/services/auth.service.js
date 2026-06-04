@@ -16,7 +16,7 @@ import { logger } from '../utils/logger.js';
 const GENERIC_RESEND_VERIFICATION_MESSAGE =
   'If your account needs verification, a new link has been sent.';
 
-export const registerUser = async ({ name, email, password }) => {
+export const registerUserService = async ({ name, email, password }) => {
   const existing = await findUserByEmail(email);
   if (existing) {
     throw new AppError('User already exists with this email', 409);
@@ -43,7 +43,7 @@ export const registerUser = async ({ name, email, password }) => {
   }
 };
 
-export const resendVerificationEmail = async ({ email }) => {
+export const resendVerificationEmailService = async ({ email }) => {
   const user = await findUserByEmail(email);
 
   if (!user || user.isEmailVerified !== false) {
@@ -70,7 +70,7 @@ export const resendVerificationEmail = async ({ email }) => {
   return { message: GENERIC_RESEND_VERIFICATION_MESSAGE };
 };
 
-export const verifyEmail = async ({ token }) => {
+export const verifyEmailService = async ({ token }) => {
   const user = await findByVerificationToken(token);
   if (!user) {
     throw new AppError('Invalid or expired verification token', 400);
@@ -84,7 +84,7 @@ export const verifyEmail = async ({ token }) => {
   return { user };
 };
 
-export const loginUser = async ({ email, password }) => {
+export const loginUserService = async ({ email, password }) => {
   const user = await findUserByEmail(email);
 
   if (!user) {
@@ -108,7 +108,7 @@ export const loginUser = async ({ email, password }) => {
   return { token, user };
 };
 
-export const logoutUser = async ({ token }) => {
+export const logoutUserService = async ({ token }) => {
   if (!token) return;
 
   const decoded = await verifyToken(token).catch(() => null);

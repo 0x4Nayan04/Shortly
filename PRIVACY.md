@@ -1,4 +1,4 @@
-# Privacy Manifesto
+# Privacy Policy
 
 Shortly is built as a privacy-first URL shortener. We collect the smallest
 amount of data needed to provide useful analytics, and we never sell or share
@@ -15,6 +15,11 @@ For each redirect, we record:
 
 We do not store raw IP addresses. We use the IP address only at request time to
 derive a country and discard it immediately.
+
+**Registered accounts:** We store your name, email, and password hash so you can
+sign in and manage your links. Session auth uses an HTTP-only cookie (not used
+to track visitors). Email addresses are used for verification and password reset
+when email is enabled.
 
 **Click counts:** We send the redirect first, then record the visit. This keeps
 links fast. In rare cases — for example, if someone closes the tab very quickly
@@ -42,11 +47,18 @@ perfectly exact counts.
 
 ## Your Control
 
-- If you delete a short URL, its analytics are deleted along with it.
+- Deleting a short URL hides it from your dashboard immediately, but the
+  underlying link record, lifetime click counter, and raw click events remain in
+  storage until the 30-day TTL expires. To remove your data sooner, delete your
+  account.
 - You can request deletion of your account and associated data at any time.
+  Account deletion removes your user record, short URLs, and click data in a
+  single transactional flow on the server.
 
 ## Transparency
 
 - This policy will be updated whenever we change our analytics collection or
   retention practices.
 - We will always document what changes and why.
+
+_Last updated: June 2026_

@@ -3,76 +3,73 @@ import {
   createContext,
   lazy,
   Suspense,
+  use,
   useCallback,
-  useContext,
   useEffect,
   useMemo,
-  useState
+  useState,
+  useSyncExternalStore
 } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useUrlStats } from '../hooks/useUrlStats';
 import { getCurrentUser, logoutUser } from '../api/user.api';
 import { useAnnouncement } from '../components/Accessibility';
-import {
-  ConfirmDialog,
-  showToast,
-  useConfirmDialog
-} from '../components/UxEnhancements';
+import { ConfirmDialog, useConfirmDialog } from '../components/UxEnhancements';
+import { showToast } from '../utils/showToast';
 import { ROUTES } from '../constants/routes';
 import { getApiPayload } from '../utils/axiosInstance';
 import { claimStoredAnonymousLinks } from '../utils/claimAnonymousLinks';
+import {
+  clearAuthSessionUser,
+  getAuthSessionServerSnapshot,
+  getAuthSessionSnapshot,
+  refreshAuthSessionUser,
+  setAuthSessionUser,
+  subscribeAuthSession
+} from './authSessionStore';
 
 const UserProfileModal = lazy(() => import('../components/UserProfileModal'));
 
-const PROTECTED_ROUTE_PRELOADS = {
-  [ROUTES.DASHBOARD]: () => import('../components/Dashboard'),
-  [ROUTES.SETTINGS]: () => import('../components/AccountSettings')
-};
+const PROFILE_LOAD_ERROR =
+  'Signed in but could not load your profile. Please try again.';
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [authChecked, setAuthChecked] = useState(false);
+  const { user, authChecked } = useSyncExternalStore(
+    subscribeAuthSession,
+    getAuthSessionSnapshot,
+    getAuthSessionServerSnapshot
+  );
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [announcement, announce] = useAnnouncement();
   const confirmLogout = useConfirmDialog();
   const navigate = useNavigate();
-  const location = useLocation();
 
-  const { stats, refetch: refetchUserStats } = useUrlStats();
+  const {
+    stats,
+    loading: statsFetchLoading,
+    hasFetched: statsHasFetched,
+    refetch: refetchStats,
+    reset: resetStats
+  } = useUrlStats();
+
+  const statsLoading = Boolean(
+    user?._id && (statsFetchLoading || !statsHasFetched)
+  );
 
   useEffect(() => {
-    let cancelled = false;
-    const routePreload =
-      PROTECTED_ROUTE_PRELOADS[location.pathname]?.() ?? Promise.resolve();
-
-    const checkAuthStatus = async () => {
-      const response = await getCurrentUser().catch(() => null);
-      if (!cancelled) {
-        const userData = response ? getApiPayload(response)?.user : null;
-        if (userData) {
-          setUser(userData);
-          await claimStoredAnonymousLinks();
-        }
-      }
-      await routePreload;
-      if (!cancelled) {
-        setAuthChecked(true);
-      }
-    };
-
-    checkAuthStatus();
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only session check
-  }, []);
+    if (user?._id) {
+      refetchStats();
+    } else {
+      resetStats();
+    }
+  }, [user?._id, refetchStats, resetStats]);
 
   useEffect(() => {
     const handler = (event) => {
       showToast.error('Session expired. Please sign in again.');
-      setUser(null);
+      clearAuthSessionUser();
       const returnTo = event.detail?.returnTo;
       if (returnTo) {
         navigate(`${ROUTES.LOGIN}?returnTo=${returnTo}`, { replace: true });
@@ -85,29 +82,21 @@ export function AuthProvider({ children }) {
   }, [navigate]);
 
   const login = useCallback(
-    async (response) => {
-      const userData = getApiPayload(response)?.user;
-      if (userData) {
-        setUser(userData);
-      } else {
+    async (response, { returnTo } = {}) => {
+      let userData = getApiPayload(response)?.user;
+      if (!userData) {
         try {
           const current = await getCurrentUser();
-          const currentUser = getApiPayload(current)?.user;
-          if (currentUser) {
-            setUser(currentUser);
-          } else {
-            showToast.error(
-              'Signed in but could not load your profile. Please try again.'
-            );
-            return;
-          }
+          userData = getApiPayload(current)?.user;
         } catch {
-          showToast.error(
-            'Signed in but could not load your profile. Please try again.'
-          );
+          userData = null;
+        }
+        if (!userData) {
+          showToast.error(PROFILE_LOAD_ERROR);
           return;
         }
       }
+      setAuthSessionUser(userData);
 
       const claimResult = await claimStoredAnonymousLinks();
       if (claimResult.claimed.length > 0) {
@@ -116,19 +105,29 @@ export function AuthProvider({ children }) {
         );
       }
 
-      announce('Successfully signed in. Redirecting to dashboard.');
-      showToast.success('Welcome back! You have been signed in.');
-      navigate(ROUTES.DASHBOARD);
+      const destination = returnTo ?? ROUTES.DASHBOARD;
+      showToast.success('Welcome back!');
+      announce(
+        returnTo
+          ? 'Returning to your previous page.'
+          : 'Redirecting to dashboard.'
+      );
+      navigate(destination);
     },
     [navigate, announce]
   );
 
   const updateUser = useCallback((updatedUser) => {
-    setUser(updatedUser);
+    const current = getAuthSessionSnapshot().user;
+    setAuthSessionUser(
+      current && updatedUser ? { ...current, ...updatedUser } : updatedUser
+    );
   }, []);
 
+  const refreshUser = useCallback(() => refreshAuthSessionUser(), []);
+
   const handleAccountDeleted = useCallback(() => {
-    setUser(null);
+    clearAuthSessionUser();
     navigate(ROUTES.HOME);
   }, [navigate]);
 
@@ -150,7 +149,7 @@ export function AuthProvider({ children }) {
     if (loggedOut) {
       showToast.success('You have been signed out.');
     }
-    setUser(null);
+    clearAuthSessionUser();
     announce('You have been signed out.');
     navigate(ROUTES.HOME);
   }, [navigate, announce, confirmLogout]);
@@ -160,9 +159,9 @@ export function AuthProvider({ children }) {
   const openRegister = useCallback(() => navigate(ROUTES.REGISTER), [navigate]);
 
   const openProfile = useCallback(() => {
-    refetchUserStats();
+    refetchStats();
     setShowProfileModal(true);
-  }, [refetchUserStats]);
+  }, [refetchStats]);
 
   const closeProfile = useCallback(() => setShowProfileModal(false), []);
 
@@ -170,9 +169,13 @@ export function AuthProvider({ children }) {
     () => ({
       user,
       authChecked,
+      stats,
+      statsLoading,
+      refetchStats,
       login,
       logout,
       updateUser,
+      refreshUser,
       handleAccountDeleted,
       openLogin,
       openRegister,
@@ -183,9 +186,13 @@ export function AuthProvider({ children }) {
     [
       user,
       authChecked,
+      stats,
+      statsLoading,
+      refetchStats,
       login,
       logout,
       updateUser,
+      refreshUser,
       handleAccountDeleted,
       openLogin,
       openRegister,
@@ -214,7 +221,7 @@ export function AuthProvider({ children }) {
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext);
+  const context = use(AuthContext);
   if (!context) {
     throw new Error('useAuth must be used within AuthProvider');
   }

@@ -12,87 +12,73 @@ const NotFound = () => {
   return (
     <AppCatalogShell>
       <AppNavbar />
-      <main
-        id='main-content'
-        className='flex-1'>
+      <main id="main-content" className="flex-1">
         <LandingSectionBlock>
-          <LandingFrameInner className='py-12'>
-            <div className='mx-auto max-w-md text-center'>
-              <div className='mx-auto mb-6 size-20 bg-[var(--color-blue-tint)] border border-border flex items-center justify-center'>
-                <span className='font-display text-4xl font-medium tracking-display text-primary'>
+          <LandingFrameInner className="py-12">
+            <div className="mx-auto max-w-md text-center">
+              <div className="mx-auto mb-6 size-20 bg-[var(--color-blue-tint)] border border-border flex items-center justify-center">
+                <span className="font-display text-4xl font-medium tracking-display text-primary">
                   404
                 </span>
               </div>
-              <h1 className='font-display text-2xl font-medium text-ink mb-2'>
+              <h1 className="font-display text-2xl font-medium text-ink mb-2">
                 Page not found
               </h1>
-              <p className='text-muted-strong mb-1'>
+              <p className="text-muted-strong mb-1">
                 The page you're looking for doesn't exist or has been moved.
               </p>
-              <p className='text-sm text-muted mb-8'>
+              <p className="text-sm text-muted mb-8">
                 Check the URL for typos or use a link below.
               </p>
-              <div className='flex flex-col sm:flex-row gap-3 justify-center'>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <button
-                  type='button'
+                  type="button"
                   onClick={() => navigate(-1)}
-                  className='sm-btn sm-btn-secondary inline-flex items-center justify-center gap-2'>
-                  <ArrowLeft
-                    className='size-4'
-                    aria-hidden='true'
-                  />
+                  className="sm-btn sm-btn-secondary inline-flex items-center justify-center gap-2"
+                >
+                  <ArrowLeft className="size-4" aria-hidden="true" />
                   Go back
                 </button>
                 <Link
-                  to='/'
-                  className='sm-btn sm-btn-primary inline-flex items-center justify-center gap-2'>
-                  <Home
-                    className='size-4'
-                    aria-hidden='true'
-                  />
+                  to="/"
+                  className="sm-btn sm-btn-primary inline-flex items-center justify-center gap-2"
+                >
+                  <Home className="size-4" aria-hidden="true" />
                   Home page
                 </Link>
               </div>
-              <div className='mt-8 border-t border-border pt-6'>
-                <p className='text-sm text-muted mb-3'>
+              <div className="mt-8 border-t border-border pt-6">
+                <p className="text-sm text-muted mb-3">
                   Try these pages instead:
                 </p>
-                <div className='flex flex-wrap gap-2 justify-center'>
+                <div className="flex flex-wrap gap-2 justify-center">
                   <Link
-                    to='/'
-                    className='landing-text-link inline-flex items-center gap-1 text-sm'>
+                    to="/"
+                    className="landing-text-link inline-flex items-center gap-1 text-sm"
+                  >
                     URL Shortener{' '}
-                    <ExternalLink
-                      className='size-3'
-                      aria-hidden='true'
-                    />
+                    <ExternalLink className="size-3" aria-hidden="true" />
                   </Link>
                   <Link
-                    to='/login'
-                    className='landing-text-link inline-flex items-center gap-1 text-sm'>
+                    to="/login"
+                    className="landing-text-link inline-flex items-center gap-1 text-sm"
+                  >
                     Sign in{' '}
-                    <ExternalLink
-                      className='size-3'
-                      aria-hidden='true'
-                    />
+                    <ExternalLink className="size-3" aria-hidden="true" />
                   </Link>
                   <Link
-                    to='/register'
-                    className='landing-text-link inline-flex items-center gap-1 text-sm'>
+                    to="/register"
+                    className="landing-text-link inline-flex items-center gap-1 text-sm"
+                  >
                     Sign up{' '}
-                    <ExternalLink
-                      className='size-3'
-                      aria-hidden='true'
-                    />
+                    <ExternalLink className="size-3" aria-hidden="true" />
                   </Link>
                   <Link
-                    to='/privacy'
-                    className='landing-text-link inline-flex items-center gap-1 text-sm'>
+                    to="/privacy"
+                    className="landing-text-link inline-flex items-center gap-1 text-sm"
+                  >
                     Privacy{' '}
-                    <ExternalLink
-                      className='size-3'
-                      aria-hidden='true'
-                    />
+                    <ExternalLink className="size-3" aria-hidden="true" />
                   </Link>
                 </div>
               </div>

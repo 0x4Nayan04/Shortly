@@ -1,32 +1,42 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useReducer } from 'react';
 import { Mail } from 'lucide-react';
-import AuthSubmitButton from './AuthSubmitButton';
 import { registerUser, resendVerificationEmail } from '../api/user.api';
 import { getApiErrorMessage } from '../utils/axiosInstance';
 import {
-  formAlertClass,
-  formSuccessIconWrapClass,
-  getDesignInputClass
-} from '../utils/designFormClasses';
-import { validators } from '../utils/validation';
-import { mapBackendFieldErrors } from '../utils/apiErrors';
+  validators,
+  makeConfirmPasswordRevalidator
+} from '../utils/validation';
+import { handleApiFormError } from '../utils/apiErrors';
 import { useFormValidation } from '../hooks/useFormValidation';
 import { useUnsavedNavigationGuard } from '../hooks/useUnsavedNavigationGuard';
-import PasswordVisibilityToggle from './PasswordVisibilityToggle';
-import { showToast, useOnlineStatus, ConfirmDialog } from './UxEnhancements';
+import { useOnlineStatus } from './UxEnhancements';
+import { ConfirmDialog } from './ux/confirmDialog';
+import { showToast } from '../utils/showToast';
+import FormAlert from './forms/FormAlert';
+import SuccessPanel from './forms/SuccessPanel';
+import VerificationActions from './auth/VerificationActions';
+import RegisterFormFields from './auth/RegisterFormFields';
+import {
+  registerInitialState,
+  registerReducer
+} from './auth/registerFormState';
 
 const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [verificationPending, setVerificationPending] = useState(false);
-  const [registeredEmail, setRegisteredEmail] = useState('');
-  const [resendingVerification, setResendingVerification] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [state, dispatch] = useReducer(registerReducer, registerInitialState);
+  const {
+    name,
+    email,
+    password,
+    confirmPassword,
+    loading,
+    error,
+    verificationPending,
+    registeredEmail,
+    resendingVerification,
+    showPassword,
+    showConfirmPassword
+  } = state;
+
   const { isOnline } = useOnlineStatus();
 
   const getRules = useCallback(
@@ -51,17 +61,7 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
     ['name', 'email', 'password', 'confirmPassword'],
     getRules,
     {
-      onAfterFieldChange: (field, values, { setFieldErrors, getTouched }) => {
-        if (field === 'password' && getTouched().confirmPassword) {
-          setFieldErrors((prev) => ({
-            ...prev,
-            confirmPassword: validators.confirmPassword(
-              values.confirmPassword,
-              values.password
-            )
-          }));
-        }
-      }
+      onAfterFieldChange: makeConfirmPasswordRevalidator()
     }
   );
 
@@ -70,16 +70,44 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
   const unsavedDialog = useUnsavedNavigationGuard(hasUnsavedChanges);
 
   const formValues = { name, email, password, confirmPassword };
-
-  const updateField = (field, value, setter) => {
-    setter(value);
+  const onPasswordChange = (e) => {
+    const value = e.target.value;
+    dispatch({ type: 'SET_FIELD', field: 'password', value });
     onFieldChange(
-      field,
-      { ...formValues, [field]: value },
-      {
-        clearError: () => setError('')
-      }
+      'password',
+      { ...formValues, password: value },
+      { clearError: () => dispatch({ type: 'SET_ERROR', value: '' }) }
     );
+  };
+  const onConfirmPasswordChange = (e) => {
+    const value = e.target.value;
+    dispatch({ type: 'SET_FIELD', field: 'confirmPassword', value });
+    onFieldChange(
+      'confirmPassword',
+      { ...formValues, confirmPassword: value },
+      { clearError: () => dispatch({ type: 'SET_ERROR', value: '' }) }
+    );
+  };
+
+  const handleRegisterSuccess = (response) => {
+    if (response.user?.isEmailVerified === false) {
+      dispatch({ type: 'SET_VERIFICATION_PENDING', value: true, email });
+      showToast.success(
+        response.message ||
+          'Account created. Please verify your email before signing in.'
+      );
+      return;
+    }
+    showToast.success(response.message || 'Account created successfully!');
+    if (onRegisterSuccess) onRegisterSuccess(response);
+    dispatch({ type: 'REGISTER_SUCCESS' });
+    resetValidation();
+  };
+
+  const handleRegisterFailure = (response) => {
+    const message = response.message || 'Registration failed';
+    dispatch({ type: 'SET_ERROR', value: message });
+    showToast.error(message);
   };
 
   const handleSubmit = async (e) => {
@@ -89,69 +117,38 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
       showToast.error("You're offline. Cannot create account.");
       return;
     }
+    if (!validateAll(formValues).valid) return;
 
-    if (!validateAll(formValues).valid) {
-      return;
-    }
-
-    setLoading(true);
-    setError('');
+    dispatch({ type: 'REGISTER_START' });
 
     try {
       const response = await registerUser(name, email, password);
-
       if (response.success !== false && response.user) {
-        const needsVerification = response.user.isEmailVerified === false;
-
-        if (needsVerification) {
-          setRegisteredEmail(email);
-          setVerificationPending(true);
-          showToast.success(
-            response.message ||
-              'Account created. Please verify your email before signing in.'
-          );
-          return;
-        }
-
-        showToast.success(response.message || 'Account created successfully!');
-        if (onRegisterSuccess) {
-          onRegisterSuccess(response);
-        }
-
-        setName('');
-        setEmail('');
-        setPassword('');
-        setConfirmPassword('');
-        resetValidation();
+        handleRegisterSuccess(response);
       } else {
-        setError(response.message || 'Registration failed');
-        showToast.error(response.message || 'Registration failed');
+        handleRegisterFailure(response);
       }
     } catch (err) {
-      const data = err?.response ? err.response.data : err;
-      if (data && typeof data === 'object' && Array.isArray(data.errors)) {
-        const backendErrors = mapBackendFieldErrors(data.errors);
-        mergeFieldErrors(backendErrors);
-        showToast.error('Please check the form for errors.');
-      } else {
-        const errorMsg = getApiErrorMessage(err, 'Registration failed');
-        setError(errorMsg);
-        showToast.error(errorMsg);
-      }
+      handleApiFormError(
+        err,
+        {
+          setError: (val) => dispatch({ type: 'SET_ERROR', value: val }),
+          mergeFieldErrors
+        },
+        { fallbackMessage: 'Registration failed' }
+      );
     } finally {
-      setLoading(false);
+      dispatch({ type: 'SET_LOADING', value: false });
     }
   };
 
   const handleResendVerification = async () => {
     if (!registeredEmail) return;
-
     if (!isOnline) {
       showToast.error("You're offline. Cannot resend verification email.");
       return;
     }
-
-    setResendingVerification(true);
+    dispatch({ type: 'SET_RESENDING_VERIFICATION', value: true });
     try {
       const response = await resendVerificationEmail(registeredEmail);
       showToast.success(
@@ -163,270 +160,72 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
         getApiErrorMessage(err, 'Failed to resend verification email.')
       );
     } finally {
-      setResendingVerification(false);
+      dispatch({ type: 'SET_RESENDING_VERIFICATION', value: false });
     }
   };
 
   if (verificationPending) {
     return (
-      <div className='app-panel text-center'>
-        <div className={formSuccessIconWrapClass}>
-          <Mail
-            className='size-8 text-primary'
-            aria-hidden='true'
+      <SuccessPanel
+        icon={<Mail className="size-8 text-primary" aria-hidden="true" />}
+        heading="Check your email"
+        message={
+          <>
+            We sent a verification link to{' '}
+            <strong className="text-ink">{registeredEmail}</strong>. Open it to
+            activate your account, then sign in.
+          </>
+        }
+        actions={
+          <VerificationActions
+            resending={resendingVerification}
+            onResend={handleResendVerification}
+            onSwitchToLogin={switchToLogin}
           />
-        </div>
-        <h2 className='font-display text-xl font-medium tracking-display text-ink mb-2'>
-          Check your email
-        </h2>
-        <p className='text-muted-strong mb-6'>
-          We sent a verification link to{' '}
-          <strong className='text-ink'>{registeredEmail}</strong>. Open it to
-          activate your account, then sign in.
-        </p>
-        <div className='flex flex-col gap-3 sm:flex-row sm:justify-center'>
-          <button
-            type='button'
-            onClick={handleResendVerification}
-            disabled={resendingVerification}
-            className='sm-btn sm-btn-secondary disabled:opacity-50'>
-            {resendingVerification ? 'Sending…' : 'Resend verification email'}
-          </button>
-          <button
-            type='button'
-            onClick={switchToLogin}
-            className='sm-btn sm-btn-primary'>
-            Go to sign in
-          </button>
-        </div>
-      </div>
+        }
+      />
     );
   }
 
   return (
-    <div className='app-panel'>
-      <div className='mb-6 text-center'>
+    <div className="app-panel">
+      <div className="mb-6 text-center">
         <h2
-          id='register-heading'
-          className='font-display text-xl font-medium tracking-display text-ink sm:text-2xl'>
+          id="register-heading"
+          className="font-display text-xl font-medium tracking-display text-ink sm:text-2xl"
+        >
           Create account
         </h2>
-        <p className='mt-2 text-muted-strong'>Sign up to get started</p>
+        <p className="mt-2 text-muted-strong">Sign up to get started</p>
       </div>
 
-      <form
+      <RegisterFormFields
+        dispatch={dispatch}
+        formValues={formValues}
+        fieldErrors={fieldErrors}
+        touched={touched}
+        handleBlur={handleBlur}
+        onFieldChange={onFieldChange}
+        onPasswordChange={onPasswordChange}
+        onConfirmPasswordChange={onConfirmPasswordChange}
+        showPassword={showPassword}
+        showConfirmPassword={showConfirmPassword}
+        loading={loading}
         onSubmit={handleSubmit}
-        className='space-y-4'
-        aria-labelledby='register-heading'>
-        <div>
-          <label
-            htmlFor='name'
-            className='sm-label'>
-            Full name
-          </label>
-          <input
-            id='name'
-            type='text'
-            value={name}
-            onChange={(e) => updateField('name', e.target.value, setName)}
-            onBlur={() => handleBlur('name', formValues)}
-            placeholder='Enter your full name'
-            className={getDesignInputClass({
-              hasError: touched.name && fieldErrors.name
-            })}
-            aria-invalid={touched.name && fieldErrors.name ? 'true' : 'false'}
-            aria-describedby={fieldErrors.name ? 'name-error' : undefined}
-          />
-          {touched.name && fieldErrors.name && (
-            <p
-              id='name-error'
-              className='sm-field-error'
-              role='alert'>
-              {fieldErrors.name}
-            </p>
-          )}
-        </div>
+      />
 
-        <div>
-          <label
-            htmlFor='email'
-            className='sm-label'>
-            Email address
-          </label>
-          <input
-            id='email'
-            type='email'
-            value={email}
-            onChange={(e) => updateField('email', e.target.value, setEmail)}
-            onBlur={() => handleBlur('email', formValues)}
-            placeholder='Enter your email'
-            className={getDesignInputClass({
-              hasError: touched.email && fieldErrors.email
-            })}
-            aria-invalid={touched.email && fieldErrors.email ? 'true' : 'false'}
-            aria-describedby={fieldErrors.email ? 'email-error' : undefined}
-          />
-          {touched.email && fieldErrors.email && (
-            <p
-              id='email-error'
-              className='sm-field-error'
-              role='alert'>
-              {fieldErrors.email}
-            </p>
-          )}
-        </div>
-
-        <div>
-          <label
-            htmlFor='password'
-            className='sm-label'>
-            Password
-          </label>
-          <div className='relative'>
-            <input
-              id='password'
-              type={showPassword ? 'text' : 'password'}
-              value={password}
-              onChange={(e) =>
-                updateField('password', e.target.value, setPassword)
-              }
-              onBlur={() => handleBlur('password', formValues)}
-              placeholder='Enter your password'
-              className={getDesignInputClass({
-                hasError: touched.password && fieldErrors.password,
-                className: 'pr-12'
-              })}
-              aria-invalid={
-                touched.password && fieldErrors.password ? 'true' : 'false'
-              }
-              aria-describedby={
-                fieldErrors.password ? 'password-error' : undefined
-              }
-            />
-            <PasswordVisibilityToggle
-              visible={showPassword}
-              onToggle={() => setShowPassword(!showPassword)}
-            />
-          </div>
-          {password.length > 0 && password.length < 6 && (
-            <p
-              className={`mt-1 text-sm ${touched.password && fieldErrors.password ? 'sm-field-error !mt-1' : 'text-muted'}`}
-              role={
-                touched.password && fieldErrors.password ? 'alert' : undefined
-              }>
-              {touched.password && fieldErrors.password
-                ? fieldErrors.password
-                : 'Password must be at least 6 characters'}
-            </p>
-          )}
-          {password.length >= 6 && (
-            <div className='mt-2'>
-              <div className='flex gap-1'>
-                {[
-                  password.length >= 8,
-                  /[A-Z]/.test(password),
-                  /[a-z]/.test(password),
-                  /[0-9]/.test(password),
-                  /[^A-Za-z0-9]/.test(password)
-                ].map((met, i) => (
-                  <div
-                    key={i}
-                    className={`h-1.5 flex-1 transition-colors ${
-                      met ? 'bg-primary' : 'bg-border'
-                    }`}
-                  />
-                ))}
-              </div>
-              <p className='mt-1 text-xs text-muted'>
-                {password.length >= 8 &&
-                /[A-Z]/.test(password) &&
-                /[0-9]/.test(password) &&
-                /[^A-Za-z0-9]/.test(password)
-                  ? 'Strong password'
-                  : password.length >= 8 && /[A-Z]/.test(password)
-                    ? 'Medium password'
-                    : 'Add uppercase, number, and special char for a stronger password'}
-              </p>
-            </div>
-          )}
-        </div>
-
-        <div>
-          <label
-            htmlFor='confirmPassword'
-            className='sm-label'>
-            Confirm password
-          </label>
-          <div className='relative'>
-            <input
-              id='confirmPassword'
-              type={showConfirmPassword ? 'text' : 'password'}
-              value={confirmPassword}
-              onChange={(e) =>
-                updateField(
-                  'confirmPassword',
-                  e.target.value,
-                  setConfirmPassword
-                )
-              }
-              onBlur={() => handleBlur('confirmPassword', formValues)}
-              placeholder='Confirm your password'
-              className={getDesignInputClass({
-                hasError:
-                  touched.confirmPassword && fieldErrors.confirmPassword,
-                className: 'pr-12'
-              })}
-              aria-invalid={
-                touched.confirmPassword && fieldErrors.confirmPassword
-                  ? 'true'
-                  : 'false'
-              }
-              aria-describedby={
-                fieldErrors.confirmPassword
-                  ? 'confirmPassword-error'
-                  : undefined
-              }
-            />
-            <PasswordVisibilityToggle
-              visible={showConfirmPassword}
-              onToggle={() => setShowConfirmPassword(!showConfirmPassword)}
-            />
-          </div>
-          {touched.confirmPassword && fieldErrors.confirmPassword && (
-            <p
-              id='confirmPassword-error'
-              className='sm-field-error'
-              role='alert'>
-              {fieldErrors.confirmPassword}
-            </p>
-          )}
-        </div>
-
-        <AuthSubmitButton
-          loading={loading}
-          loadingLabel='Creating account…'>
-          Create account
-        </AuthSubmitButton>
-      </form>
-
-      {error && (
-        <div
-          className={formAlertClass}
-          role='alert'
-          aria-live='assertive'>
-          {error}
-        </div>
-      )}
+      <FormAlert error={error} />
 
       <ConfirmDialog {...unsavedDialog} />
 
-      <div className='mt-6 text-center'>
-        <p className='text-sm text-muted-strong'>
+      <div className="mt-6 text-center">
+        <p className="text-sm text-muted-strong">
           Already have an account?{' '}
           <button
-            type='button'
+            type="button"
             onClick={switchToLogin}
-            className='landing-text-link font-medium'>
+            className="landing-text-link font-medium"
+          >
             Sign in here
           </button>
         </p>

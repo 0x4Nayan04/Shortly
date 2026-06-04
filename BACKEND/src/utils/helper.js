@@ -1,5 +1,5 @@
-import jwt from "jsonwebtoken";
-import { nanoid } from "nanoid";
+import jwt from 'jsonwebtoken';
+import { nanoid } from 'nanoid';
 
 export const generateNanoId = (length) => {
   return nanoid(length);
@@ -7,7 +7,7 @@ export const generateNanoId = (length) => {
 
 export const signToken = (payload) => {
   return jwt.sign(payload, process.env.JWT_SECRET, {
-    expiresIn: "1d",
+    expiresIn: '1d'
   });
 };
 

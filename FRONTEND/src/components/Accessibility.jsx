@@ -8,7 +8,8 @@ export const SkipLink = ({
   return (
     <a
       href={`#${targetId}`}
-      className='sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] sm-btn sm-btn-primary focus-ring'>
+      className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] sm-btn sm-btn-primary focus-ring"
+    >
       {children}
     </a>
   );
@@ -20,13 +21,9 @@ export const LiveRegion = ({
   atomic = true
 }) => {
   return (
-    <div
-      role='status'
-      aria-live={politeness}
-      aria-atomic={atomic}
-      className='sr-only'>
+    <output aria-live={politeness} aria-atomic={atomic} className="sr-only">
       {message}
-    </div>
+    </output>
   );
 };
 
@@ -45,15 +42,14 @@ export const useFocusTrap = (isActive, options = {}) => {
   const containerRef = useRef(null);
   const previousFocusRef = useRef(null);
   const onEscapeRef = useRef(null);
-  const restoreFocusRef = useRef(true);
 
   const { onEscape, restoreFocus = true } = options;
   onEscapeRef.current = onEscape;
-  restoreFocusRef.current = restoreFocus;
 
   useEffect(() => {
     if (!isActive || !containerRef.current) return;
 
+    const shouldRestoreFocus = restoreFocus;
     previousFocusRef.current = document.activeElement;
 
     const container = containerRef.current;
@@ -97,18 +93,11 @@ export const useFocusTrap = (isActive, options = {}) => {
 
     return () => {
       container.removeEventListener('keydown', handleKeyDown);
-      if (restoreFocusRef.current && previousFocusRef.current) {
+      if (shouldRestoreFocus && previousFocusRef.current) {
         previousFocusRef.current.focus();
       }
     };
-  }, [isActive]);
+  }, [isActive, restoreFocus]);
 
   return containerRef;
-};
-
-export default {
-  SkipLink,
-  LiveRegion,
-  useAnnouncement,
-  useFocusTrap
 };

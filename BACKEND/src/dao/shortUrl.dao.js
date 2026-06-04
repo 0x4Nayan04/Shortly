@@ -3,14 +3,15 @@ import { SLUG_RECLAIM_DAYS } from '../constants/shortUrlLimits.js';
 import { normalizeSlug } from '../utils/normalizeSlug.js';
 import { escapeRegExp } from '../utils/escapeRegExp.js';
 
-export const ACTIVE_LINK_FILTER = { deletedAt: null };
+const ACTIVE_LINK_FILTER = { deletedAt: null };
 
 const ACTIVE_AND_ENABLED_FILTER = {
   ...ACTIVE_LINK_FILTER,
   disabled: { $ne: true }
 };
 
-const projectionShortUrlFull = '_id short_url full_url canonical_url click disabled createdAt manage_token';
+const projectionShortUrlFull =
+  '_id short_url full_url canonical_url click disabled createdAt manage_token';
 const projectionForRedirect = '_id full_url';
 
 const reclaimMs = () => SLUG_RECLAIM_DAYS * 24 * 60 * 60 * 1000;
@@ -218,11 +219,7 @@ export const softDeleteManyByIdsAndUser = async (ids, userId) => {
 };
 
 export const incrementClick = async (id, session) =>
-  short_urlModel.updateOne(
-    { _id: id },
-    { $inc: { click: 1 } },
-    { session }
-  );
+  short_urlModel.updateOne({ _id: id }, { $inc: { click: 1 } }, { session });
 
 export const claimAnonymousLink = async (id, userId) =>
   short_urlModel.updateOne(
@@ -231,10 +228,10 @@ export const claimAnonymousLink = async (id, userId) =>
   );
 
 export const softDeleteById = async (id) =>
-  short_urlModel.updateOne(
-    { _id: id },
-    { $set: { deletedAt: new Date() } }
-  );
+  short_urlModel.updateOne({ _id: id }, { $set: { deletedAt: new Date() } });
 
-export const deleteAllForUser = async (userId) =>
-  short_urlModel.deleteMany({ user: userId });
+export const deleteAllForUser = async (userId, session = null) =>
+  short_urlModel.deleteMany(
+    { user: userId },
+    session ? { session } : undefined
+  );

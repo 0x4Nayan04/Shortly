@@ -1,10 +1,12 @@
 import AppCatalogShell from '../components/app/AppCatalogShell';
 import AppNavbar from '../components/app/AppNavbar';
 
+const EMPTY_MAIN_PROPS = {};
+
 const CatalogPageShell = ({
   children,
   mainClassName = 'flex-1',
-  mainProps = {}
+  mainProps = EMPTY_MAIN_PROPS
 }) => {
   const { className: mainPropsClassName, ...restMainProps } = mainProps;
 
@@ -12,12 +14,12 @@ const CatalogPageShell = ({
     <AppCatalogShell>
       <AppNavbar />
       <main
-        id='main-content'
+        id="main-content"
         className={[mainClassName, mainPropsClassName]
           .filter(Boolean)
           .join(' ')}
-        role='main'
-        {...restMainProps}>
+        {...restMainProps}
+      >
         {children}
       </main>
     </AppCatalogShell>

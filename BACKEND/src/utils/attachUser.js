@@ -1,42 +1,30 @@
-import User from '../schema/user.model.js';
-import { verifyToken } from './helper.js';
-import { getTokenFromRequest, isTokenVersionValid } from './authToken.js';
+import {
+  decodeTokenClaims,
+  getTokenFromRequest,
+  resolveUserFromToken
+} from './authToken.js';
 
 export const attachUser = async (req, res, next) => {
   const token = getTokenFromRequest(req);
-  if (!token) {
-    return next();
-  }
+  if (!token) return next();
 
-  try {
-    const decoded = await verifyToken(token);
-    req.authUserId = decoded.id;
-    req.authTokenVersion = decoded.tokenVersion;
-  } catch {
-    return next();
-  }
+  const claims = await decodeTokenClaims(token);
+  if (!claims) return next();
 
+  req.authUserId = claims.id;
+  req.authTokenVersion = claims.tokenVersion;
   next();
 };
 
 export const loadUserIfAuthenticated = async (req, res, next) => {
-  if (!req.authUserId) {
-    return next();
-  }
+  const token = getTokenFromRequest(req);
+  if (!token) return next();
 
-  try {
-    const user = await User.findById(req.authUserId);
-    if (
-      !user ||
-      !isTokenVersionValid(user, { tokenVersion: req.authTokenVersion })
-    ) {
-      return next();
-    }
-    user.password = undefined;
-    req.user = user;
-  } catch {
-    return next();
-  }
+  const resolved = await resolveUserFromToken(req, token);
+  if (resolved.kind !== 'ok') return next();
 
+  req.user = resolved.user;
+  req.authUserId = resolved.user._id;
+  req.authTokenVersion = resolved.user.tokenVersion ?? 0;
   next();
 };

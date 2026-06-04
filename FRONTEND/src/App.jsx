@@ -11,13 +11,10 @@ const App = () => {
   useDocumentMeta(location.pathname);
 
   return (
-    <div className='min-h-screen'>
-      <SkipLink targetId='main-content' />
+    <div className="min-h-screen">
+      <SkipLink targetId="main-content" />
 
-      <LiveRegion
-        message={announcement}
-        politeness='polite'
-      />
+      <LiveRegion message={announcement} politeness="polite" />
 
       <AppRoutes />
     </div>

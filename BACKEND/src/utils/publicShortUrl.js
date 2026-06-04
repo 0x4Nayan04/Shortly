@@ -1,5 +1,4 @@
-// Prefer PUBLIC_BASE_URL when API and redirect hosts differ.
-export function getPublicShortBaseUrl(req) {
+function getPublicShortBaseUrl(req) {
   const configured = process.env.PUBLIC_BASE_URL?.trim();
   if (configured) {
     return configured.replace(/\/$/, '');

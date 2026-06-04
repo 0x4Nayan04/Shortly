@@ -1,61 +1,92 @@
 import { logger } from './logger.js';
 import { classifyError } from './classifyError.js';
+import { duplicateKeyMessageForField } from './duplicateKeyMessages.js';
 
-export const errorHandler = (err, req, res, _next) => {
-  const { category, type } = classifyError(err);
+const buildLogContext = (err, req, category, type) => ({
+  requestId: req?.requestId,
+  method: req?.method,
+  path: req?.originalUrl || req?.url,
+  statusCode: err.statusCode || 500,
+  category,
+  type,
+  ...(process.env.NODE_ENV !== 'production' && { stack: err.stack })
+});
 
-  logger.error(err.message, {
-    requestId: req?.requestId,
-    method: req?.method,
-    path: req?.originalUrl || req?.url,
-    statusCode: err.statusCode || 500,
-    category,
-    type,
-    ...(process.env.NODE_ENV !== 'production' && { stack: err.stack })
-  });
+const logError = (err, req, category, type) => {
+  logger.error(err.message, buildLogContext(err, req, category, type));
+};
 
-  if (err instanceof ValidationError) {
-    return res.status(err.statusCode).json({
-      success: false,
-      message: err.message,
-      errors: err.errors
-    });
+const handleValidationError = (err) => ({
+  status: err.statusCode,
+  body: { success: false, message: err.message, errors: err.errors }
+});
+
+const handleAppError = (err) => ({
+  status: err.statusCode,
+  body: {
+    success: false,
+    message: err.message,
+    ...(err.errors && { errors: err.errors })
   }
+});
 
-  if (err instanceof AppError) {
-    const payload = { success: false, message: err.message };
-    if (err.errors) payload.errors = err.errors;
-    return res.status(err.statusCode).json(payload);
+const mapMongooseFieldErrors = (errors) =>
+  Object.values(errors).map((e) => ({ field: e.path, message: e.message }));
+
+const handleMongooseValidationError = (err) => ({
+  status: 400,
+  body: {
+    success: false,
+    message: 'Validation failed',
+    errors: mapMongooseFieldErrors(err.errors)
   }
+});
 
-  if (err.name === 'ValidationError' && err.errors) {
-    const errors = Object.values(err.errors).map((e) => ({
-      field: e.path,
-      message: e.message
-    }));
-    return res.status(400).json({
-      success: false,
-      message: 'Validation failed',
-      errors
-    });
-  }
+const handleMongoDuplicateError = (err) => {
+  const field = err.keyPattern ? Object.keys(err.keyPattern)[0] : 'field';
+  return {
+    status: 409,
+    body: { success: false, message: duplicateKeyMessageForField(field) }
+  };
+};
 
-  if (err.name === 'MongoServerError' && err.code === 11000) {
-    const field = err.keyPattern ? Object.keys(err.keyPattern)[0] : 'field';
-    const message =
-      field === 'short_url'
-        ? 'This short URL is already taken. Please choose a different one.'
-        : 'A record with this value already exists.';
-    return res.status(409).json({ success: false, message });
-  }
-
-  res.status(500).json({
+const handleGenericError = (err) => ({
+  status: 500,
+  body: {
     success: false,
     message:
       process.env.NODE_ENV === 'production'
         ? 'Internal Server Error'
         : err.message || 'Internal Server Error'
-  });
+  }
+});
+
+const errorResponders = [
+  [(err) => err instanceof ValidationError, handleValidationError],
+  [(err) => err instanceof AppError, handleAppError],
+  [
+    (err) => err.name === 'ValidationError' && err.errors,
+    handleMongooseValidationError
+  ],
+  [
+    (err) => err.name === 'MongoServerError' && err.code === 11000,
+    handleMongoDuplicateError
+  ]
+];
+
+export const errorHandler = (err, req, res, _next) => {
+  const { category, type } = classifyError(err);
+  logError(err, req, category, type);
+
+  for (const [matches, respond] of errorResponders) {
+    if (matches(err)) {
+      const { status, body } = respond(err);
+      return res.status(status).json(body);
+    }
+  }
+
+  const fallback = handleGenericError(err);
+  return res.status(fallback.status).json(fallback.body);
 };
 
 export class AppError extends Error {

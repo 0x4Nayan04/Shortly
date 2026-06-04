@@ -287,5 +287,4 @@
     transition-duration: var(--duration-press);
     transition-timing-function: var(--ease-press);
   }
-
 }

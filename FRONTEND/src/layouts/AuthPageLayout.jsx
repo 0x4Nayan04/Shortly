@@ -24,18 +24,21 @@ const AuthPageLayout = () => {
 
   return (
     <CatalogPageShell
-      mainClassName='flex flex-1 flex-col'
-      mainProps={{ 'aria-labelledby': headingId }}>
+      mainClassName="flex flex-1 flex-col"
+      mainProps={{ 'aria-labelledby': headingId }}
+    >
       <LandingSectionBlock
-        className='auth-section-block'
+        className="auth-section-block"
         label={sectionLabel}
         index={1}
-        total={1}>
+        total={1}
+      >
         <HeroDotGridWrap
-          wrapClassName='auth-page-dot-grid bg-surface'
-          className='auth-page-inner'>
+          wrapClassName="auth-page-dot-grid bg-surface"
+          className="auth-page-inner"
+        >
           <LandingFrameInner>
-            <div className='auth-form-shell mx-auto w-full max-w-md'>
+            <div className="auth-form-shell mx-auto w-full max-w-md">
               <Suspense
                 fallback={
                   <AuthPageLoader
@@ -43,7 +46,8 @@ const AuthPageLayout = () => {
                     label={loadingMessage}
                     showForgotRow={skeletonForgotRow}
                   />
-                }>
+                }
+              >
                 <Outlet />
               </Suspense>
             </div>

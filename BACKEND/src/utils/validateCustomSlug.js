@@ -4,8 +4,8 @@ import {
 } from '../constants/reservedSlugs.js';
 import { normalizeSlug } from './normalizeSlug.js';
 
-export const CUSTOM_SLUG_MIN_LENGTH = 3;
-export const CUSTOM_SLUG_MAX_LENGTH = 20;
+const CUSTOM_SLUG_MIN_LENGTH = 3;
+const CUSTOM_SLUG_MAX_LENGTH = 20;
 
 const CUSTOM_SLUG_PATTERN = /^[a-z0-9_-]+$/;
 

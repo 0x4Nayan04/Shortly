@@ -93,19 +93,16 @@ export function useFormValidation(fieldNames, getRules, options = {}) {
     setFieldErrors((prev) => ({ ...prev, ...partial }));
   }, []);
 
-  const resetValidation = useCallback(
-    (names = fieldNamesRef.current) => {
-      setFieldErrors((prev) => ({
-        ...prev,
-        ...Object.fromEntries(names.map((name) => [name, null]))
-      }));
-      setTouched((prev) => ({
-        ...prev,
-        ...Object.fromEntries(names.map((name) => [name, false]))
-      }));
-    },
-    []
-  );
+  const resetValidation = useCallback((names = fieldNamesRef.current) => {
+    setFieldErrors((prev) => ({
+      ...prev,
+      ...Object.fromEntries(names.map((name) => [name, null]))
+    }));
+    setTouched((prev) => ({
+      ...prev,
+      ...Object.fromEntries(names.map((name) => [name, false]))
+    }));
+  }, []);
 
   return {
     fieldErrors,

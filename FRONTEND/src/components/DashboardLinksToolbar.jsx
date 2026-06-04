@@ -23,14 +23,9 @@ const SortSelect = memo(({ value, onChange, options, disabled, id, label }) => {
 
   const currentLabel = options.find((o) => o.value === value)?.label || '';
 
-  useEffect(() => {
-    if (!open) {
-      setFocusIdx(-1);
-      return;
-    }
-    const idx = options.findIndex((o) => o.value === value);
-    setFocusIdx(idx >= 0 ? idx : 0);
-  }, [open, options, value]);
+  const selectedIdx = options.findIndex((o) => o.value === value);
+  const activeIdx =
+    focusIdx >= 0 ? focusIdx : selectedIdx >= 0 ? selectedIdx : 0;
 
   useEffect(() => {
     if (!open) return;
@@ -47,6 +42,7 @@ const SortSelect = memo(({ value, onChange, options, disabled, id, label }) => {
     (nextVal) => {
       onChange(nextVal);
       setOpen(false);
+      setFocusIdx(-1);
       triggerRef.current?.focus();
     },
     [onChange]
@@ -57,6 +53,7 @@ const SortSelect = memo(({ value, onChange, options, disabled, id, label }) => {
       if (!open) {
         if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') {
           e.preventDefault();
+          setFocusIdx(selectedIdx >= 0 ? selectedIdx : 0);
           setOpen(true);
         }
         return;
@@ -66,6 +63,7 @@ const SortSelect = memo(({ value, onChange, options, disabled, id, label }) => {
         case 'Escape':
           e.preventDefault();
           setOpen(false);
+          setFocusIdx(-1);
           triggerRef.current?.focus();
           break;
         case 'ArrowDown':
@@ -79,80 +77,81 @@ const SortSelect = memo(({ value, onChange, options, disabled, id, label }) => {
         case 'Enter':
         case ' ':
           e.preventDefault();
-          if (focusIdx >= 0 && focusIdx < options.length) {
-            select(options[focusIdx].value);
+          if (activeIdx >= 0 && activeIdx < options.length) {
+            select(options[activeIdx].value);
           }
           break;
         case 'Tab':
           setOpen(false);
+          setFocusIdx(-1);
           break;
       }
     },
-    [open, focusIdx, options, select]
+    [open, activeIdx, options, select, selectedIdx]
   );
 
   const onTriggerClick = useCallback(() => {
     if (disabled) return;
-    setOpen((prev) => !prev);
-  }, [disabled]);
+    setOpen((prev) => {
+      const nextOpen = !prev;
+      setFocusIdx(nextOpen ? (selectedIdx >= 0 ? selectedIdx : 0) : -1);
+      return nextOpen;
+    });
+  }, [disabled, selectedIdx]);
 
   return (
-    <div
-      ref={containerRef}
-      className='sort-select'
-      onKeyDown={onKeyDown}>
-      <label
-        htmlFor={id}
-        className='sr-only'>
+    <section ref={containerRef} className="sort-select">
+      <label htmlFor={id} className="sr-only">
         {label}
       </label>
       <button
         ref={triggerRef}
         id={id}
-        type='button'
-        role='combobox'
-        aria-haspopup='listbox'
+        type="button"
+        role="combobox"
+        aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls={`${id}-listbox`}
         aria-label={label}
         disabled={disabled}
-        className='dashboard-toolbar-compound__select outline-none'
-        onClick={onTriggerClick}>
-        <span className='sort-select__label'>{currentLabel}</span>
+        className="dashboard-toolbar-compound__select outline-none"
+        onClick={onTriggerClick}
+        onKeyDown={onKeyDown}
+      >
+        <span className="sort-select__label">{currentLabel}</span>
         <ChevronDown
           className={`sort-select__chevron${open ? ' sort-select__chevron--open' : ''}`}
-          aria-hidden='true'
+          aria-hidden="true"
         />
       </button>
 
       {open && (
         <ul
           id={`${id}-listbox`}
-          role='listbox'
           aria-label={label}
-          className='sort-select__panel'>
+          className="sort-select__panel"
+        >
           {options.map((opt, idx) => (
             <li
               key={opt.value}
-              role='option'
-              aria-selected={opt.value === value}
-              className={`sort-select__option${opt.value === value ? ' sort-select__option--selected' : ''}${idx === focusIdx ? ' sort-select__option--focused' : ''}`}
+              className={`sort-select__option${opt.value === value ? ' sort-select__option--selected' : ''}${idx === activeIdx ? ' sort-select__option--focused' : ''}`}
               onPointerDown={() => select(opt.value)}
-              onMouseEnter={() => setFocusIdx(idx)}>
-              <span className='sort-select__option-check'>
+              onMouseEnter={() => setFocusIdx(idx)}
+            >
+              <span className="sort-select__option-check">
                 {opt.value === value && (
                   <Check
-                    className='sort-select__option-check-icon'
-                    aria-hidden='true'
+                    className="sort-select__option-check-icon"
+                    aria-hidden="true"
                   />
                 )}
               </span>
-              <span className='sort-select__option-label'>{opt.label}</span>
+              <span className="sort-select__option-label">{opt.label}</span>
             </li>
           ))}
         </ul>
       )}
-    </div>
+    </section>
   );
 });
 
@@ -180,66 +179,59 @@ const DashboardLinksToolbar = memo(
     );
 
     return (
-      <div className='dashboard-links-toolbar'>
+      <div className="dashboard-links-toolbar">
         <div className={`${formCompoundClass()} dashboard-toolbar-compound`}>
-          <div className='hero-cli-bar dashboard-toolbar-compound__bar'>
-            <span
-              className='hero-cli-prefix'
-              aria-hidden='true'>
+          <div className="hero-cli-bar dashboard-toolbar-compound__bar">
+            <span className="hero-cli-prefix" aria-hidden="true">
               filter
             </span>
             <input
-              type='text'
-              role='searchbox'
-              inputMode='search'
-              enterKeyHint='search'
+              type="text"
+              inputMode="search"
+              enterKeyHint="search"
               value={search}
               onChange={handleSearchChange}
               onKeyDown={preventEmptyBackspaceNav}
-              placeholder='Search links…'
+              placeholder="Search links…"
               disabled={disabled}
-              className='hero-cli-input dashboard-toolbar-compound__search'
-              aria-label='Search links'
-              autoComplete='off'
+              className="hero-cli-input dashboard-toolbar-compound__search"
+              aria-label="Search links"
+              autoComplete="off"
               spellCheck={false}
             />
 
             <div
-              className='dashboard-toolbar-compound__sort'
-              aria-label='Sort links'>
-              <div className='dashboard-toolbar-compound__select-wrap'>
+              className="dashboard-toolbar-compound__sort"
+              aria-label="Sort links"
+            >
+              <div className="dashboard-toolbar-compound__select-wrap">
                 <SortSelect
-                  id='dashboard-sort-by'
+                  id="dashboard-sort-by"
                   value={sortBy}
                   onChange={onSortByChange}
                   options={SORT_OPTIONS}
                   disabled={disabled}
-                  label='Sort by'
+                  label="Sort by"
                 />
               </div>
               <button
-                type='button'
+                type="button"
                 onClick={() =>
                   onSortOrderChange(sortOrder === 'desc' ? 'asc' : 'desc')
                 }
                 disabled={disabled}
-                className='dashboard-toolbar-compound__order outline-none'
+                className="dashboard-toolbar-compound__order outline-none"
                 aria-label={
                   sortOrder === 'desc' ? 'Sort descending' : 'Sort ascending'
                 }
                 title={
                   sortOrder === 'desc' ? 'Sort descending' : 'Sort ascending'
-                }>
+                }
+              >
                 {sortOrder === 'desc' ? (
-                  <SortDesc
-                    className='h-[1.125rem] w-[1.125rem]'
-                    aria-hidden='true'
-                  />
+                  <SortDesc className="size-[1.125rem]" aria-hidden="true" />
                 ) : (
-                  <SortAsc
-                    className='h-[1.125rem] w-[1.125rem]'
-                    aria-hidden='true'
-                  />
+                  <SortAsc className="size-[1.125rem]" aria-hidden="true" />
                 )}
               </button>
             </div>
@@ -247,30 +239,32 @@ const DashboardLinksToolbar = memo(
         </div>
 
         {showBulk && (
-          <div
-            className='dashboard-links-toolbar__bulk'
-            role='region'
-            aria-label='Bulk actions'>
-            <p className='dashboard-links-toolbar__bulk-count'>
+          <section
+            className="dashboard-links-toolbar__bulk"
+            aria-label="Bulk actions"
+          >
+            <p className="dashboard-links-toolbar__bulk-count">
               {selectedCount} selected
             </p>
-            <div className='dashboard-links-toolbar__bulk-actions'>
+            <div className="dashboard-links-toolbar__bulk-actions">
               <button
-                type='button'
+                type="button"
                 onClick={onDeselectAll}
                 disabled={disabled || isBulkDeleting}
-                className='sm-btn sm-btn-secondary dashboard-links-toolbar__bulk-deselect'>
+                className="sm-btn sm-btn-secondary dashboard-links-toolbar__bulk-deselect"
+              >
                 Clear selection
               </button>
               <button
-                type='button'
+                type="button"
                 onClick={onBulkDelete}
                 disabled={disabled || isBulkDeleting}
-                className='sm-btn sm-btn-secondary dashboard-links-toolbar__bulk-delete'>
+                className="sm-btn sm-btn-secondary dashboard-links-toolbar__bulk-delete"
+              >
                 Delete selected ({selectedCount})
               </button>
             </div>
-          </div>
+          </section>
         )}
       </div>
     );

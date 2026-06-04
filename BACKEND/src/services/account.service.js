@@ -5,7 +5,9 @@ import {
   findByResetToken,
   updateNameById
 } from '../dao/user.dao.js';
+import { deleteClicksForUser } from '../dao/click.dao.js';
 import { deleteAllForUser } from '../dao/shortUrl.dao.js';
+import { runWithTransaction } from '../utils/mongoTransaction.js';
 import { signToken } from '../utils/helper.js';
 import { AppError } from '../utils/errorHandler.js';
 import {
@@ -17,7 +19,11 @@ import { logger } from '../utils/logger.js';
 const GENERIC_RESET_MESSAGE =
   'If an account with that email exists, a reset link has been sent.';
 
-export const changePassword = async ({ userId, oldPassword, newPassword }) => {
+export const changePasswordService = async ({
+  userId,
+  oldPassword,
+  newPassword
+}) => {
   const user = await findUserById(userId);
   if (!user) {
     throw new AppError('User not found', 404);
@@ -45,7 +51,7 @@ export const changePassword = async ({ userId, oldPassword, newPassword }) => {
   return { token, user };
 };
 
-export const updateProfile = async ({ userId, name }) => {
+export const updateProfileService = async ({ userId, name }) => {
   const user = await updateNameById(userId, name);
   if (!user) {
     throw new AppError('User not found', 404);
@@ -53,17 +59,20 @@ export const updateProfile = async ({ userId, name }) => {
   return { user };
 };
 
-export const deleteAccount = async ({ userId }) => {
+export const deleteAccountService = async ({ userId }) => {
   const user = await findUserById(userId);
   if (!user) {
     throw new AppError('User not found', 404);
   }
 
-  await deleteAllForUser(userId);
-  await findUserByIdAndDelete(userId);
+  await runWithTransaction(async (session) => {
+    await deleteClicksForUser(userId, session);
+    await deleteAllForUser(userId, session);
+    await findUserByIdAndDelete(userId, session);
+  });
 };
 
-export const requestPasswordReset = async ({ email }) => {
+export const requestPasswordResetService = async ({ email }) => {
   const user = await findUserByEmail(email);
   if (!user) {
     return { message: GENERIC_RESET_MESSAGE };
@@ -89,7 +98,7 @@ export const requestPasswordReset = async ({ email }) => {
   return { message: GENERIC_RESET_MESSAGE };
 };
 
-export const resetPassword = async ({ token, newPassword }) => {
+export const resetPasswordService = async ({ token, newPassword }) => {
   const user = await findByResetToken(token);
   if (!user) {
     throw new AppError('Invalid or expired reset token', 400);

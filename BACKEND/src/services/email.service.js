@@ -51,7 +51,13 @@ async function sendTransactionalEmail({ to, subject, html, text }) {
   });
 }
 
-async function sendTemplateEmail({ email, subject, ctaUrl, errorLabel, templateInput }) {
+async function sendTemplateEmail({
+  email,
+  subject,
+  ctaUrl,
+  errorLabel,
+  templateInput
+}) {
   const resend = getResendClient();
 
   if (!resend) {
@@ -59,7 +65,10 @@ async function sendTemplateEmail({ email, subject, ctaUrl, errorLabel, templateI
       email,
       ...(process.env.NODE_ENV !== 'production' && { ctaUrl })
     });
-    throw new AppError(`${errorLabel} is unavailable: email service not configured.`, 503);
+    throw new AppError(
+      `${errorLabel} is unavailable: email service not configured.`,
+      503
+    );
   }
 
   try {
@@ -74,12 +83,18 @@ async function sendTemplateEmail({ email, subject, ctaUrl, errorLabel, templateI
       error: err.message,
       email
     });
-    throw new AppError(`Failed to send ${errorLabel.toLowerCase()}. Try again later.`, 500);
+    throw new AppError(
+      `Failed to send ${errorLabel.toLowerCase()}. Try again later.`,
+      500
+    );
   }
 }
 
-export const sendVerificationEmail = async (email, verificationToken) => {
-  const ctaUrl = buildFrontEndUrl(frontEndBase(), `/verify-email/${verificationToken}`);
+const sendVerificationEmail = async (email, verificationToken) => {
+  const ctaUrl = buildFrontEndUrl(
+    frontEndBase(),
+    `/verify-email/${verificationToken}`
+  );
   await sendTemplateEmail({
     email,
     subject: 'Verify your Shortly account',
@@ -100,8 +115,11 @@ export const sendVerificationEmail = async (email, verificationToken) => {
   });
 };
 
-export const sendPasswordResetEmail = async (email, resetToken) => {
-  const ctaUrl = buildFrontEndUrl(frontEndBase(), `/reset-password/${resetToken}`);
+const sendPasswordResetEmail = async (email, resetToken) => {
+  const ctaUrl = buildFrontEndUrl(
+    frontEndBase(),
+    `/reset-password/${resetToken}`
+  );
   await sendTemplateEmail({
     email,
     subject: 'Reset your Shortly password',

@@ -18,16 +18,6 @@ export function buildPublicShortUrl(slug) {
   return `${base}/${slug}`;
 }
 
-export function formatPublicShortUrlForDisplay(slug) {
-  const slugPart = slug?.trim() ?? '';
-  if (!slugPart) return '';
-
-  const full = buildPublicShortUrl(slugPart);
-  if (!full) return slugPart;
-
-  return full.replace(/^https?:\/\//, '');
-}
-
 export function getShortLinkDisplayParts(slug) {
   const slugPart = slug?.trim() ?? '';
   const full = buildPublicShortUrl(slugPart);

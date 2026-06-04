@@ -20,17 +20,25 @@ export const useUnsavedNavigationGuard = (hasUnsavedChanges) => {
   const navigationBlocker = useBlocker(hasUnsavedChanges);
   const unsavedDialog = useConfirmDialog();
 
+  const { confirm } = unsavedDialog;
+
   useEffect(() => {
     if (navigationBlocker.state !== 'blocked') return;
 
-    unsavedDialog.confirm(UNSAVED_LEAVE_OPTIONS).then((confirmed) => {
+    let active = true;
+    confirm(UNSAVED_LEAVE_OPTIONS).then((confirmed) => {
+      if (!active || navigationBlocker.state !== 'blocked') return;
       if (confirmed) {
         navigationBlocker.proceed();
       } else {
         navigationBlocker.reset();
       }
     });
-  }, [navigationBlocker.state]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    return () => {
+      active = false;
+    };
+  }, [navigationBlocker, confirm]);
 
   return unsavedDialog;
 };

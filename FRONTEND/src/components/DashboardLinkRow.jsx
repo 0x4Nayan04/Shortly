@@ -15,6 +15,130 @@ import {
   getShortLinkDisplayParts
 } from '../utils/publicShortUrl';
 
+const ActionButton = ({
+  onClick,
+  disabled,
+  className = 'dashboard-link-item__action',
+  ariaLabel,
+  title,
+  ariaBusy,
+  children
+}) => (
+  <button
+    type="button"
+    onClick={onClick}
+    disabled={disabled}
+    aria-label={ariaLabel}
+    title={title}
+    aria-busy={ariaBusy}
+    className={className}
+  >
+    {children}
+  </button>
+);
+
+const CopyButton = ({ isCopied, shortUrlFull, onCopy }) => (
+  <ActionButton
+    onClick={() => onCopy(shortUrlFull)}
+    className={`dashboard-link-item__action${isCopied ? ' dashboard-link-item__action--done' : ''}`}
+    aria-label={
+      isCopied ? 'Copied to clipboard' : `Copy ${shortUrlFull} to clipboard`
+    }
+  >
+    {isCopied ? (
+      <Check className="size-[1.125rem]" aria-hidden="true" />
+    ) : (
+      <Copy className="size-[1.125rem]" aria-hidden="true" />
+    )}
+  </ActionButton>
+);
+
+const ShareButton = ({ disabled, shortUrl, onShare, fullUrl }) => (
+  <ActionButton
+    onClick={() => onShare({ short_url: shortUrl, full_url: fullUrl })}
+    disabled={disabled}
+    aria-label={`Share ${shortUrl}`}
+  >
+    <Share2 className="size-[1.125rem]" aria-hidden="true" />
+  </ActionButton>
+);
+
+const EditButton = ({ disabled, shortUrl, isUpdating, onEdit }) => (
+  <ActionButton
+    onClick={onEdit}
+    disabled={disabled}
+    aria-label={`Edit ${shortUrl}`}
+    title="Edit destination or alias"
+  >
+    {isUpdating ? (
+      <Loader2 className="size-[1.125rem] animate-spin" aria-hidden="true" />
+    ) : (
+      <Pencil className="size-[1.125rem]" aria-hidden="true" />
+    )}
+  </ActionButton>
+);
+
+const ToggleButton = ({ disabled, shortUrl, isDisabled, onToggleDisabled }) => (
+  <ActionButton
+    onClick={onToggleDisabled}
+    disabled={disabled}
+    aria-label={isDisabled ? `Enable ${shortUrl}` : `Disable ${shortUrl}`}
+    title={isDisabled ? 'Enable link' : 'Disable link'}
+  >
+    {isDisabled ? (
+      <Power className="size-[1.125rem]" aria-hidden="true" />
+    ) : (
+      <PowerOff className="size-[1.125rem]" aria-hidden="true" />
+    )}
+  </ActionButton>
+);
+
+const DeleteButton = ({ disabled, shortUrl, isDeleting, onDelete }) => (
+  <ActionButton
+    onClick={onDelete}
+    disabled={disabled}
+    className="dashboard-link-item__action dashboard-link-item__action--danger"
+    aria-busy={isDeleting}
+    aria-label={isDeleting ? 'Deleting link' : `Delete ${shortUrl}`}
+  >
+    {isDeleting ? (
+      <Loader2 className="size-[1.125rem] animate-spin" aria-hidden="true" />
+    ) : (
+      <Trash2 className="size-[1.125rem]" aria-hidden="true" />
+    )}
+  </ActionButton>
+);
+
+const ShortLinkDisplay = ({ hostLead, hostTrail, slug }) => {
+  if (!hostLead) {
+    return <span className="dashboard-link-item__slug">/{slug}</span>;
+  }
+  return (
+    <>
+      <span className="dashboard-link-item__host dashboard-link-item__host--truncate">
+        {hostLead}
+        {hostTrail ? <span>{hostTrail}</span> : null}
+      </span>
+      <span className="dashboard-link-item__slug">/{slug}</span>
+    </>
+  );
+};
+
+const LinkMeta = ({ clicks, clickText, createdLabel, createdAt }) => (
+  <p className="dashboard-link-item__meta catalog-row-meta">
+    <span className="dashboard-link-item__clicks">
+      <span className="font-semibold">{clicks}</span>
+      <span className="text-muted text-xs"> {clickText}</span>
+    </span>
+    <span className="dashboard-link-item__meta-sep" aria-hidden="true">
+      ·
+    </span>
+    <time className="tabular-nums" dateTime={createdAt}>
+      {createdLabel}
+    </time>
+  </p>
+);
+
 const DashboardLinkRow = memo(
   ({
     url,
@@ -41,171 +165,85 @@ const DashboardLinkRow = memo(
           year: 'numeric'
         })
       : '';
-    const clickNum = url.click;
     const clickText = `click${url.click !== 1 ? 's' : ''}`;
 
     return (
       <li
-        className={`dashboard-link-item${isSelected ? ' dashboard-link-item--selected' : ''}${url.disabled ? ' dashboard-link-item--disabled' : ''}`}>
-        <div className='dashboard-link-item__main'>
+        className={`dashboard-link-item${isSelected ? ' dashboard-link-item--selected' : ''}${url.disabled ? ' dashboard-link-item--disabled' : ''}`}
+      >
+        <div className="dashboard-link-item__main">
           <input
-            type='checkbox'
+            type="checkbox"
             checked={isSelected}
             onChange={(e) => onSelect(url._id, e.target.checked)}
-            className='dashboard-links-toolbar__checkbox dashboard-link-item__check'
+            className="dashboard-links-toolbar__checkbox dashboard-link-item__check"
             aria-label={`Select ${url.short_url}`}
           />
 
-          <div className='dashboard-link-item__body'>
+          <div className="dashboard-link-item__body">
             <a
               href={shortUrlFull}
-              target='_blank'
-              rel='noopener noreferrer'
-              className='dashboard-link-item__short'
+              target="_blank"
+              rel="noopener noreferrer"
+              className="dashboard-link-item__short"
               title={shortUrlFull}
-              aria-label={`Open ${shortUrlFull} in a new tab`}>
-              <span className='dashboard-link-item__short-inner'>
-                {hostLead ? (
-                  <>
-                    <span className='dashboard-link-item__host dashboard-link-item__host--truncate'>
-                      {hostLead}
-                      {hostTrail ? <span>{hostTrail}</span> : null}
-                    </span>
-                    <span className='dashboard-link-item__slug'>/{slug}</span>
-                  </>
-                ) : (
-                  <span className='dashboard-link-item__slug'>/{slug}</span>
-                )}
+              aria-label={`Open ${shortUrlFull} in a new tab`}
+            >
+              <span className="dashboard-link-item__short-inner">
+                <ShortLinkDisplay
+                  hostLead={hostLead}
+                  hostTrail={hostTrail}
+                  slug={slug}
+                />
               </span>
             </a>
-            <p
-              className='dashboard-link-item__dest'
-              title={url.full_url}>
+            <p className="dashboard-link-item__dest" title={url.full_url}>
               {url.full_url}
             </p>
             {url.disabled && (
-              <span className='dashboard-link-item__status'>Disabled</span>
+              <span className="dashboard-link-item__status">Disabled</span>
             )}
           </div>
 
           {showMeta && (
-            <p className='dashboard-link-item__meta catalog-row-meta'>
-              <span className='dashboard-link-item__clicks'>
-                <span className='font-semibold'>{clickNum}</span>
-                <span className='text-muted text-xs'> {clickText}</span>
-              </span>
-              <span
-                className='dashboard-link-item__meta-sep'
-                aria-hidden='true'>
-                ·
-              </span>
-              <time
-                className='tabular-nums'
-                dateTime={url.createdAt}>
-                {createdLabel}
-              </time>
-            </p>
+            <LinkMeta
+              clicks={url.click}
+              clickText={clickText}
+              createdLabel={createdLabel}
+              createdAt={url.createdAt}
+            />
           )}
 
-          <div className='dashboard-link-item__actions'>
-            <button
-              type='button'
-              onClick={() => onCopy(shortUrlFull)}
-              className={`dashboard-link-item__action${isCopied ? ' dashboard-link-item__action--done' : ''}`}
-              aria-live='polite'
-              aria-label={
-                isCopied
-                  ? 'Copied to clipboard'
-                  : `Copy ${shortUrlFull} to clipboard`
-              }>
-              {isCopied ? (
-                <Check
-                  className='h-[1.125rem] w-[1.125rem]'
-                  aria-hidden='true'
-                />
-              ) : (
-                <Copy
-                  className='h-[1.125rem] w-[1.125rem]'
-                  aria-hidden='true'
-                />
-              )}
-            </button>
-            <button
-              type='button'
-              onClick={() =>
-                onShare({ short_url: url.short_url, full_url: url.full_url })
-              }
+          <div className="dashboard-link-item__actions">
+            <CopyButton
+              isCopied={isCopied}
+              shortUrlFull={shortUrlFull}
+              onCopy={onCopy}
+            />
+            <ShareButton
               disabled={isUpdating}
-              className='dashboard-link-item__action'
-              aria-label={`Share ${url.short_url}`}>
-              <Share2
-                className='h-[1.125rem] w-[1.125rem]'
-                aria-hidden='true'
-              />
-            </button>
-            <button
-              type='button'
-              onClick={() => onEdit(url)}
+              shortUrl={url.short_url}
+              fullUrl={url.full_url}
+              onShare={onShare}
+            />
+            <EditButton
               disabled={isUpdating || isDeleting}
-              className='dashboard-link-item__action'
-              aria-label={`Edit ${url.short_url}`}
-              title='Edit destination or alias'>
-              {isUpdating ? (
-                <Loader2
-                  className='h-[1.125rem] w-[1.125rem] animate-spin'
-                  aria-hidden='true'
-                />
-              ) : (
-                <Pencil
-                  className='h-[1.125rem] w-[1.125rem]'
-                  aria-hidden='true'
-                />
-              )}
-            </button>
-            <button
-              type='button'
-              onClick={() => onToggleDisabled(url)}
+              shortUrl={url.short_url}
+              isUpdating={isUpdating}
+              onEdit={() => onEdit(url)}
+            />
+            <ToggleButton
               disabled={isUpdating || isDeleting}
-              className='dashboard-link-item__action'
-              aria-label={
-                url.disabled
-                  ? `Enable ${url.short_url}`
-                  : `Disable ${url.short_url}`
-              }
-              title={url.disabled ? 'Enable link' : 'Disable link'}>
-              {url.disabled ? (
-                <Power
-                  className='h-[1.125rem] w-[1.125rem]'
-                  aria-hidden='true'
-                />
-              ) : (
-                <PowerOff
-                  className='h-[1.125rem] w-[1.125rem]'
-                  aria-hidden='true'
-                />
-              )}
-            </button>
-            <button
-              type='button'
-              onClick={() => onDelete(url._id, url.short_url)}
+              shortUrl={url.short_url}
+              isDisabled={url.disabled}
+              onToggleDisabled={() => onToggleDisabled(url)}
+            />
+            <DeleteButton
               disabled={isDeleting || isUpdating}
-              className='dashboard-link-item__action dashboard-link-item__action--danger'
-              aria-busy={isDeleting}
-              aria-label={
-                isDeleting ? 'Deleting link' : `Delete ${url.short_url}`
-              }>
-              {isDeleting ? (
-                <Loader2
-                  className='h-[1.125rem] w-[1.125rem] animate-spin'
-                  aria-hidden='true'
-                />
-              ) : (
-                <Trash2
-                  className='h-[1.125rem] w-[1.125rem]'
-                  aria-hidden='true'
-                />
-              )}
-            </button>
+              shortUrl={url.short_url}
+              isDeleting={isDeleting}
+              onDelete={() => onDelete(url._id, url.short_url)}
+            />
           </div>
         </div>
       </li>

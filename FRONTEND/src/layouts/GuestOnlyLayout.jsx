@@ -8,26 +8,18 @@ const GuestOnlyLayout = () => {
 
   if (!authChecked) {
     return (
-      <div
-        className='fixed inset-0 z-50 flex items-center justify-center bg-surface'
-        role='status'
-        aria-live='polite'
-        aria-label='Loading'>
-        <BrandedSpinner
-          size='md'
-          decorative
-        />
-      </div>
+      <output
+        className="fixed inset-0 z-50 flex items-center justify-center bg-surface"
+        aria-live="polite"
+        aria-label="Loading"
+      >
+        <BrandedSpinner size="md" decorative />
+      </output>
     );
   }
 
   if (user) {
-    return (
-      <Navigate
-        to={ROUTES.DASHBOARD}
-        replace
-      />
-    );
+    return <Navigate to={ROUTES.DASHBOARD} replace />;
   }
 
   return <Outlet />;

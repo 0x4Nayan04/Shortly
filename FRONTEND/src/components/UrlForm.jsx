@@ -1,35 +1,98 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useReducer } from 'react';
 import { AlertCircle } from 'lucide-react';
 import ShareModal from './ShareModal';
 import { createShortUrl, createCustomShortUrl } from '../api/shortUrl.api';
-import { getApiErrorMessage, getApiPayload } from '../utils/axiosInstance';
+import { getApiPayload } from '../utils/axiosInstance';
 import { rememberAnonymousLink } from '../utils/anonymousLinks';
-import { mapBackendFieldErrors } from '../utils/apiErrors';
+import { handleApiFormError } from '../utils/apiErrors';
 import { buildPublicShortUrl } from '../utils/publicShortUrl';
 import { validators } from '../utils/validation';
 import { useFormValidation } from '../hooks/useFormValidation';
 import { formAlertClass } from '../utils/designFormClasses';
+
 import { useAnnouncement, LiveRegion } from './Accessibility';
-import {
-  showToast,
-  useOnlineStatus,
-  useCopyToClipboard
-} from './UxEnhancements';
+import { useOnlineStatus, useCopyToClipboard } from './UxEnhancements';
+import { showToast } from '../utils/showToast';
 import UrlInputBar from './urlForm/UrlInputBar';
 import LandingCustomAliasSection from './urlForm/LandingCustomAliasSection';
 import DefaultCustomAliasSection from './urlForm/DefaultCustomAliasSection';
 import UrlFormResult from './urlForm/UrlFormResult';
+const rememberLinkIfAnonymous = (payload) => {
+  if (!payload?.id || !payload?.manage_token) return;
+  rememberAnonymousLink({
+    id: payload.id,
+    manage_token: payload.manage_token,
+    short_url: payload.short_url
+  });
+};
+
+const initialState = {
+  url: '',
+  customAlias: '',
+  shortUrl: '',
+  createdLink: null,
+  shareOpen: false,
+  loading: false,
+  error: '',
+  useCustomAlias: false
+};
+
+function urlFormReducer(state, action) {
+  switch (action.type) {
+    case 'SET_FIELD':
+      return { ...state, [action.field]: action.value, error: '' };
+    case 'SET_LOADING':
+      return { ...state, loading: action.value };
+    case 'SET_ERROR':
+      return { ...state, error: action.value };
+    case 'TOGGLE_CUSTOM_ALIAS':
+      return {
+        ...state,
+        useCustomAlias: !state.useCustomAlias,
+        error: ''
+      };
+    case 'SET_USE_CUSTOM_ALIAS':
+      return { ...state, useCustomAlias: action.value, error: '' };
+    case 'SUBMIT_START':
+      return {
+        ...state,
+        loading: true,
+        error: '',
+        shortUrl: '',
+        createdLink: null,
+        shareOpen: false
+      };
+    case 'SUBMIT_SUCCESS':
+      return {
+        ...initialState,
+        shortUrl: action.shortUrl,
+        createdLink: action.createdLink
+      };
+    case 'SUBMIT_FAILURE':
+      return { ...state, loading: false, error: action.error };
+    case 'SET_SHARE_OPEN':
+      return { ...state, shareOpen: action.value };
+    case 'RESET_FORM':
+      return initialState;
+    default:
+      return state;
+  }
+}
 
 const UrlForm = ({ onUrlCreated, user, onShowAuth, variant = 'default' }) => {
   const isLanding = variant === 'landing';
-  const [url, setUrl] = useState('');
-  const [customAlias, setCustomAlias] = useState('');
-  const [shortUrl, setShortUrl] = useState('');
-  const [createdLink, setCreatedLink] = useState(null);
-  const [shareOpen, setShareOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [useCustomAlias, setUseCustomAlias] = useState(false);
+  const [state, dispatch] = useReducer(urlFormReducer, initialState);
+  const {
+    url,
+    customAlias,
+    shortUrl,
+    createdLink,
+    shareOpen,
+    loading,
+    error,
+    useCustomAlias
+  } = state;
+
   const [announcement, announce] = useAnnouncement();
   const { isOnline } = useOnlineStatus();
   const { copy, isCopied } = useCopyToClipboard();
@@ -57,17 +120,20 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth, variant = 'default' }) => {
   } = useFormValidation(['url', 'customAlias'], getRules);
 
   const formValues = { url, customAlias };
-
-  const updateField = (field, value, setter) => {
-    setter(value);
+  const onCustomAliasChange = (e) => {
+    const val = e.target.value;
+    dispatch({ type: 'SET_FIELD', field: 'customAlias', value: val });
     onFieldChange(
-      field,
-      { ...formValues, [field]: value },
-      {
-        clearError: () => setError('')
-      }
+      'customAlias',
+      { ...formValues, customAlias: val },
+      { clearError: () => dispatch({ type: 'SET_ERROR', value: '' }) }
     );
   };
+  const onCustomAliasBlur = (e) =>
+    handleBlur('customAlias', {
+      ...formValues,
+      customAlias: e.target.value
+    });
 
   const clearCustomAliasValidation = () => {
     setFieldErrors((prev) => ({ ...prev, customAlias: null }));
@@ -76,8 +142,7 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth, variant = 'default' }) => {
 
   const handleToggleCustomAlias = () => {
     const next = !useCustomAlias;
-    setUseCustomAlias(next);
-    setError('');
+    dispatch({ type: 'TOGGLE_CUSTOM_ALIAS' });
     if (!next) {
       clearCustomAliasValidation();
     }
@@ -85,19 +150,82 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth, variant = 'default' }) => {
 
   const handleDefaultCustomAliasChange = (e) => {
     if (!user && e.target.checked) {
-      setError('Please sign in to use custom aliases');
+      dispatch({
+        type: 'SET_ERROR',
+        value: 'Please sign in to use custom aliases'
+      });
       onShowAuth?.();
       return;
     }
-    setUseCustomAlias(e.target.checked);
-    setError('');
+    dispatch({ type: 'SET_USE_CUSTOM_ALIAS', value: e.target.checked });
     if (!e.target.checked) {
       clearCustomAliasValidation();
     }
   };
 
+  const announceSuccess = (reused) => {
+    if (reused) {
+      showToast.success('Existing short link reused for this URL');
+      announce('Existing short link reused for this URL');
+      return;
+    }
+    showToast.success('URL shortened successfully!');
+    announce('URL shortened successfully! Your new short URL is ready.');
+  };
+
+  const handleSubmitSuccess = (payload, loadingToast) => {
+    const createdShortUrl = payload?.short_url;
+    if (!createdShortUrl) {
+      showToast.dismiss(loadingToast);
+      const msg = 'Failed to process the server response.';
+      dispatch({ type: 'SUBMIT_FAILURE', error: msg });
+      showToast.error(msg);
+      return;
+    }
+    rememberLinkIfAnonymous(payload);
+    dispatch({
+      type: 'SUBMIT_SUCCESS',
+      shortUrl: buildPublicShortUrl(createdShortUrl),
+      createdLink: { slug: createdShortUrl, fullUrl: url }
+    });
+    showToast.dismiss(loadingToast);
+    announceSuccess(payload.reused);
+    onUrlCreated?.();
+    resetValidation();
+  };
+
+  const handleSubmitError = (err, loadingToast) => {
+    showToast.dismiss(loadingToast);
+    handleApiFormError(
+      err,
+      {
+        setError: (val) => dispatch({ type: 'SET_ERROR', value: val }),
+        mergeFieldErrors
+      },
+      {
+        fallbackMessage: 'Failed to create short URL',
+        fieldMap: { full_url: 'url', custom_url: 'customAlias' }
+      }
+    );
+    dispatch({ type: 'SET_LOADING', value: false });
+  };
+
+  const createUrl = async (loadingToast) => {
+    if (!useCustomAlias || !customAlias) {
+      return createShortUrl(url);
+    }
+    if (!user) {
+      showToast.dismiss(loadingToast);
+      const message = 'Please sign in to use custom aliases';
+      dispatch({ type: 'SET_ERROR', value: message });
+      showToast.error(message);
+      return null;
+    }
+    return createCustomShortUrl(url, customAlias);
+  };
+
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
 
     if (!isOnline) {
       showToast.error("You're offline. Cannot create URL.");
@@ -112,78 +240,17 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth, variant = 'default' }) => {
       return;
     }
 
-    setLoading(true);
-    setError('');
-    setShortUrl('');
-    setCreatedLink(null);
-    setShareOpen(false);
+    dispatch({ type: 'SUBMIT_START' });
 
     const loadingToast = showToast.loading('Creating short URL...');
 
     try {
-      let response;
-
-      if (useCustomAlias && customAlias) {
-        if (!user) {
-          showToast.dismiss(loadingToast);
-          setError('Please sign in to use custom aliases');
-          showToast.error('Please sign in to use custom aliases');
-          return;
-        }
-        response = await createCustomShortUrl(url, customAlias);
-      } else {
-        response = await createShortUrl(url);
-      }
-
+      const response = await createUrl(loadingToast);
+      if (!response) return;
       const payload = getApiPayload(response);
-      const createdShortUrl = payload?.short_url;
-
-      if (createdShortUrl) {
-        if (payload?.id && payload?.manage_token) {
-          rememberAnonymousLink({
-            id: payload.id,
-            manage_token: payload.manage_token,
-            short_url: createdShortUrl
-          });
-        }
-
-        setCreatedLink({ slug: createdShortUrl, fullUrl: url });
-        setShortUrl(buildPublicShortUrl(createdShortUrl));
-        showToast.dismiss(loadingToast);
-        if (payload.reused) {
-          showToast.success('Existing short link reused for this URL');
-          announce('Existing short link reused for this URL');
-        } else {
-          showToast.success('URL shortened successfully!');
-          announce('URL shortened successfully! Your new short URL is ready.');
-        }
-        onUrlCreated?.();
-        setUrl('');
-        setCustomAlias('');
-        setUseCustomAlias(false);
-        resetValidation();
-      } else {
-        showToast.dismiss(loadingToast);
-        showToast.error('Failed to process the server response.');
-        setError('Failed to process the server response.');
-      }
+      handleSubmitSuccess(payload, loadingToast);
     } catch (err) {
-      showToast.dismiss(loadingToast);
-      const data = err?.response ? err.response.data : err;
-      if (data && typeof data === 'object' && Array.isArray(data.errors)) {
-        const backendErrors = mapBackendFieldErrors(data.errors, {
-          full_url: 'url',
-          custom_url: 'customAlias'
-        });
-        mergeFieldErrors(backendErrors);
-        showToast.error('Please check the form for errors.');
-      } else {
-        const errorMsg = getApiErrorMessage(err, 'Failed to create short URL');
-        setError(errorMsg);
-        showToast.error(errorMsg);
-      }
-    } finally {
-      setLoading(false);
+      handleSubmitError(err, loadingToast);
     }
   };
 
@@ -194,27 +261,35 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth, variant = 'default' }) => {
 
   return (
     <div className={isLanding ? '' : 'space-y-6'}>
-      <LiveRegion
-        message={announcement}
-        politeness='polite'
-      />
+      <LiveRegion message={announcement} politeness="polite" />
 
       <form
         onSubmit={handleSubmit}
         className={isLanding ? 'pt-0' : 'space-y-4'}
-        aria-label='URL shortener form'>
+        aria-label="URL shortener form"
+      >
         <UrlInputBar
           url={url}
-          setUrl={setUrl}
+          setUrl={(val) =>
+            dispatch({ type: 'SET_FIELD', field: 'url', value: val })
+          }
           loading={loading}
           fieldErrors={fieldErrors}
           touched={touched}
-          handleChange={updateField}
+          handleChange={(field, value) => {
+            dispatch({ type: 'SET_FIELD', field, value });
+            onFieldChange(
+              field,
+              { ...formValues, [field]: value },
+              { clearError: () => dispatch({ type: 'SET_ERROR', value: '' }) }
+            );
+          }}
           handleBlur={(field, value) =>
             handleBlur(field, { ...formValues, [field]: value })
           }
           showPrefix={isLanding}
-          shortUrl={shortUrl}>
+          shortUrl={shortUrl}
+        >
           {isLanding && (
             <LandingCustomAliasSection
               user={user}
@@ -222,15 +297,8 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth, variant = 'default' }) => {
               useCustomAlias={useCustomAlias}
               onToggleCustomAlias={handleToggleCustomAlias}
               customAlias={customAlias}
-              onCustomAliasChange={(e) =>
-                updateField('customAlias', e.target.value, setCustomAlias)
-              }
-              onCustomAliasBlur={(e) =>
-                handleBlur('customAlias', {
-                  ...formValues,
-                  customAlias: e.target.value
-                })
-              }
+              onCustomAliasChange={onCustomAliasChange}
+              onCustomAliasBlur={onCustomAliasBlur}
               touched={touched}
               fieldErrors={fieldErrors}
             />
@@ -243,37 +311,28 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth, variant = 'default' }) => {
             useCustomAlias={useCustomAlias}
             onUseCustomAliasChange={handleDefaultCustomAliasChange}
             customAlias={customAlias}
-            onCustomAliasChange={(e) =>
-              updateField('customAlias', e.target.value, setCustomAlias)
-            }
-            onCustomAliasBlur={(e) =>
-              handleBlur('customAlias', {
-                ...formValues,
-                customAlias: e.target.value
-              })
-            }
+            onCustomAliasChange={onCustomAliasChange}
+            onCustomAliasBlur={onCustomAliasBlur}
             touched={touched}
             fieldErrors={fieldErrors}
           />
         )}
 
         {error && (
-          <div
-            className={formAlertClass}
-            role='alert'
-            aria-live='assertive'>
-            <div className='flex items-center'>
+          <div className={formAlertClass} role="alert" aria-live="assertive">
+            <div className="flex items-center">
               <AlertCircle
-                className='size-5 mr-2 shrink-0'
-                aria-hidden='true'
+                className="size-5 mr-2 shrink-0"
+                aria-hidden="true"
               />
               {error}
             </div>
-            <div className='mt-3 flex gap-2'>
+            <div className="mt-3 flex gap-2">
               <button
-                type='button'
-                onClick={handleSubmit}
-                className='sm-btn sm-btn-primary text-sm !bg-[#dc2626] hover:!opacity-90'>
+                type="button"
+                onClick={() => handleSubmit()}
+                className="sm-btn sm-btn-primary text-sm !bg-[#dc2626] hover:!opacity-90"
+              >
                 Retry
               </button>
             </div>
@@ -289,13 +348,13 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth, variant = 'default' }) => {
           onShowAuth={onShowAuth}
           isCopied={isCopied(shortUrl)}
           onCopy={copyToClipboard}
-          onShare={() => setShareOpen(true)}
+          onShare={() => dispatch({ type: 'SET_SHARE_OPEN', value: true })}
         />
       )}
 
       <ShareModal
         isOpen={shareOpen}
-        onClose={() => setShareOpen(false)}
+        onClose={() => dispatch({ type: 'SET_SHARE_OPEN', value: false })}
         shortUrl={createdLink?.slug}
         fullUrl={createdLink?.fullUrl}
       />

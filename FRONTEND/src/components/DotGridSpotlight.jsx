@@ -145,7 +145,7 @@ export function DotGridSpotlight({
   return (
     <canvas
       ref={canvasRef}
-      data-ready='false'
+      data-ready="false"
       className={[
         'pointer-events-none absolute inset-0 block opacity-0 transition-opacity duration-500 data-[ready=true]:opacity-100',
         className

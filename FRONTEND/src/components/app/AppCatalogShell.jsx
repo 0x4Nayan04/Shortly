@@ -2,18 +2,15 @@
  * Catalog-frame shell for app routes — reuses landing frame primitives.
  */
 
-import LandingFrame, {
-  LandingFrameInner,
-  LandingSectionBlock
-} from '../landing/LandingFrame';
+import LandingFrame from '../landing/LandingFrame';
+import { LandingFrameInner } from '../landing/LandingFrameInner';
+import { LandingSectionBlock } from '../landing/LandingSectionBlock';
 
 export { LandingFrameInner, LandingSectionBlock };
 
-export const AppCatalogShell = ({ children, className = '' }) => (
+const AppCatalogShell = ({ children, className = '' }) => (
   <div className={`app-page flex min-h-screen flex-col ${className}`.trim()}>
-    <LandingFrame>
-      {children}
-    </LandingFrame>
+    <LandingFrame>{children}</LandingFrame>
   </div>
 );
 

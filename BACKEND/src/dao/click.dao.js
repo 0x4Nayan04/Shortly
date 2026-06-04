@@ -6,6 +6,18 @@ export const insertClick = async (data, session) => {
   return Click.create([payload], { session });
 };
 
+export const deleteClicksForUser = async (userId, session = null) => {
+  const opts = session ? { session } : undefined;
+  const urlIds = await short_urlModel.find({ user: userId }).distinct('_id');
+  if (urlIds.length === 0) return 0;
+
+  const result = await Click.deleteMany(
+    { short_url_id: { $in: urlIds } },
+    opts
+  );
+  return result.deletedCount ?? 0;
+};
+
 const buildUserClickFacetsPipeline = (userId, since) => [
   {
     $lookup: {

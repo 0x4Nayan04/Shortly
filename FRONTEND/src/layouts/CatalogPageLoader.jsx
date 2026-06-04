@@ -10,16 +10,11 @@ const CatalogPageLoader = ({ message }) => (
     mainProps={{
       'aria-busy': true,
       'aria-label': message
-    }}>
-    <LandingSectionBlock
-      label='LOADING'
-      index={1}
-      total={1}>
-      <LandingFrameInner className='flex min-h-[50vh] items-center justify-center py-12'>
-        <LoadingSpinner
-          size='lg'
-          message={message}
-        />
+    }}
+  >
+    <LandingSectionBlock label="LOADING" index={1} total={1}>
+      <LandingFrameInner className="flex min-h-[50vh] items-center justify-center py-12">
+        <LoadingSpinner size="lg" message={message} />
       </LandingFrameInner>
     </LandingSectionBlock>
   </CatalogPageShell>

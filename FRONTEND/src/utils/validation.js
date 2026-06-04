@@ -117,3 +117,13 @@ export const getFirstError = (errors) => {
   const firstError = Object.values(errors).find((error) => error !== null);
   return firstError || null;
 };
+
+export const makeConfirmPasswordRevalidator =
+  (validate = validators.confirmPassword) =>
+  (field, values, { setFieldErrors, getTouched }) => {
+    if (field !== 'password' || !getTouched().confirmPassword) return;
+    setFieldErrors((prev) => ({
+      ...prev,
+      confirmPassword: validate(values.confirmPassword, values.password)
+    }));
+  };

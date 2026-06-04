@@ -3,7 +3,7 @@ import Click from '../schema/click.model.js';
 import { logger } from '../utils/logger.js';
 import { normalizeUrl } from '../utils/normalizeUrl.js';
 
-export const backfillAnonymousShortUrlUsers = async () => {
+const backfillAnonymousShortUrlUsers = async () => {
   const result = await short_urlModel.updateMany(
     { user: { $exists: false } },
     { $set: { user: null } }
@@ -15,7 +15,7 @@ export const backfillAnonymousShortUrlUsers = async () => {
   }
 };
 
-export const backfillCanonicalUrls = async () => {
+const backfillCanonicalUrls = async () => {
   const missing = await short_urlModel
     .find({
       $or: [{ canonical_url: { $exists: false } }, { canonical_url: null }]
@@ -51,7 +51,7 @@ export const backfillCanonicalUrls = async () => {
  * Remove duplicate (user, canonical_url) rows so lookups stay stable.
  * Keeps the row with the highest click count, then earliest createdAt.
  */
-export const deduplicateShortUrlsByUserAndFullUrl = async () => {
+const deduplicateShortUrlsByUserAndFullUrl = async () => {
   const duplicateGroups = await short_urlModel.aggregate([
     {
       $group: {

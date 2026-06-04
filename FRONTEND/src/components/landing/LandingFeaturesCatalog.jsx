@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import CatalogVisualPanel from './CatalogVisualPanel';
-import { LandingFrameInner } from './LandingFrame';
+import { LandingFrameInner } from './LandingFrameInner';
 
 const CATALOG_ITEMS = [
   {
@@ -51,57 +51,50 @@ const LandingFeaturesCatalog = () => {
 
   return (
     <section
-      id='features'
-      className='scroll-mt-[calc(var(--nav-height)+var(--section-bar-height))]'
-      aria-labelledby='features-heading'>
-      <LandingFrameInner className='landing-section-intro catalog-intro'>
-        <h2
-          id='features-heading'
-          className='landing-section-title text-ink'>
+      id="features"
+      className="scroll-mt-[calc(var(--nav-height)+var(--section-bar-height))]"
+      aria-labelledby="features-heading"
+    >
+      <LandingFrameInner className="landing-section-intro catalog-intro">
+        <h2 id="features-heading" className="landing-section-title text-ink">
           All the pieces to share links smarter
         </h2>
-        <p className='landing-section-lead max-w-xl'>
+        <p className="landing-section-lead max-w-xl">
           Focused tools for shortening, customizing, tracking, and sharing —
           without the clutter of a full marketing suite.
         </p>
       </LandingFrameInner>
 
-      <div className='landing-catalog-split'>
+      <div className="landing-catalog-split">
         <ol
-          className='catalog-list m-0 list-none p-0'
-          aria-label='Product features'>
+          className="catalog-list m-0 list-none p-0"
+          aria-label="Product features"
+        >
           {CATALOG_ITEMS.map((item, index) => {
             const isActive = index === activeIndex;
             return (
               <li
                 key={item.num}
-                className='catalog-list-item'
-                onMouseEnter={() => setActiveIndex(index)}>
+                className="catalog-list-item"
+                onMouseEnter={() => setActiveIndex(index)}
+              >
                 <button
-                  type='button'
+                  type="button"
                   aria-pressed={isActive}
                   className={`catalog-row catalog-list-row outline-none${isActive ? ' catalog-row--active' : ''}`}
-                  onClick={() => setActiveIndex(index)}>
-                  <span className='catalog-row-num'>{item.num}</span>
-                  <span className='catalog-row-label'>{item.title}</span>
-                  <span
-                    className='catalog-row-marker'
-                    aria-hidden='true'
-                  />
+                  onClick={() => setActiveIndex(index)}
+                >
+                  <span className="catalog-row-num">{item.num}</span>
+                  <span className="catalog-row-label">{item.title}</span>
+                  <span className="catalog-row-marker" aria-hidden="true" />
                 </button>
               </li>
             );
           })}
         </ol>
 
-        <div
-          className='catalog-visual'
-          aria-live='polite'
-          aria-atomic='true'>
-          <CatalogVisualPanel
-            item={active}
-            playKey={active.num}
-          />
+        <div className="catalog-visual" aria-live="polite" aria-atomic="true">
+          <CatalogVisualPanel item={active} playKey={active.num} />
         </div>
       </div>
     </section>

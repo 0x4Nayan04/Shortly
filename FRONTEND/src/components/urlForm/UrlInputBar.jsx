@@ -1,6 +1,41 @@
 import { BrandedSpinner } from '../LoadingSpinner';
 import { formCompoundClass } from '../../utils/designFormClasses';
 
+const getContainerClass = (showPrefix, hasError) =>
+  showPrefix
+    ? `hero-form-compound${hasError ? ' hero-form-compound-error' : ''}`
+    : formCompoundClass(hasError);
+
+const getLabelText = (showPrefix) =>
+  showPrefix ? 'Long URL' : 'Enter your long URL';
+
+const getPlaceholder = (showPrefix) =>
+  showPrefix
+    ? 'https://example.com/your-long-link'
+    : 'Enter your long URL here...';
+
+const getErrorClass = (showPrefix) =>
+  `hero-form-error${showPrefix ? '' : ' px-4 pb-3'}`;
+
+const UrlPreview = ({ url, showPrefix }) =>
+  url && (
+    <p className="truncate px-4 pb-3 font-mono text-xs text-muted" title={url}>
+      {showPrefix ? null : <span aria-hidden="true">→ </span>}
+      {url}
+    </p>
+  );
+
+const SubmitButton = ({ loading, showPrefix }) => (
+  <button
+    type="submit"
+    disabled={loading}
+    aria-busy={loading}
+    className={`hero-cli-submit${showPrefix ? ' focus-ring' : ''}`}
+  >
+    {loading ? <BrandedSpinner size="sm" decorative /> : 'Shorten'}
+  </button>
+);
+
 const UrlInputBar = ({
   url,
   setUrl,
@@ -13,76 +48,41 @@ const UrlInputBar = ({
   shortUrl,
   children
 }) => {
-  const urlHasError = touched.url && fieldErrors.url;
+  const urlHasError = Boolean(touched.url && fieldErrors.url);
+  const showErrorPreview = url && !fieldErrors.url && !loading && !shortUrl;
 
   return (
-    <div
-      className={
-        showPrefix
-          ? `hero-form-compound${urlHasError ? ' hero-form-compound-error' : ''}`
-          : formCompoundClass(urlHasError)
-      }>
-      <label
-        htmlFor='url-input'
-        className='sr-only'>
-        {showPrefix ? 'Long URL' : 'Enter your long URL'}
+    <div className={getContainerClass(showPrefix, urlHasError)}>
+      <label htmlFor="url-input" className="sr-only">
+        {getLabelText(showPrefix)}
       </label>
-      <div className='hero-cli-bar'>
+      <div className="hero-cli-bar">
         {showPrefix && (
-          <span
-            className='hero-cli-prefix'
-            aria-hidden='true'>
+          <span className="hero-cli-prefix" aria-hidden="true">
             url
           </span>
         )}
         <input
-          id='url-input'
-          type='url'
+          id="url-input"
+          type="url"
           value={url}
           onChange={(e) => handleChange('url', e.target.value, setUrl)}
           onBlur={(e) => handleBlur('url', e.target.value)}
-          placeholder={
-            showPrefix
-              ? 'https://example.com/your-long-link'
-              : 'Enter your long URL here...'
-          }
-          className='hero-cli-input'
+          placeholder={getPlaceholder(showPrefix)}
+          className="hero-cli-input"
           aria-invalid={urlHasError ? 'true' : 'false'}
           aria-describedby={fieldErrors.url ? 'url-error' : undefined}
-          autoComplete='url'
+          autoComplete="url"
         />
-        <button
-          type='submit'
-          disabled={loading}
-          aria-busy={loading}
-          className={`hero-cli-submit${showPrefix ? ' focus-ring' : ''}`}>
-          {loading ? (
-            <BrandedSpinner
-              size='sm'
-              decorative
-            />
-          ) : (
-            'Shorten'
-          )}
-        </button>
+        <SubmitButton loading={loading} showPrefix={showPrefix} />
       </div>
       {showPrefix && children}
       {urlHasError && (
-        <p
-          id='url-error'
-          className={`hero-form-error${showPrefix ? '' : ' px-4 pb-3'}`}
-          role='alert'>
+        <p id="url-error" className={getErrorClass(showPrefix)} role="alert">
           {fieldErrors.url}
         </p>
       )}
-      {url && !fieldErrors.url && !loading && !shortUrl && (
-        <p
-          className='truncate px-4 pb-3 font-mono text-xs text-muted'
-          title={url}>
-          {showPrefix ? null : <span aria-hidden='true'>→ </span>}
-          {url}
-        </p>
-      )}
+      {showErrorPreview && <UrlPreview url={url} showPrefix={showPrefix} />}
     </div>
   );
 };

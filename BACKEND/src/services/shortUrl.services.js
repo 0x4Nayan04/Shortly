@@ -1,144 +1,59 @@
 import crypto from 'crypto';
-import { MAX_LINKS_PER_USER, CLICK_RETENTION_DAYS } from '../constants/shortUrlLimits.js';
+import { CLICK_RETENTION_DAYS } from '../constants/shortUrlLimits.js';
 import {
-  countActiveLinksForUser,
-  claimAnonymousLink,
-  findActiveLinkBySlug,
-  findAnonymousByIdAndToken,
   findExistingForCanonical,
   findOwnedActiveById,
   findOwnedActiveByIds,
-  findOwnedDuplicateByCanonical,
   findTopClickedForUser,
   isSlugAvailable,
   listForUser,
   purgeReclaimableSlug,
   saveShortUrl,
-  softDeleteById,
   softDeleteByIdAndUser,
   softDeleteManyByIdsAndUser,
   aggregateLifetimeStatsForUser,
   aggregateRecentActivityForUser,
   updateByIdAndUser
 } from '../dao/shortUrl.dao.js';
-import { generateNanoId } from '../utils/helper.js';
 import { AppError, NotFoundError } from '../utils/errorHandler.js';
 import { normalizeSlug } from '../utils/normalizeSlug.js';
 import { normalizeUrl } from '../utils/normalizeUrl.js';
 import { validateCustomSlug } from '../utils/validateCustomSlug.js';
-import {
-  getCachedRedirectTarget,
-  setCachedRedirectTarget,
-  invalidateRedirectSlugCache
-} from '../utils/redirectSlugCache.js';
+import { invalidateRedirectSlugCache } from '../utils/redirectSlugCache.js';
 import { getClickAggregates } from './analytics.service.js';
 import {
   CUSTOM_SLUG_TAKEN_MESSAGE,
   withSlugConflictHandler
 } from '../utils/slugErrors.js';
 import { hashEmailToken } from '../utils/hashToken.js';
+import { assertUserLinkCapacity } from './shortUrl/linkCapacity.js';
+import {
+  buildExistingReuseResult,
+  generateUniqueShortUrl,
+  saveShortUrlOnDuplicateSlug
+} from './shortUrl/persistShortUrl.js';
+export { claimAnonymousLinksService } from './shortUrl/claimAnonymousLinks.js';
+export {
+  getShortUrlService,
+  resolveRedirectTargetService
+} from './shortUrl/redirect.js';
 
 const generateManageToken = () => crypto.randomBytes(24).toString('hex');
 const hashManageToken = (token) => hashEmailToken(token);
 
-const assertUserLinkCapacity = async (userId) => {
-  if (!userId) return;
-  const count = await countActiveLinksForUser(userId);
-  if (count >= MAX_LINKS_PER_USER) {
-    throw new AppError(
-      `Link limit reached (${MAX_LINKS_PER_USER}). Delete unused links to create more.`,
-      403
-    );
-  }
-};
-
-const generateUniqueShortUrl = async () => {
-  let short_url;
-  let isUnique = false;
-  let attempts = 0;
-  const maxAttempts = 5;
-
-  while (!isUnique && attempts < maxAttempts) {
-    short_url = generateNanoId(7);
-    if (await isSlugAvailable(short_url)) {
-      isUnique = true;
-    }
-    attempts++;
-  }
-
-  if (!isUnique) {
-    throw new AppError(
-      'Could not generate unique short URL after multiple attempts',
-      500
-    );
-  }
-
-  return normalizeSlug(short_url);
-};
-
-const buildExistingReuseResult = (doc) => ({
-  short_url: doc.short_url,
-  id: doc._id?.toString(),
-  created: false,
-  reused: true
-});
-
-const findExistingLinkForCanonical = async (canonical_url, userId) => {
-  const doc = await findExistingForCanonical(canonical_url, userId);
-  return doc ? buildExistingReuseResult(doc) : null;
-};
-
-const saveShortUrlWithRetry = async ({
-  short_url,
-  full_url,
-  canonical_url,
-  userId,
-  manage_token = null
-}) => {
-  await purgeReclaimableSlug(short_url);
-
-  try {
-    const saved = await saveShortUrl({
-      short_url,
-      full_url,
-      canonical_url,
-      userId,
-      manage_token
-    });
-    return { ...saved, created: true, reused: false };
-  } catch (err) {
-    if (err.code !== 11000) throw err;
-
-    const keys = err.keyPattern ? Object.keys(err.keyPattern) : [];
-    if (!keys.includes('short_url')) throw err;
-
-    if (userId) {
-      const existing = await findExistingLinkForCanonical(canonical_url, userId);
-      if (existing) return existing;
-    }
-
-    const fallback = await generateUniqueShortUrl();
-    return saveShortUrlWithRetry({
-      short_url: fallback,
-      full_url,
-      canonical_url,
-      userId,
-      manage_token
-    });
-  }
-};
-
-export async function createShortUrl({ full_url, userId = null }) {
+export async function createShortUrlService({ full_url, userId = null }) {
   const canonical_url = normalizeUrl(full_url);
-  const existing = await findExistingLinkForCanonical(canonical_url, userId);
-  if (existing) return existing;
+  const existingDoc = await findExistingForCanonical(canonical_url, userId);
+  if (existingDoc) return buildExistingReuseResult(existingDoc);
 
   if (userId) await assertUserLinkCapacity(userId);
 
   const short_url = await generateUniqueShortUrl();
   const rawManageToken = userId ? null : generateManageToken();
-  const storedManageToken = rawManageToken ? hashManageToken(rawManageToken) : null;
-  const saved = await saveShortUrlWithRetry({
+  const storedManageToken = rawManageToken
+    ? hashManageToken(rawManageToken)
+    : null;
+  const saved = await saveShortUrlOnDuplicateSlug({
     short_url,
     full_url: canonical_url,
     canonical_url,
@@ -149,7 +64,11 @@ export async function createShortUrl({ full_url, userId = null }) {
   return rawManageToken ? { ...saved, manage_token: rawManageToken } : saved;
 }
 
-export async function createCustomShortUrl({ full_url, custom_url, userId }) {
+export async function createCustomShortUrlService({
+  full_url,
+  custom_url,
+  userId
+}) {
   await assertUserLinkCapacity(userId);
 
   const canonical_url = normalizeUrl(full_url);
@@ -188,63 +107,7 @@ export async function createCustomShortUrl({ full_url, custom_url, userId }) {
   };
 }
 
-export async function getShortUrl(short_url) {
-  const slug = normalizeSlug(short_url);
-  const shortUrlData = await findActiveLinkBySlug(slug);
-  if (!shortUrlData) {
-    throw new NotFoundError('Short URL not found');
-  }
-  return shortUrlData;
-}
-
-export async function resolveRedirectTarget(short_url) {
-  const cached = getCachedRedirectTarget(short_url);
-  if (cached) return cached;
-
-  const shortUrlData = await getShortUrl(short_url);
-  setCachedRedirectTarget(short_url, shortUrlData);
-  return shortUrlData;
-}
-
-export async function claimAnonymousLinks({ userId, claims }) {
-  await assertUserLinkCapacity(userId);
-
-  const claimed = [];
-  const skipped = [];
-
-  await Promise.all(
-    claims.map(async ({ id, manage_token }) => {
-      if (!id || !manage_token) {
-        skipped.push({ id, reason: 'missing_id_or_token' });
-        return;
-      }
-
-      const doc = await findAnonymousByIdAndToken(id, hashManageToken(manage_token));
-      if (!doc) {
-        skipped.push({ id, reason: 'not_found_or_invalid_token' });
-        return;
-      }
-
-      const ownedDuplicate = await findOwnedDuplicateByCanonical(userId, doc.canonical_url);
-      if (ownedDuplicate) {
-        await softDeleteById(doc._id);
-        skipped.push({
-          id,
-          reason: 'duplicate_destination',
-          short_url: doc.short_url
-        });
-        return;
-      }
-
-      await claimAnonymousLink(doc._id, userId);
-      claimed.push({ id, short_url: doc.short_url });
-    })
-  );
-
-  return { claimed, skipped };
-}
-
-export async function updateOwnedShortUrl({ userId, id, updates }) {
+export async function updateOwnedShortUrlService({ userId, id, updates }) {
   const url = await findOwnedActiveById(id, userId);
   if (!url) {
     throw new NotFoundError('URL not found');
@@ -286,7 +149,9 @@ export async function updateOwnedShortUrl({ userId, id, updates }) {
 
   let updated = url;
   if (Object.keys(patch).length > 0) {
-    updated = await withSlugConflictHandler(() => updateByIdAndUser(id, userId, patch));
+    updated = await withSlugConflictHandler(() =>
+      updateByIdAndUser(id, userId, patch)
+    );
   }
 
   for (const slug of slugsToInvalidate) {
@@ -296,7 +161,7 @@ export async function updateOwnedShortUrl({ userId, id, updates }) {
   return updated;
 }
 
-export async function listLinksForUser({
+export async function listLinksForUserService({
   userId,
   limit = 20,
   skip = 0,
@@ -326,7 +191,7 @@ export async function listLinksForUser({
   };
 }
 
-export async function softDeleteLink({ userId, id }) {
+export async function softDeleteLinkService({ userId, id }) {
   const existing = await findOwnedActiveById(id, userId);
   if (!existing) {
     throw new NotFoundError('URL not found');
@@ -340,7 +205,7 @@ export async function softDeleteLink({ userId, id }) {
   invalidateRedirectSlugCache(existing.short_url);
 }
 
-export async function softDeleteLinks({ userId, ids }) {
+export async function softDeleteLinksService({ userId, ids }) {
   const owned = await findOwnedActiveByIds(ids, userId);
   const ownedIds = owned.map((u) => u._id.toString());
 
@@ -369,10 +234,10 @@ export async function softDeleteLinks({ userId, ids }) {
   };
 }
 
-export async function getStatsForUser({ userId }) {
+export async function getStatsForUserService({ userId }) {
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
-  const [lifetime, recentCreations, topUrls, clickStats] = await Promise.all([
+  const [lifetime, recentActivity, topUrls, clickStats] = await Promise.all([
     aggregateLifetimeStatsForUser(userId),
     aggregateRecentActivityForUser(userId, sevenDaysAgo),
     findTopClickedForUser(userId),
@@ -386,7 +251,7 @@ export async function getStatsForUser({ userId }) {
       avgClicksPerUrl: Math.round(lifetime.avgClicks * 100) / 100,
       clickEventRetentionDays: CLICK_RETENTION_DAYS
     },
-    recentCreations,
+    recentActivity,
     topUrls,
     clickAnalytics: clickStats
   };

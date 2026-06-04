@@ -5,8 +5,8 @@ import GuestOnlyLayout from '../layouts/GuestOnlyLayout';
 import ProtectedLayout from '../layouts/ProtectedLayout';
 import AuthPageLayout from '../layouts/AuthPageLayout';
 import CatalogPageLoader from '../layouts/CatalogPageLoader';
+import { AUTH_PAGE_HANDLES } from './authPageHandles';
 import {
-  AUTH_PAGE_HANDLES,
   ForgotPasswordRoute,
   LoginRoute,
   RegisterRoute,
@@ -21,13 +21,10 @@ const PrivacyPage = lazy(() => import('../components/PrivacyPage'));
 const NotFound = lazy(() => import('../components/NotFound'));
 
 const AppRoutes = () => (
-  <Suspense fallback={<CatalogPageLoader message='Loading page…' />}>
+  <Suspense fallback={<CatalogPageLoader message="Loading page…" />}>
     <Routes>
       <Route element={<GuestOnlyLayout />}>
-        <Route
-          path={ROUTES.HOME}
-          element={<LandingPage />}
-        />
+        <Route path={ROUTES.HOME} element={<LandingPage />} />
 
         <Route element={<AuthPageLayout />}>
           <Route
@@ -59,25 +56,13 @@ const AppRoutes = () => (
       </Route>
 
       <Route element={<ProtectedLayout />}>
-        <Route
-          path={ROUTES.DASHBOARD}
-          element={<Dashboard />}
-        />
-        <Route
-          path={ROUTES.SETTINGS}
-          element={<AccountSettings />}
-        />
+        <Route path={ROUTES.DASHBOARD} element={<Dashboard />} />
+        <Route path={ROUTES.SETTINGS} element={<AccountSettings />} />
       </Route>
 
-      <Route
-        path={ROUTES.PRIVACY}
-        element={<PrivacyPage />}
-      />
+      <Route path={ROUTES.PRIVACY} element={<PrivacyPage />} />
 
-      <Route
-        path='*'
-        element={<NotFound />}
-      />
+      <Route path="*" element={<NotFound />} />
     </Routes>
   </Suspense>
 );

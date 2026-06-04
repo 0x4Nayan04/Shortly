@@ -5,27 +5,27 @@ import { BrandedSpinner } from './LoadingSpinner';
  * Primary auth submit control — disabled + busy state, in-button loader, subtle progress.
  */
 const AuthSubmitButton = memo(
-  ({ loading, loadingLabel, children, className = 'sm-btn sm-btn-primary sm-btn-block' }) => (
+  ({
+    loading,
+    loadingLabel,
+    children,
+    className = 'sm-btn sm-btn-primary sm-btn-block'
+  }) => (
     <button
-      type='submit'
+      type="submit"
       disabled={loading}
       aria-busy={loading}
-      className={`${className}${loading ? ' sm-btn--auth-loading' : ''}`.trim()}>
+      className={`${className}${loading ? ' sm-btn--auth-loading' : ''}`.trim()}
+    >
       {loading ? (
         <>
-          <BrandedSpinner
-            size='sm'
-            decorative
-          />
+          <BrandedSpinner size="sm" decorative />
           {loadingLabel}
         </>
       ) : (
         children
       )}
-      <span
-        className='sr-only'
-        aria-live='polite'
-        aria-atomic='true'>
+      <span className="sr-only" aria-live="polite" aria-atomic="true">
         {loading ? loadingLabel : ''}
       </span>
     </button>

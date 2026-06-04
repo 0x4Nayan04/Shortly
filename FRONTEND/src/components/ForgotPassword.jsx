@@ -2,13 +2,11 @@ import { useCallback, useState } from 'react';
 import { Loader2, Mail } from 'lucide-react';
 import { forgotPassword } from '../api/user.api';
 import { getApiErrorMessage } from '../utils/axiosInstance';
-import {
-  formSuccessIconWrapClass,
-  getDesignInputClass
-} from '../utils/designFormClasses';
 import { validators } from '../utils/validation';
 import { useFormValidation } from '../hooks/useFormValidation';
-import { showToast } from './UxEnhancements';
+import { showToast } from '../utils/showToast';
+import FormField from './forms/FormField';
+import SuccessPanel from './forms/SuccessPanel';
 
 const ForgotPassword = ({ switchToLogin }) => {
   const [email, setEmail] = useState('');
@@ -47,99 +45,79 @@ const ForgotPassword = ({ switchToLogin }) => {
 
   if (sent) {
     return (
-      <div className='app-panel text-center'>
-        <div className={formSuccessIconWrapClass}>
-          <Mail
-            className='size-8 text-primary'
-            aria-hidden='true'
-          />
-        </div>
-        <h2 className='font-display text-xl font-medium tracking-display text-ink mb-2'>
-          Check your email
-        </h2>
-        <p className='text-muted-strong mb-6'>
-          If an account exists for <strong className='text-ink'>{email}</strong>
-          , you&apos;ll receive a password reset link shortly.
-        </p>
-        <button
-          type='button'
-          onClick={switchToLogin}
-          className='landing-text-link font-medium'>
-          Back to sign in
-        </button>
-      </div>
+      <SuccessPanel
+        icon={<Mail className="size-8 text-primary" aria-hidden="true" />}
+        heading="Check your email"
+        message={
+          <>
+            If an account exists for{' '}
+            <strong className="text-ink">{email}</strong>, you&apos;ll receive a
+            password reset link shortly.
+          </>
+        }
+        primaryAction={
+          <button
+            type="button"
+            onClick={switchToLogin}
+            className="landing-text-link font-medium"
+          >
+            Back to sign in
+          </button>
+        }
+      />
     );
   }
 
-  const emailError = fieldErrors.email;
-
   return (
-    <div className='app-panel'>
-      <div className='mb-6 text-center'>
+    <div className="app-panel">
+      <div className="mb-6 text-center">
         <h2
-          id='forgot-heading'
-          className='font-display text-xl font-medium tracking-display text-ink sm:text-2xl'>
+          id="forgot-heading"
+          className="font-display text-xl font-medium tracking-display text-ink sm:text-2xl"
+        >
           Reset your password
         </h2>
-        <p className='mt-2 text-muted-strong'>
+        <p className="mt-2 text-muted-strong">
           Enter your email and we&apos;ll send you a reset link.
         </p>
       </div>
 
       <form
         onSubmit={handleSubmit}
-        className='space-y-4'
-        aria-labelledby='forgot-heading'>
-        <div>
-          <label
-            htmlFor='forgot-email'
-            className='sm-label'>
-            Email address
-          </label>
-          <input
-            id='forgot-email'
-            type='email'
-            value={email}
-            onChange={(e) => {
-              setEmail(e.target.value);
-              onFieldChange(
-                'email',
-                { email: e.target.value },
-                {
-                  clearError: () => setSubmitError('')
-                }
-              );
-            }}
-            onBlur={() => handleBlur('email', { email })}
-            placeholder='Enter your email'
-            className={getDesignInputClass({
-              hasError: touched.email && !!emailError
-            })}
-            aria-invalid={touched.email && !!emailError}
-            aria-describedby={emailError ? 'forgot-email-error' : undefined}
-            autoComplete='email'
-          />
-          {touched.email && emailError && (
-            <p
-              id='forgot-email-error'
-              className='sm-field-error'
-              role='alert'>
-              {emailError}
-            </p>
-          )}
-        </div>
+        className="space-y-4"
+        aria-labelledby="forgot-heading"
+      >
+        <FormField
+          id="forgot-email"
+          label="Email address"
+          type="email"
+          value={email}
+          onChange={(e) => {
+            setEmail(e.target.value);
+            onFieldChange(
+              'email',
+              { email: e.target.value },
+              {
+                clearError: () => setSubmitError('')
+              }
+            );
+          }}
+          onBlur={() => handleBlur('email', { email })}
+          error={fieldErrors.email}
+          touched={touched.email}
+          placeholder="Enter your email"
+          autoComplete="email"
+        />
 
         <button
-          type='submit'
+          type="submit"
           disabled={loading}
           aria-busy={loading}
-          className='sm-btn sm-btn-primary sm-btn-block'>
+          className="sm-btn sm-btn-primary sm-btn-block"
+        >
           {loading ? (
             <>
-              <Loader2
-                className='size-5 animate-spin'
-                aria-hidden='true'
-              />
+              <Loader2 className="size-5 animate-spin" aria-hidden="true" />
               Sending&hellip;
             </>
           ) : (
@@ -149,20 +127,19 @@ const ForgotPassword = ({ switchToLogin }) => {
       </form>
 
       {submitError && (
-        <p
-          className='sm-field-error mt-4 text-center'
-          role='alert'>
+        <p className="sm-field-error mt-4 text-center" role="alert">
           {submitError}
         </p>
       )}
 
-      <div className='mt-6 text-center'>
-        <p className='text-sm text-muted-strong'>
+      <div className="mt-6 text-center">
+        <p className="text-sm text-muted-strong">
           Remember your password?{' '}
           <button
-            type='button'
+            type="button"
             onClick={switchToLogin}
-            className='landing-text-link font-medium'>
+            className="landing-text-link font-medium"
+          >
             Sign in
           </button>
         </p>

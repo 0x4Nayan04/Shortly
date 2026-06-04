@@ -8,18 +8,12 @@ const ProtectedLayout = () => {
   const location = useLocation();
 
   if (!authChecked) {
-    return (
-      <CatalogPageLoader message='Checking authentication…' />
-    );
+    return <CatalogPageLoader message="Checking authentication…" />;
   }
 
   if (!user) {
     return (
-      <Navigate
-        to={ROUTES.LOGIN}
-        replace
-        state={{ from: location.pathname }}
-      />
+      <Navigate to={ROUTES.LOGIN} replace state={{ from: location.pathname }} />
     );
   }
 

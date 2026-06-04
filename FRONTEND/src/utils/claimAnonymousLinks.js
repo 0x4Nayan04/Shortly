@@ -1,9 +1,6 @@
 import { claimAnonymousLinks } from '../api/shortUrl.api';
 import { getApiPayload } from './axiosInstance';
-import {
-  clearAnonymousLinksByIds,
-  readAnonymousLinks
-} from './anonymousLinks';
+import { clearAnonymousLinksByIds, readAnonymousLinks } from './anonymousLinks';
 
 export async function claimStoredAnonymousLinks() {
   const links = readAnonymousLinks();

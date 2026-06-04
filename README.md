@@ -1,112 +1,56 @@
-# Shortly - URL Shortener Application
+# Shortly
 
-A privacy-first URL shortener that converts long URLs into short, shareable
-links with click analytics. Live at
-[shortly.nayan04.me](https://shortly.nayan04.me/).
+> Privacy-first URL shortener with click analytics, custom aliases, and a dashboard.
+> Built to learn end-to-end full-stack development with React, Express, and MongoDB.
+
+**Live demo:** [shortly.nayan04.me](https://shortly.nayan04.me/)
+
+<p align="left">
+  <img src="https://img.shields.io/badge/status-live-brightgreen" alt="Status" />
+  <img src="https://img.shields.io/badge/license-MIT-blue" alt="License" />
+  <img src="https://img.shields.io/badge/node-18%2B-339933" alt="Node" />
+  <img src="https://img.shields.io/badge/mongo-replica%20set-47A248" alt="MongoDB" />
+</p>
+
+<video src="./FRONTEND/public/demo/demo.mp4" width="1280" autoplay loop muted playsinline>
+  <a href="./FRONTEND/public/demo/demo.mp4">Watch the Shortly demo</a>
+</video>
 
 ## Features
 
-- **URL Shortening** — Convert long URLs to short links (no account required)
-- **Anonymous → account** — Guest links are saved on-device; sign in to claim
-  them into your dashboard
-- **Custom Aliases** — Personalized short URLs (3–20 chars, signed-in users)
-- **Click Tracking** — Per-link and account-wide statistics
-- **Click Analytics** — Clicks over time, top countries, device/browser/OS
-  breakdowns (raw click events retained up to 30 days)
-- **URL Management** — View, search, sort, copy, share, edit, and delete links
-- **Bulk Delete** — Select and delete multiple URLs at once
-- **QR Codes** — Generate QR codes for any short URL (SVG or PNG)
-- **Dashboard** — Stats overview, recent activity, top URLs, and analytics tab
-- **Authentication** — Register, email verification, login, HTTP-only cookie
-  sessions
-- **Password Management** — Change password (authenticated), forgot/reset via
-  email
-- **Account Settings** — Profile, password, email verification status, account
-  deletion
-- **Privacy Page** — Public summary of data collection and retention
-- **Rate Limiting** — Tiered per-endpoint limits to reduce abuse
+- Shorten URLs as a guest — no account required
+- Sign in to claim guest links into your dashboard automatically
+- Custom aliases (3–20 chars)
+- Click analytics: clicks over time, top countries, device, browser, OS
+- Dashboard with search, sort, pagination, bulk delete, QR codes
+- Account settings: profile name, password, account deletion
+- Email verification, password reset (Resend)
+- Tiered per-endpoint rate limiting
 
-## Architecture
+## Tech stack
 
-### Frontend (React + Vite)
+**Frontend** — React 19, Vite 6, Tailwind CSS 4, React Router, Axios,
+react-hot-toast, lucide-react, qrcode.
 
-```
-FRONTEND/
-├── src/
-│   ├── api/                 # shortUrl.api.js, user.api.js
-│   ├── components/
-│   │   ├── app/             # App shell, navbar
-│   │   ├── dashboard/       # Stats, links panel, charts, pagination
-│   │   ├── landing/         # Marketing, FAQ, features catalog
-│   │   ├── urlForm/         # Shortening form pieces
-│   │   ├── ux/              # Toasts, dialogs, offline banner, …
-│   │   ├── ClickAnalytics.jsx
-│   │   ├── Dashboard.jsx
-│   │   ├── UrlForm.jsx
-│   │   ├── LoginForm.jsx
-│   │   ├── RegisterForm.jsx
-│   │   ├── VerifyEmail.jsx
-│   │   ├── ForgotPassword.jsx
-│   │   ├── ResetPassword.jsx
-│   │   ├── AccountSettings.jsx
-│   │   ├── PrivacyPage.jsx
-│   │   └── …
-│   ├── contexts/            # AuthContext (incl. anonymous link claim)
-│   ├── hooks/
-│   ├── layouts/
-│   ├── routes/
-│   ├── styles/domains/      # Split CSS (tokens, dashboard, landing, …)
-│   └── utils/               # axiosInstance, anonymousLinks, validation, …
-└── public/
-```
+**Backend** — Node.js, Express 5, MongoDB + Mongoose 8, JWT (HTTP-only cookies),
+bcrypt, Joi, Resend, Helmet, geoip-lite, ua-parser-js.
 
-### Backend (Node.js + Express)
-
-```
-BACKEND/
-├── index.js
-└── src/
-    ├── controllers/
-    ├── schema/              # User, ShortUrl, Click, RateLimit
-    ├── dao/
-    ├── services/            # auth, shortUrl, analytics, email
-    ├── routes/
-    ├── middleware/
-    ├── validation/
-    ├── templates/           # Transactional email HTML/text
-    ├── utils/
-    └── config/
-```
-
-## Quick Start
-
-### Prerequisites
-
-- Node.js 18+
-- MongoDB Atlas or another cloud/replica-set MongoDB
-- npm
-
-### 1. Clone the Repository
+## Quick start
 
 ```bash
 git clone https://github.com/0x4Nayan04/Shortly.git
 cd Shortly
-```
-
-### 2. Install Dependencies (Backend + Frontend)
-
-```bash
 npm run install:all
 ```
 
-### 3. Backend Setup
+Copy and edit environment files (see full lists in the examples below):
 
 ```bash
-cd BACKEND
-cp .env.example .env
+cp BACKEND/.env.example BACKEND/.env
+cp FRONTEND/.env.example FRONTEND/.env
 ```
 
-Minimum `.env`:
+**Backend** (`BACKEND/.env`) — minimum:
 
 ```env
 MONGODB_URI=mongodb+srv://USER:PASSWORD@cluster.example.mongodb.net/url_shortener
@@ -116,308 +60,182 @@ PORT=3001
 NODE_ENV=development
 ```
 
-> Click analytics use MongoDB transactions. Use Atlas or another replica-set
-> deployment. A plain standalone local MongoDB can still redirect, but click
-> recording may fail.
+Optional but useful: `PUBLIC_BASE_URL`, `ALLOWED_ORIGINS`, `RESEND_API_KEY`,
+`RESEND_FROM_EMAIL`, `EMAIL_ASSET_BASE_URL`. See [BACKEND/.env.example](./BACKEND/.env.example).
 
-**Email (optional in dev, required in production):**
-
-```env
-RESEND_API_KEY=re_xxxxxxxxxxxx
-RESEND_FROM_EMAIL=Shortly <noreply@yourdomain.com>
-EMAIL_ASSET_BASE_URL=https://your-production-domain.com
-```
-
-When `RESEND_API_KEY` is **unset**, registration skips email verification and
-logs the user in immediately. When set, new accounts must verify email before
-login.
-
-### 4. Frontend Setup
-
-```bash
-cd FRONTEND
-cp .env.example .env
-```
+**Frontend** (`FRONTEND/.env`) — development:
 
 ```env
+# Leave empty in dev — Vite proxies /api to the backend
 VITE_APP_URL=
 VITE_PUBLIC_SHORT_URL=http://127.0.0.1:5173
 VITE_BACKEND_DEV_URL=http://127.0.0.1:3001
 ```
 
-### 5. Run the Application
+For production builds, set `VITE_APP_URL` to your API origin (e.g.
+`https://api.example.com`). See [FRONTEND/.env.example](./FRONTEND/.env.example).
 
-**Backend:**
-
-```bash
-cd BACKEND
-npm run dev
-```
-
-**Frontend (new terminal):**
-
-```bash
-cd FRONTEND
-npm run dev
-```
-
-**Root helpers:**
+Then in two terminals:
 
 ```bash
 npm run dev:backend
 npm run dev:frontend
-npm run lint:backend
-npm run lint:frontend
-npm run css:check
 ```
 
-Open `http://127.0.0.1:5173` to use Shortly.
+Open <http://127.0.0.1:5173>.
 
-## Environment Variables
+> Click analytics use MongoDB transactions, so the DB must be a replica set
+> (Atlas works). A standalone local MongoDB will still redirect, but click
+> recording may fail.
+>
+> `RESEND_API_KEY` is optional in dev. Without it, registration auto-verifies
+> and logs the user in immediately.
 
-### Backend (`BACKEND/.env.example`)
+## Documentation
 
-| Variable             | Required   | Description                                                               |
-| -------------------- | ---------- | ------------------------------------------------------------------------- |
-| MONGODB_URI          | Yes        | MongoDB Atlas/cloud replica-set connection string                         |
-| JWT_SECRET           | Yes        | JWT signing secret (min 32 chars)                                         |
-| FRONT_END_URL        | Yes        | Frontend origin for CORS, cookies, and email links                        |
-| PORT                 | Yes        | Server port                                                               |
-| NODE_ENV             | No         | `development` or `production`                                             |
-| PUBLIC_BASE_URL      | Production | Public origin for short links/QR when API host differs from redirect host |
-| ALLOWED_ORIGINS      | No         | Comma-separated extra CORS origins (defaults to `FRONT_END_URL`)          |
-| RESEND_API_KEY       | Production | Resend API key for verification and password-reset emails                 |
-| RESEND_FROM_EMAIL    | Production | Verified sender address (e.g. `Shortly <noreply@yourdomain.com>`)         |
-| EMAIL_ASSET_BASE_URL | No         | Public URL for email logo assets when `FRONT_END_URL` is localhost        |
-| MONGODB_IP_FAMILY    | No         | `4` or `6`; omit for system default                                       |
+| Doc                                              | Contents                              |
+| ------------------------------------------------ | ------------------------------------- |
+| [PRIVACY.md](./PRIVACY.md)                       | Public analytics and retention policy |
+| [BACKEND/.env.example](./BACKEND/.env.example)   | All backend environment variables     |
+| [FRONTEND/.env.example](./FRONTEND/.env.example) | All frontend environment variables    |
 
-### Frontend (`FRONTEND/.env.example`)
+## Architecture
 
-| Variable              | Required | Description                                               |
-| --------------------- | -------- | --------------------------------------------------------- |
-| VITE_APP_URL          | Prod     | Backend API origin; leave empty in dev for the Vite proxy |
-| VITE_PUBLIC_SHORT_URL | Yes      | Public short-link origin used for copy/share/QR           |
-| VITE_BACKEND_DEV_URL  | Dev      | Backend origin for Vite's local proxy                     |
-
-## Production Deployment
-
-### Backend
-
-1. Set environment variables (`NODE_ENV=production`, `PUBLIC_BASE_URL`,
-   `RESEND_*`, etc.).
-2. `npm install`
-3. `npm start`
-
-### Frontend
-
-1. Set `VITE_APP_URL` to your backend API URL.
-2. Set `VITE_PUBLIC_SHORT_URL` to the domain that reaches the backend redirect
-   route (`GET /:short_url`).
-3. `npm run build` → output in `dist/`
-
-### Deployment Notes
-
-- **Auth cookies**: In production with cross-origin frontend/API, use
-  `sameSite: 'none'` and `secure: true`. Cookie-backed writes validate
-  `Origin`/`Referer` — keep frontend origins exact.
-- **CORS**: Set `FRONT_END_URL` to your frontend domain; use `ALLOWED_ORIGINS`
-  for additional origins.
-- **MongoDB**: Include the database name in the connection string; whitelist
-  deployment IPs in Atlas.
-- **Email**: Verify your sending domain in Resend. Set `FRONT_END_URL` to your
-  public frontend so verification/reset links work outside localhost.
-- **Short links**: Do not point `VITE_PUBLIC_SHORT_URL` at a static SPA-only
-  host unless it proxies root slug paths to the backend.
-
-## API Documentation
-
-### Base URL
-
-- Development: `http://localhost:3001` (or via Vite proxy at `/api`)
-
-### Authentication
-
-| Method | Endpoint                      | Auth | Description                                          |
-| ------ | ----------------------------- | ---- | ---------------------------------------------------- |
-| POST   | /api/auth/register            | No   | Register user                                        |
-| POST   | /api/auth/verify-email        | No   | Verify email with token                              |
-| POST   | /api/auth/resend-verification | No   | Resend verification email                            |
-| POST   | /api/auth/login               | No   | Login (requires verified email if Resend configured) |
-| POST   | /api/auth/logout              | Yes  | Logout                                               |
-| GET    | /api/auth/me                  | Yes  | Get profile                                          |
-| PATCH  | /api/auth/me                  | Yes  | Update profile                                       |
-| DELETE | /api/auth/me                  | Yes  | Delete account                                       |
-| POST   | /api/auth/change-password     | Yes  | Change password                                      |
-| POST   | /api/auth/forgot-password     | No   | Request password reset                               |
-| POST   | /api/auth/reset-password      | No   | Reset password with token                            |
-
-### URL Shortening
-
-| Method | Endpoint            | Auth | Description                                       |
-| ------ | ------------------- | ---- | ------------------------------------------------- |
-| POST   | /api/create         | No\* | Create short URL (\*optional auth attaches owner) |
-| POST   | /api/create/custom  | Yes  | Create custom short URL                           |
-| POST   | /api/create/claim   | Yes  | Claim anonymous links created on this device      |
-| GET    | /api/create/my-urls | Yes  | List user URLs (search, sort, pagination)         |
-| GET    | /api/create/stats   | Yes  | Account stats and click analytics                 |
-| PATCH  | /api/create/:id     | Yes  | Update destination, alias, or disabled state      |
-| DELETE | /api/create/:id     | Yes  | Delete single URL                                 |
-| DELETE | /api/create/bulk    | Yes  | Bulk delete URLs                                  |
-| GET    | /api/qr/:short_url  | No   | QR code image (`?format=png` or `svg`)            |
-| GET    | /:short_url         | No   | Redirect to original URL                          |
-| GET    | /api/health         | No   | Health check                                      |
-
-### Example: Create Short URL (guest)
-
-```http
-POST /api/create
-Content-Type: application/json
-
-{
-  "full_url": "https://www.example.com/very/long/url/path"
-}
+```
+FRONTEND/      React 19 + Vite SPA (see FRONTEND layout below)
+BACKEND/       Express 5 API
+  src/
+    routes/        REST endpoints
+    controllers/   request handling
+    services/      business logic
+      shortUrl/    persist, redirect, claim, capacity (split from monolith)
+      auth, account, analytics, email, click, …
+    dao/           Mongo access layer
+    schema/        Mongoose models (User, ShortUrl, Click, RateLimit)
+    middleware/    auth, csrf, rate limit, validation, latency
+    validation/    Joi schemas
+    utils/         authToken, slug/url helpers, error handler, redirect cache,
+                   mongoTransaction
 ```
 
-Guest response includes `manage_token` (stored in browser `localStorage` for
-claim-on-sign-in). Signed-in users get the link attached to their account
-directly.
+Profile reads use `GET /api/auth/me` with `Cache-Control: no-store` so clients
+never show a stale display name after edits.
 
-### Example: Claim Anonymous Links
+### Frontend (`FRONTEND/src`)
 
-```http
-POST /api/create/claim
-Content-Type: application/json
-Cookie: token=<jwt>
+| Path                                                                                        | Access    | Page                                   |
+| ------------------------------------------------------------------------------------------- | --------- | -------------------------------------- |
+| `/`                                                                                         | Public    | Landing                                |
+| `/login`, `/register`, `/verify-email/:token`, `/forgot-password`, `/reset-password/:token` | Guest     | Auth                                   |
+| `/dashboard`, `/settings`                                                                   | Signed in | Dashboard, account settings            |
+| `/privacy`                                                                                  | Public    | Privacy policy                         |
+| `/:short_url`                                                                               | Public    | Proxied redirect (dev: Vite → backend) |
 
-{
-  "links": [
-    { "id": "<urlId>", "manage_token": "<token>" }
-  ]
-}
-```
+**Layout:** `api/` (axios clients), `contexts/` (`authSessionStore` +
+`AuthContext` with shared stats), `hooks/` (`useDashboard`, `useDashboardList`,
+`useDashboardMutations`, `useUrlStats`), `components/` (`app/`, `dashboard/`,
+`settings/`, `landing/`, `urlForm/`, `ux/`, …), `styles/domains/` + design tokens.
 
-### Example: Resend Verification Email
+**Session:** Bootstrap via `GET /api/auth/me`; profile saves call `PATCH /api/auth/me`,
+then `updateUser` + `refreshUser` so the navbar shows the new name.
 
-```http
-POST /api/auth/resend-verification
-Content-Type: application/json
+**API responses:** Axios flattens `{ success, message, data: { … } }`. Use
+`getApiPayload`, `getApiUser`, `getApiMessage`, `getApiErrorMessage` from
+`FRONTEND/src/utils/axiosInstance.js`.
 
-{
-  "email": "you@example.com"
-}
-```
-
-### Example: Get User URLs
-
-```http
-GET /api/create/my-urls?limit=20&skip=0&search=example&sortBy=createdAt&sortOrder=desc
-Cookie: token=<jwt>
-```
-
-## Tech Stack
-
-### Frontend
-
-- React 19, Vite 6, Tailwind CSS 4
-- React Router, Axios
-- react-hot-toast, lucide-react, qrcode
-
-### Backend
-
-- Node.js, Express 5, MongoDB, Mongoose 8
-- JWT, bcrypt, nanoid, Joi, Resend
-- Helmet, compression, cookie-parser, geoip-lite
-
-### Development
-
-- ESLint, Nodemon, dotenv
-
-## Usage
-
-### Anonymous Users
-
-1. Visit the homepage and paste a long URL.
-2. Copy and share the short link immediately.
-3. The link is remembered on this device only.
-4. **Sign in** to move saved links into your dashboard (claim flow runs
-   automatically on login/register).
-
-### Registered Users
-
-1. Sign up with name, email, and password.
-2. If email is configured, verify via the link sent to your inbox (or use
-   **Resend verification email** on login/register).
-3. Use the dashboard to manage URLs, view analytics, and bulk-delete.
-4. Create custom aliases (3–20 chars: letters, numbers, hyphens, underscores).
+**CSS:** Domain files under `styles/domains/`; run `npm run css:check` from the
+repo root after token/CSS edits (syncs with `Design/` variables when present).
 
 ## Design tradeoffs
 
-Intentional product and engineering choices — useful context for reviewers and
-interviews. See [PRIVACY.md](./PRIVACY.md) for the public-facing version of
+These are intentional product/engineering decisions — useful context for
+reviewers and interviews. See [PRIVACY.md](./PRIVACY.md) for the public-facing
 analytics policy.
 
-### Redirect speed vs click accuracy
+### 1. Fast redirects over exact click counts
 
-The redirect handler sends a `302` **first**, then records the click
-asynchronously after the response finishes. That keeps links fast for visitors.
+The redirect handler sends `302` first, then records the click asynchronously
+after the response finishes (`res.once('finish', recordClick)`). This keeps
+links fast for visitors.
 
-**Tradeoff:** If someone closes the tab immediately, the visit may never be
-recorded. We prioritize fast redirects over perfectly exact counts. Bot user
-agents are excluded from recording entirely.
+**Tradeoff:** If a visitor closes the tab immediately after the redirect
+resolves, the visit may never be recorded. We prioritize perceived speed
+over perfectly exact counts. Bot user-agents are excluded from recording
+entirely.
 
-### 30-day analytics window vs lifetime totals
+### 2. 30-day analytics window, but lifetime click totals
 
-Raw click events (country, device, browser, referrer, daily chart buckets) are
-stored with a MongoDB TTL index and **deleted after 30 days**.
+Raw click events (country, device, browser, referrer, daily chart) live in a
+`clicks` collection with a MongoDB TTL index and are auto-deleted after 30
+days. The link's `click` counter, however, is incremented transactionally on
+every recorded redirect and is **not** tied to the TTL window — so total
+clicks on a link are lifetime, but the breakdown charts only cover the last
+30 days.
 
-**Tradeoff:** The analytics chart and breakdowns only cover stored history (up
-to 30 days). **Total clicks (all time)** on each link and in the dashboard
-overview comes from the link’s `click` counter, which is incremented on every
-recorded redirect and is not tied to the TTL window.
+### 3. Anonymous links: device-local until claimed
 
-### Anonymous links: device-local, claim on sign-in
+Guests can shorten without an account. The backend returns a `manage_token`;
+the frontend stores `{ id, manage_token }` in `localStorage`. On sign-in, the
+`/api/create/claim` flow transfers ownership and unsets the manage token.
 
-Guests can shorten without an account. The backend returns a `manage_token`; the
-frontend stores `{ id, manage_token }` in `localStorage` on that device.
+**Tradeoff:** No way to recover guest links across browsers/devices without
+signing in. Clearing browser data loses manage access — the short link itself
+still works.
 
-**Tradeoff:** Links are not tied to an account until the user signs in and the
-claim flow runs (`POST /api/create/claim`). There is no guest delete API — sign
-in to claim, then manage or delete from the dashboard. Clearing browser data
-loses manage access (the short link still works).
+### 4. Two rate-limit strategies, picked by path temperature
 
-### Email verification when Resend is configured
+- **DB-backed `rateLimiter`** (auth, custom-create, etc.) — accurate across
+  instances, but one extra Mongo round-trip per request.
+- **In-memory `memoryRateLimiter`** for the redirect hot path — zero DB cost
+  per redirect, at the cost of not being shared across instances.
 
-If `RESEND_API_KEY` is set, new accounts must verify email before login. Without
-it (typical local dev), registration auto-verifies and issues a session
-immediately.
+The redirect cache (`redirectSlugCache`, 60s TTL, 5000-entry LRU) follows the
+same logic: redirect latency is more valuable than the freshness of an edit.
 
-**Tradeoff:** Production gets verified inboxes and fewer throwaway accounts;
-local dev stays frictionless when email is not configured.
+### 5. Soft delete on links, not hard delete
+
+`deletedAt` is set on links, not `remove()`d. This preserves click-event
+joins (the analytics aggregation only counts `deletedAt: null` links) and
+leaves the door open for a future "trash / restore" flow.
+
+**Tradeoff:** Storage grows with churn; mitigated by the 30-day click TTL
+and a `purgeReclaimableSlug` helper that hard-deletes older soft-deleted
+slugs before reusing them. Deleting a link hides it from the dashboard;
+raw events expire on the TTL schedule (see [PRIVACY.md](./PRIVACY.md)).
+
+### 6. SSRF protection at both create and redirect
+
+`isSafeRedirectUrl` rejects non-http(s) schemes and any destination whose
+hostname resolves to a private/loopback/link-local range (using
+`net.BlockList` for IPv4 + IPv6, including IPv4-mapped IPv6). It's checked
+on create/update **and** again at redirect time, so a tampered DB record
+can't redirect visitors to `127.0.0.1` or `169.254.169.254` (cloud metadata).
 
 ## Security
 
-- Password hashing with bcrypt
-- JWT in HTTP-only cookies with `tokenVersion` (invalidate sessions on password
-  change)
+- bcrypt password hashing; JWT in HTTP-only cookies with `tokenVersion`
+  (sessions are invalidated on password change)
 - Email verification gate when Resend is configured
-- Server-side validation (Joi)
-- CORS, Helmet, CSRF checks on cookie-backed writes
-- Rate limiting (per-endpoint tiers)
-- Reserved slug protection
-- Safe redirect validation (blocks private/local targets)
-- Bot user agents excluded from click recording
-- Graceful shutdown with connection cleanup
+- Joi validation on every input, CSRF checks on cookie-backed writes
+- CORS with explicit origin allowlist (`FRONT_END_URL` + `ALLOWED_ORIGINS`)
+- Per-endpoint rate limits, reserved-slug protection, SSRF-safe redirects
+- Helmet, gzip, request IDs, latency tracking, graceful shutdown
+- User profile API responses are not cached (`no-store` on `/api/auth/me`)
 
-## Troubleshooting
+## Root scripts
 
-| Issue                     | Solution                                                                                    |
-| ------------------------- | ------------------------------------------------------------------------------------------- |
-| 401 / No token            | Check `FRONT_END_URL`; use `sameSite: 'none'` + `secure: true` in production cross-origin   |
-| Verify email before login | Verify inbox/spam; use resend on login; or unset `RESEND_API_KEY` for local dev auto-verify |
-| No verification email     | Check Resend dashboard, domain verification, and quota; set public `FRONT_END_URL` in prod  |
-| 500 / DB errors           | Verify MongoDB URI and Atlas IP whitelist                                                   |
-| CORS blocked              | Match `FRONT_END_URL` to frontend domain; use `ALLOWED_ORIGINS` if needed                   |
-| Short link 404 on SPA     | Proxy `/:slug` to backend or set `VITE_PUBLIC_SHORT_URL` to the redirect host               |
+| Command                  | Description                                         |
+| ------------------------ | --------------------------------------------------- |
+| `npm run install:all`    | Install backend + frontend dependencies             |
+| `npm run dev:backend`    | Start API with nodemon                              |
+| `npm run dev:frontend`   | Start Vite dev server                               |
+| `npm run build:frontend` | Production frontend build (`VITE_APP_URL` required) |
+| `npm run lint:frontend`  | ESLint (frontend)                                   |
+| `npm run lint:backend`   | ESLint (backend)                                    |
+| `npm run css:check`      | Assemble CSS + verify design tokens (frontend)      |
+| `npm run format`         | Prettier — format tracked source/docs               |
+| `npm run format:check`   | Prettier — verify formatting (CI-friendly)          |
 
-See also [PRIVACY.md](./PRIVACY.md) for analytics retention and
-[FRONTEND/README.md](./FRONTEND/README.md) for frontend-specific notes.
+## License
+
+[MIT](./LICENSE)
