@@ -12,12 +12,13 @@ const Avatar = memo(
     width,
     height
   }) => {
-    const [showFallback, setShowFallback] = useState(!src);
+    const [failedSrc, setFailedSrc] = useState(null);
+    const showFallback = !src || failedSrc === src;
     const initial = (label || 'U').charAt(0).toUpperCase();
 
     const handleError = useCallback(() => {
-      setShowFallback(true);
-    }, []);
+      setFailedSrc(src);
+    }, [src]);
 
     const inner = (
       <>

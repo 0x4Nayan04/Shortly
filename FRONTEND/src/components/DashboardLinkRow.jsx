@@ -144,15 +144,18 @@ const DashboardLinkRow = memo(
     url,
     onCopy,
     onDelete,
-    isCopied,
-    isDeleting,
-    isUpdating,
-    isSelected,
+    status,
     onSelect,
     onShare,
     onEdit,
     onToggleDisabled
   }) => {
+    const {
+      copied: isCopied,
+      deleting: isDeleting,
+      updating: isUpdating,
+      selected: isSelected
+    } = status;
     const showMeta = !useMediaQuery('(max-width: 767px)');
     const shortUrlFull = buildPublicShortUrl(url.short_url);
     const { hostLead, hostTrail, slug } = getShortLinkDisplayParts(

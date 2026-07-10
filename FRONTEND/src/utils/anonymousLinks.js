@@ -1,4 +1,4 @@
-const STORAGE_KEY = 'shortly_anonymous_links';
+const STORAGE_KEY = 'shortly_anonymous_links:v1';
 
 export function rememberAnonymousLink({ id, manage_token, short_url }) {
   if (!id || !manage_token) return;

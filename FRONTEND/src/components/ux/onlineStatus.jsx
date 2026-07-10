@@ -54,15 +54,8 @@ OnlineStatusProvider.displayName = 'OnlineStatusProvider';
 
 export const useOnlineStatus = () => use(OnlineStatusContext);
 
-export const OfflineBanner = memo(() => {
-  const { isOnline } = useOnlineStatus();
+const OfflineBannerContent = memo(({ isOnline }) => {
   const [isDismissed, setIsDismissed] = useState(false);
-
-  useEffect(() => {
-    if (isOnline) {
-      setIsDismissed(false);
-    }
-  }, [isOnline]);
 
   if (isOnline || isDismissed) return null;
 
@@ -114,6 +107,13 @@ export const OfflineBanner = memo(() => {
       </div>
     </div>
   );
+});
+
+OfflineBannerContent.displayName = 'OfflineBannerContent';
+
+export const OfflineBanner = memo(() => {
+  const { isOnline } = useOnlineStatus();
+  return <OfflineBannerContent key={String(isOnline)} isOnline={isOnline} />;
 });
 
 OfflineBanner.displayName = 'OfflineBanner';

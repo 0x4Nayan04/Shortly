@@ -13,10 +13,9 @@ const NAV_LINKS = [
   { label: 'Privacy', to: '/privacy' }
 ];
 
-const LandingNavbar = memo(() => {
+const LandingNavbarContent = memo(() => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const menuButtonRef = useRef(null);
   const mobileMenuRef = useFocusTrap(isMobileMenuOpen, {
@@ -41,10 +40,6 @@ const LandingNavbar = memo(() => {
     window.addEventListener('resize', closeOnResize);
     return () => window.removeEventListener('resize', closeOnResize);
   }, [isMobileMenuOpen]);
-
-  useEffect(() => {
-    setIsMobileMenuOpen(false);
-  }, [location.pathname, location.hash]);
 
   const closeMobileMenu = useCallback(() => {
     setIsMobileMenuOpen(false);
@@ -234,6 +229,11 @@ const LandingNavbar = memo(() => {
   );
 });
 
-LandingNavbar.displayName = 'LandingNavbar';
+LandingNavbarContent.displayName = 'LandingNavbarContent';
+
+const LandingNavbar = () => {
+  const location = useLocation();
+  return <LandingNavbarContent key={`${location.pathname}${location.hash}`} />;
+};
 
 export default LandingNavbar;

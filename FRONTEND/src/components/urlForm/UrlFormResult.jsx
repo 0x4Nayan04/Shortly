@@ -1,15 +1,15 @@
-import { forwardRef } from 'react';
 import { Check, Share2 } from 'lucide-react';
 
-const UrlFormResult = forwardRef(function UrlFormResult({
+const UrlFormResult = ({
   shortUrl,
   isLanding,
   user,
   onShowAuth,
   isCopied,
   onCopy,
-  onShare
-}, ref) {
+  onShare,
+  ref
+}) => {
   return (
     <output
       ref={ref}
@@ -100,6 +100,6 @@ const UrlFormResult = forwardRef(function UrlFormResult({
       )}
     </output>
   );
-});
+};
 
 export default UrlFormResult;

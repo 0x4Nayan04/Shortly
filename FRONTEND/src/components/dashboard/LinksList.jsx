@@ -19,10 +19,12 @@ const LinksList = ({
         <DashboardLinkRow
           key={url._id}
           url={url}
-          isCopied={copiedCheck(buildPublicShortUrl(url.short_url))}
-          isDeleting={deletingUrl === url._id}
-          isUpdating={updatingUrl === url._id}
-          isSelected={selectedIds.has(url._id)}
+          status={{
+            copied: copiedCheck(buildPublicShortUrl(url.short_url)),
+            deleting: deletingUrl === url._id,
+            updating: updatingUrl === url._id,
+            selected: selectedIds.has(url._id)
+          }}
           onCopy={handlers.onCopy}
           onDelete={handlers.onDelete}
           onSelect={handlers.onSelect}
