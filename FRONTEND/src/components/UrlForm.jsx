@@ -302,7 +302,6 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth, variant = 'default' }) => {
             handleBlur(field, { ...formValues, [field]: value })
           }
           showPrefix={isLanding}
-          shortUrl={shortUrl}
         >
           {isLanding && (
             <LandingCustomAliasSection

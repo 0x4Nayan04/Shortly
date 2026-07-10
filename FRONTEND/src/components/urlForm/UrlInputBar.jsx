@@ -17,14 +17,6 @@ const getPlaceholder = (showPrefix) =>
 const getErrorClass = (showPrefix) =>
   `hero-form-error${showPrefix ? '' : ' px-4 pb-3'}`;
 
-const UrlPreview = ({ url, showPrefix }) =>
-  url && (
-    <p className="truncate px-4 pb-3 font-mono text-xs text-muted" title={url}>
-      {showPrefix ? null : <span aria-hidden="true">→ </span>}
-      {url}
-    </p>
-  );
-
 const SubmitButton = ({ loading, showPrefix }) => (
   <button
     type="submit"
@@ -45,11 +37,9 @@ const UrlInputBar = ({
   handleChange,
   handleBlur,
   showPrefix,
-  shortUrl,
   children
 }) => {
   const urlHasError = Boolean(touched.url && fieldErrors.url);
-  const showErrorPreview = url && !fieldErrors.url && !loading && !shortUrl;
 
   return (
     <div className={getContainerClass(showPrefix, urlHasError)}>
@@ -82,7 +72,6 @@ const UrlInputBar = ({
           {fieldErrors.url}
         </p>
       )}
-      {showErrorPreview && <UrlPreview url={url} showPrefix={showPrefix} />}
     </div>
   );
 };

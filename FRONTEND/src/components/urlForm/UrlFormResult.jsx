@@ -1,4 +1,4 @@
-import { Check, Share2 } from 'lucide-react';
+import { Check, Copy, Share2 } from 'lucide-react';
 
 const UrlFormResult = ({
   shortUrl,
@@ -16,75 +16,63 @@ const UrlFormResult = ({
       className={
         isLanding
           ? 'short-link-result short-link-result--landing animate-fade-in'
-          : 'short-link-result app-panel animate-fade-in'
+          : 'short-link-result short-link-result--panel app-panel animate-fade-in'
       }
       aria-live="polite"
+      aria-label="Short link created"
     >
       <div className="short-link-result__header">
-        <div className="short-link-result__icon">
-          <Check className="w-4 h-4" aria-hidden="true" />
-        </div>
-        <div className="short-link-result__heading">
-          <p className="short-link-result__eyebrow">Short link created</p>
-          <h3 className="short-link-result__title">
-            {isLanding
-              ? 'Your short link is ready'
-              : 'URL shortened successfully!'}
-          </h3>
-        </div>
+        <span className="short-link-result__status">
+          <Check className="size-3.5" strokeWidth={2.5} aria-hidden="true" />
+          Short link ready
+        </span>
+        <button
+          type="button"
+          onClick={onShare}
+          className="short-link-result__ghost-action"
+          aria-label="Share shortened URL"
+        >
+          <Share2 className="size-4" aria-hidden="true" />
+          Share
+        </button>
       </div>
 
-      <div className="short-link-result__body">
-        <label htmlFor="short-url-output" className="short-link-result__label">
-          Your shortened URL
-        </label>
-        <div className="short-link-result__url-row">
-          <input
-            id="short-url-output"
-            type="text"
-            value={shortUrl}
-            readOnly
-            className="short-link-result__input sm-input"
-            aria-describedby="short-url-description"
-            onClick={(e) => e.target.select()}
-          />
-          <button
-            type="button"
-            onClick={onCopy}
-            aria-label={
-              isCopied ? 'URL copied to clipboard' : 'Copy URL to clipboard'
-            }
-            className="short-link-result__copy sm-btn sm-btn-primary"
-          >
-            {isCopied ? (
-              <>
-                <Check className="w-4 h-4" aria-hidden="true" />
-                Copied
-              </>
-            ) : (
-              'Copy'
-            )}
-          </button>
-          <button
-            type="button"
-            onClick={onShare}
-            className="short-link-result__share sm-btn sm-btn-secondary"
-            aria-label="Share shortened URL"
-          >
-            <Share2 className="w-4 h-4" aria-hidden="true" />
-            Share
-          </button>
-        </div>
-        <p
-          id="short-url-description"
-          className="short-link-result__description"
+      <label htmlFor="short-url-output" className="sr-only">
+        Your shortened URL
+      </label>
+      <div className="short-link-result__control">
+        <input
+          id="short-url-output"
+          type="text"
+          value={shortUrl}
+          readOnly
+          className="short-link-result__input"
+          onClick={(e) => e.target.select()}
+        />
+        <button
+          type="button"
+          onClick={onCopy}
+          aria-label={
+            isCopied ? 'URL copied to clipboard' : 'Copy URL to clipboard'
+          }
+          className="short-link-result__copy"
         >
-          Copy your new shortened URL or share it using the buttons above.
-        </p>
+          {isCopied ? (
+            <>
+              <Check className="size-4" aria-hidden="true" />
+              Copied
+            </>
+          ) : (
+            <>
+              <Copy className="size-4" aria-hidden="true" />
+              Copy
+            </>
+          )}
+        </button>
       </div>
 
       {!user && (
-        <div className="mt-4 border-t border-border pt-4">
+        <div className="short-link-result__footer">
           <p className="text-sm text-muted-strong">
             <strong className="text-ink">Not saved to your account.</strong>{' '}
             <button
