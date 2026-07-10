@@ -1,4 +1,4 @@
-import { useCallback, useReducer } from 'react';
+import { useCallback, useEffect, useReducer, useRef } from 'react';
 import { AlertCircle } from 'lucide-react';
 import ShareModal from './ShareModal';
 import { createShortUrl, createCustomShortUrl } from '../api/shortUrl.api';
@@ -82,6 +82,7 @@ function urlFormReducer(state, action) {
 const UrlForm = ({ onUrlCreated, user, onShowAuth, variant = 'default' }) => {
   const isLanding = variant === 'landing';
   const [state, dispatch] = useReducer(urlFormReducer, initialState);
+  const resultRef = useRef(null);
   const {
     url,
     customAlias,
@@ -96,6 +97,18 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth, variant = 'default' }) => {
   const [announcement, announce] = useAnnouncement();
   const { isOnline } = useOnlineStatus();
   const { copy, isCopied } = useCopyToClipboard();
+
+  useEffect(() => {
+    if (!shortUrl || !resultRef.current) return;
+
+    const prefersReducedMotion = window.matchMedia(
+      '(prefers-reduced-motion: reduce)'
+    ).matches;
+    resultRef.current.scrollIntoView({
+      behavior: prefersReducedMotion ? 'auto' : 'smooth',
+      block: 'center'
+    });
+  }, [shortUrl]);
 
   const getRules = useCallback(
     () => ({
@@ -265,6 +278,7 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth, variant = 'default' }) => {
 
       <form
         onSubmit={handleSubmit}
+        noValidate
         className={isLanding ? 'pt-0' : 'space-y-4'}
         aria-label="URL shortener form"
       >
@@ -342,6 +356,7 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth, variant = 'default' }) => {
 
       {shortUrl && (
         <UrlFormResult
+          ref={resultRef}
           shortUrl={shortUrl}
           isLanding={isLanding}
           user={user}

@@ -143,7 +143,7 @@ const ShareModal = memo(({ isOpen, onClose, shortUrl, fullUrl }) => {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4"
+      className="fixed inset-0 z-50 flex overflow-hidden items-center justify-center p-3 sm:p-4"
       aria-labelledby="share-dialog-title"
     >
       <div
@@ -154,9 +154,9 @@ const ShareModal = memo(({ isOpen, onClose, shortUrl, fullUrl }) => {
       <div
         ref={setDialogRef}
         tabIndex={-1}
-        className="share-modal relative app-panel w-full max-w-[28rem] max-h-[90dvh] overflow-y-auto animate-scale-in p-5 sm:p-6"
+        className="share-modal relative app-panel flex w-full max-w-[28rem] max-h-[calc(100dvh-1.5rem)] sm:max-h-[calc(100dvh-2rem)] flex-col overflow-hidden animate-scale-in p-5 sm:p-6"
       >
-        <div className="share-modal__header flex items-center justify-between pb-4 mb-5 border-b border-border">
+        <div className="share-modal__header flex shrink-0 items-center justify-between pb-4 mb-5 border-b border-border">
           <div className="share-modal__title-wrap flex flex-col gap-1">
             <h2
               id="share-dialog-title"
@@ -178,7 +178,7 @@ const ShareModal = memo(({ isOpen, onClose, shortUrl, fullUrl }) => {
           </button>
         </div>
 
-        <div className="flex flex-col gap-6">
+        <div className="flex min-h-0 flex-col gap-6 overflow-y-auto overscroll-contain">
           <div className="flex flex-col items-center justify-center bg-surface-muted border border-border p-4 rounded-sm">
             {qrDataUrl ? (
               <div className="bg-white p-2 rounded-sm shadow-sm border border-border/50">
