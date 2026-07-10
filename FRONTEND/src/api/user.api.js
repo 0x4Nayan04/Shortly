@@ -24,7 +24,7 @@ export const logoutUser = async () => {
 
 export const getCurrentUser = async () => {
   const { data } = await axiosinstance.get(`/api/auth/me`, {
-    headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache' }
+    headers: { 'Cache-Control': 'no-cache' }
   });
   return data;
 };
