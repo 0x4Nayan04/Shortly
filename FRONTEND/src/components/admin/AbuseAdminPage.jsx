@@ -5,16 +5,16 @@ import {
   fetchAbuseReports,
   retireAbuseReport,
   updateAbuseReport
-} from '../api/abuse.api';
-import { getApiErrorMessage, getApiPayload } from '../utils/axiosInstance';
-import { showToast } from '../utils/showToast';
+} from '../../api/abuse.api';
+import { getApiErrorMessage, getApiPayload } from '../../utils/axiosInstance';
+import { showToast } from '../../utils/showToast';
 import AppCatalogShell, {
   LandingFrameInner,
   LandingSectionBlock
-} from './app/AppCatalogShell';
-import AppNavbar from './app/AppNavbar';
-import FormAlert from './forms/FormAlert';
-import { ROUTES } from '../constants/routes';
+} from '../app/AppCatalogShell';
+import AppNavbar from '../app/AppNavbar';
+import FormAlert from '../forms/FormAlert';
+import { ROUTES } from '../../constants/routes';
 
 const STATUS_OPTIONS = ['pending', 'reviewed', 'resolved', 'dismissed'];
 

@@ -2,9 +2,10 @@ import { expect, test } from '@playwright/test';
 
 test('anonymous shorten, redirect, and dashboard analytics', async ({
   page,
-  context
+  context,
+  request
 }) => {
-  const destination = 'https://example.com/e2e-target';
+  const destination = 'https://example.com/';
 
   await page.goto('/');
   await page.getByLabel('Long URL').fill(destination);
@@ -20,12 +21,15 @@ test('anonymous shorten, redirect, and dashboard analytics', async ({
   );
 
   const slug = shortUrl.split('/').pop();
+  const redirectResponse = await request.get(`http://127.0.0.1:3011/${slug}`, {
+    maxRedirects: 0
+  });
+  expect(redirectResponse.status()).toBeGreaterThanOrEqual(300);
+  expect(redirectResponse.status()).toBeLessThan(400);
+  expect(redirectResponse.headers().location).toBe(destination);
+
   const redirectPage = await context.newPage();
-  const redirectResponse = await redirectPage.goto(
-    `http://127.0.0.1:3011/${slug}`
-  );
-  expect(redirectResponse?.status()).toBeGreaterThanOrEqual(300);
-  expect(redirectResponse?.status()).toBeLessThan(400);
+  await redirectPage.goto(`http://127.0.0.1:3011/${slug}`);
   await expect(redirectPage).toHaveURL(destination);
 
   const email = `e2e-${Date.now()}@example.com`;
