@@ -10,7 +10,6 @@
     "lint": "eslint .",
     "test": "node --test --test-concurrency=1",
     "test:watch": "node --test --test-concurrency=1 --watch",
-    "migrate:resume-readiness": "bun scripts/migrateResumeReadiness.js",
     "audit": "bun audit --audit-level high",
     "ci": "bun run lint && bun run test"
   },

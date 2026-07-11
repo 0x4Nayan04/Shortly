@@ -24,7 +24,44 @@ export const registerSchema = Joi.object({
     'string.email': 'Please provide a valid email address',
     'any.required': 'Email is required'
   }),
-  password: passwordSchema
+  password: passwordSchema,
+  acceptedTerms: Joi.boolean().valid(true).required().messages({
+    'any.only': 'You must accept the Terms of Service',
+    'any.required': 'You must accept the Terms of Service'
+  })
+});
+
+export const abuseReportSchema = Joi.object({
+  slug: Joi.string()
+    .trim()
+    .lowercase()
+    .min(3)
+    .max(20)
+    .pattern(/^[a-z0-9_-]+$/)
+    .required()
+    .messages({
+      'string.empty': 'Short link slug is required',
+      'string.min': 'Slug must be at least 3 characters',
+      'string.max': 'Slug cannot exceed 20 characters',
+      'string.pattern.base':
+        'Slug can only contain letters, numbers, hyphens, and underscores',
+      'any.required': 'Short link slug is required'
+    }),
+  reason: Joi.string().trim().min(10).max(2000).required().messages({
+    'string.empty': 'Please describe the issue',
+    'string.min': 'Please provide at least 10 characters describing the issue',
+    'string.max': 'Reason cannot exceed 2000 characters',
+    'any.required': 'Please describe the issue'
+  }),
+  reporterEmail: Joi.string()
+    .trim()
+    .lowercase()
+    .email()
+    .allow('')
+    .optional()
+    .messages({
+      'string.email': 'Please provide a valid email address'
+    })
 });
 
 export const loginSchema = Joi.object({
@@ -261,3 +298,34 @@ export const claimAnonymousLinksSchema = Joi.object({
 export const qrQuerySchema = Joi.object({
   format: Joi.string().valid('png', 'svg').optional()
 });
+
+const abuseReportStatusValues = ['pending', 'reviewed', 'resolved', 'dismissed'];
+
+export const adminAbuseListQuerySchema = Joi.object({
+  status: Joi.string()
+    .valid(...abuseReportStatusValues)
+    .optional(),
+  limit: Joi.number().integer().min(1).max(100).default(20),
+  skip: Joi.number().integer().min(0).default(0)
+});
+
+export const adminAbuseReportParamsSchema = Joi.object({
+  id: Joi.string()
+    .pattern(/^[0-9a-fA-F]{24}$/)
+    .required()
+    .messages({
+      'string.pattern.base': 'Invalid report ID format',
+      'any.required': 'Report ID is required'
+    })
+});
+
+export const adminAbuseUpdateSchema = Joi.object({
+  status: Joi.string()
+    .valid(...abuseReportStatusValues)
+    .optional(),
+  reviewNotes: Joi.string().trim().max(2000).allow('').optional()
+})
+  .min(1)
+  .messages({
+    'object.min': 'Provide status and/or reviewNotes to update'
+  });

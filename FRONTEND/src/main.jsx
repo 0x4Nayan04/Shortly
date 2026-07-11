@@ -17,25 +17,31 @@ const root = createRoot(document.getElementById('root'));
 if (apiConfigError) {
   root.render(<ConfigError message={apiConfigError} />);
 } else {
-  const router = createBrowserRouter([
-    {
-      path: '*',
-      element: (
-        <>
-          <AuthProvider>
-            <App />
-          </AuthProvider>
-          <OfflineBanner />
-        </>
-      )
-    }
-  ]);
+  const router = createBrowserRouter(
+    [
+      {
+        path: '*',
+        element: (
+          <>
+            <AuthProvider>
+              <App />
+            </AuthProvider>
+            <OfflineBanner />
+          </>
+        )
+      }
+    ],
+    { future: { v7_relativeSplatPath: true } }
+  );
 
   root.render(
     <ErrorBoundary>
       <OnlineStatusProvider>
         <ToastProvider>
-          <RouterProvider router={router} />
+          <RouterProvider
+            router={router}
+            future={{ v7_startTransition: true }}
+          />
         </ToastProvider>
       </OnlineStatusProvider>
     </ErrorBoundary>

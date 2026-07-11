@@ -177,3 +177,68 @@ export async function dispatchPasswordResetForUser(user) {
     throw error;
   }
 }
+
+function getAbuseInboxEmail() {
+  return (
+    process.env.ABUSE_INBOX_EMAIL?.trim() ||
+    process.env.OPERATOR_EMAIL?.trim() ||
+    null
+  );
+}
+
+export async function notifyOperatorOfAbuseReport({ report, link }) {
+  const inbox = getAbuseInboxEmail();
+  if (!inbox) {
+    logger.warn('Abuse report stored but no ABUSE_INBOX_EMAIL/OPERATOR_EMAIL set', {
+      reportId: report._id.toString(),
+      slug: report.slug
+    });
+    return { sent: false, reason: 'inbox_not_configured' };
+  }
+
+  const linkStatus = !link
+    ? 'not found'
+    : link.retiredAt
+      ? 'already retired'
+      : 'active';
+  const reporterLine = report.reporterEmail
+    ? `Reporter email: ${report.reporterEmail}`
+    : 'Reporter email: not provided';
+
+  const text = [
+    'Shortly abuse report',
+    '',
+    `Slug: ${report.slug}`,
+    `Link status at submit: ${linkStatus}`,
+    reporterLine,
+    '',
+    'Reason:',
+    report.reason,
+    '',
+    `Report ID: ${report._id.toString()}`,
+    `Submitted: ${report.createdAt.toISOString()}`
+  ].join('\n');
+
+  const html = `<pre style="font-family:ui-monospace,monospace;white-space:pre-wrap">${text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')}</pre>`;
+
+  if (!isEmailServiceConfigured()) {
+    logger.warn('Abuse report stored but email service is not configured', {
+      reportId: report._id.toString(),
+      slug: report.slug,
+      inbox
+    });
+    return { sent: false, reason: 'email_not_configured' };
+  }
+
+  await sendTransactionalEmail({
+    to: inbox,
+    subject: `[Shortly abuse] ${report.slug}`,
+    html,
+    text
+  });
+
+  return { sent: true };
+}

@@ -5,6 +5,8 @@ import AppCatalogShell, {
   LandingSectionBlock
 } from './app/AppCatalogShell';
 import AppNavbar from './app/AppNavbar';
+import { ROUTES } from '../constants/routes';
+import { LANDING_LEGAL_LINKS } from '../constants/landingNav';
 
 const NotFound = () => {
   const navigate = useNavigate();
@@ -40,7 +42,7 @@ const NotFound = () => {
                   Go back
                 </button>
                 <Link
-                  to="/"
+                  to={ROUTES.HOME}
                   className="sm-btn sm-btn-primary inline-flex items-center justify-center gap-2"
                 >
                   <Home className="size-4" aria-hidden="true" />
@@ -53,33 +55,36 @@ const NotFound = () => {
                 </p>
                 <div className="flex flex-wrap gap-2 justify-center">
                   <Link
-                    to="/"
+                    to={ROUTES.HOME}
                     className="landing-text-link inline-flex items-center gap-1 text-sm"
                   >
                     URL Shortener{' '}
                     <ExternalLink className="size-3" aria-hidden="true" />
                   </Link>
                   <Link
-                    to="/login"
+                    to={ROUTES.LOGIN}
                     className="landing-text-link inline-flex items-center gap-1 text-sm"
                   >
                     Sign in{' '}
                     <ExternalLink className="size-3" aria-hidden="true" />
                   </Link>
                   <Link
-                    to="/register"
+                    to={ROUTES.REGISTER}
                     className="landing-text-link inline-flex items-center gap-1 text-sm"
                   >
                     Sign up{' '}
                     <ExternalLink className="size-3" aria-hidden="true" />
                   </Link>
-                  <Link
-                    to="/privacy"
-                    className="landing-text-link inline-flex items-center gap-1 text-sm"
-                  >
-                    Privacy{' '}
-                    <ExternalLink className="size-3" aria-hidden="true" />
-                  </Link>
+                  {LANDING_LEGAL_LINKS.map((link) => (
+                    <Link
+                      key={link.label}
+                      to={link.to}
+                      className="landing-text-link inline-flex items-center gap-1 text-sm"
+                    >
+                      {link.label}{' '}
+                      <ExternalLink className="size-3" aria-hidden="true" />
+                    </Link>
+                  ))}
                 </div>
               </div>
             </div>

@@ -10,12 +10,14 @@ process.env.FRONT_END_URL = 'http://frontend.test';
 process.env.PUBLIC_BASE_URL = 'http://short.test';
 process.env.PORT = '3001';
 process.env.ALLOWED_ORIGINS = 'http://frontend.test';
+process.env.ADMIN_EMAILS = 'admin@example.com';
 
 const { createApp } = await import('../src/app.js');
 const { default: ShortUrl } = await import('../src/schema/shortUrl.model.js');
 const { default: Click } = await import('../src/schema/click.model.js');
 const { default: User } = await import('../src/schema/user.model.js');
 const { default: RateLimit } = await import('../src/schema/rateLimit.model.js');
+const { default: AbuseReport } = await import('../src/schema/abuseReport.model.js');
 const { recordClickFromRequest } =
   await import('../src/services/click.service.js');
 const { hashEmailToken } = await import('../src/utils/hashToken.js');
@@ -30,7 +32,8 @@ async function register(email) {
   const response = await agent.post('/api/auth/register').send({
     name: 'Test User',
     email,
-    password
+    password,
+    acceptedTerms: true
   });
   assert.equal(response.status, 202, response.text);
   const login = await agent.post('/api/auth/login').send({ email, password });
@@ -48,7 +51,8 @@ test.before(async () => {
     ShortUrl.syncIndexes(),
     Click.syncIndexes(),
     User.syncIndexes(),
-    RateLimit.syncIndexes()
+    RateLimit.syncIndexes(),
+    AbuseReport.syncIndexes()
   ]);
   app = createApp();
 });
@@ -63,7 +67,8 @@ test.beforeEach(async () => {
     ShortUrl.deleteMany({}),
     Click.deleteMany({}),
     User.deleteMany({}),
-    RateLimit.deleteMany({})
+    RateLimit.deleteMany({}),
+    AbuseReport.deleteMany({})
   ]);
 });
 
@@ -162,26 +167,39 @@ test('registration is generic for new and existing emails and weak passwords fai
   const payload = {
     name: 'Privacy Test',
     email: 'privacy@example.com',
-    password
+    password,
+    acceptedTerms: true
   };
   const first = await request(app).post('/api/auth/register').send(payload);
   const second = await request(app).post('/api/auth/register').send(payload);
   assert.equal(first.status, 202);
   assert.equal(second.status, 202);
   assert.deepEqual(first.body, second.body);
+  const user = await User.findOne({ email: payload.email });
+  assert.ok(user.acceptedTermsAt);
+  assert.equal(user.termsVersion, '2026-07');
   const weak = await request(app).post('/api/auth/register').send({
     name: 'Weak Test',
     email: 'weak@example.com',
-    password: 'short123'
+    password: 'short123',
+    acceptedTerms: true
   });
   assert.equal(weak.status, 400);
+
+  const noTerms = await request(app).post('/api/auth/register').send({
+    name: 'No Terms',
+    email: 'noterms@example.com',
+    password
+  });
+  assert.equal(noTerms.status, 400);
 });
 
 test('concurrent same-email registrations remain generic', async () => {
   const payload = {
     name: 'Concurrent User',
     email: 'concurrent-register@example.com',
-    password
+    password,
+    acceptedTerms: true
   };
   const responses = await Promise.all([
     request(app).post('/api/auth/register').send(payload),
@@ -216,7 +234,8 @@ test('login has an IP-wide limit and logout revokes the old token', async () => 
   await request(app).post('/api/auth/register').send({
     name: 'Revoke User',
     email,
-    password
+    password,
+    acceptedTerms: true
   });
   const login = await request(app)
     .post('/api/auth/login')
@@ -287,6 +306,54 @@ test('active, retired, unknown redirects and QR responses are distinct', async (
   assert.equal(reuse.status, 409);
 });
 
+test('late click after link deletion does not restore counter or insert click docs', async () => {
+  const agent = await register('late-click@example.com');
+  const created = await agent
+    .post('/api/create/custom')
+    .set(origin)
+    .send({
+      full_url: 'https://example.com/late-click',
+      custom_url: 'late-slug'
+    });
+  assert.equal(created.status, 201, created.text);
+  const linkId = created.body.data.id;
+
+  await recordClickFromRequest({
+    shortUrlId: linkId,
+    req: {
+      headers: { 'user-agent': 'Mozilla/5.0' },
+      get: () => '',
+      ip: '203.0.113.20'
+    }
+  });
+  const activeDoc = await ShortUrl.findById(linkId).lean();
+  assert.equal(activeDoc.click, 1);
+  assert.equal(await Click.countDocuments({ short_url_id: linkId }), 1);
+
+  const removed = await agent
+    .delete(`/api/create/${linkId}`)
+    .set(origin);
+  assert.equal(removed.status, 200, removed.text);
+
+  const tombstone = await ShortUrl.findById(linkId).lean();
+  assert.equal(tombstone.click, 0);
+  assert.ok(tombstone.retiredAt);
+
+  const recorded = await recordClickFromRequest({
+    shortUrlId: linkId,
+    req: {
+      headers: { 'user-agent': 'Mozilla/5.0' },
+      get: () => '',
+      ip: '203.0.113.21'
+    }
+  });
+  assert.equal(recorded, true);
+
+  const afterLateClick = await ShortUrl.findById(linkId).lean();
+  assert.equal(afterLateClick.click, 0);
+  assert.equal(await Click.countDocuments({ short_url_id: linkId }), 1);
+});
+
 test('account deletion removes personal data and clicks but preserves tombstones', async () => {
   const agent = await register('delete@example.com');
   const created = await agent.post('/api/create/custom').set(origin).send({
@@ -335,6 +402,69 @@ test('account deletion removes personal data and clicks but preserves tombstones
     custom_url: 'account-slug'
   });
   assert.equal(reuse.status, 409);
+});
+
+test('abuse reports are accepted and stored', async () => {
+  const created = await request(app)
+    .post('/api/create')
+    .send({ full_url: 'https://example.com/abuse-target' });
+  assert.equal(created.status, 201, created.text);
+  const slug = created.body.data.short_url;
+
+  const report = await request(app).post('/api/abuse/report').send({
+    slug,
+    reason: 'This link redirects to a phishing page impersonating a bank.',
+    reporterEmail: 'reporter@example.com'
+  });
+  assert.equal(report.status, 202, report.text);
+  assert.equal(report.body.data.accepted, true);
+
+  const stored = await AbuseReport.findOne({ slug });
+  assert.ok(stored);
+  assert.equal(stored.linkFound, true);
+  assert.equal(stored.reporterEmail, 'reporter@example.com');
+});
+
+test('admin abuse queue supports list, update, and retire actions', async () => {
+  const created = await request(app)
+    .post('/api/create')
+    .send({ full_url: 'https://example.com/admin-abuse-target' });
+  assert.equal(created.status, 201, created.text);
+  const slug = created.body.data.short_url;
+
+  const reportRes = await request(app).post('/api/abuse/report').send({
+    slug,
+    reason: 'Operator test report for phishing content on destination page.'
+  });
+  assert.equal(reportRes.status, 202, reportRes.text);
+
+  const stored = await AbuseReport.findOne({ slug });
+  assert.ok(stored);
+  assert.equal(stored.status, 'pending');
+
+  const admin = await register('admin@example.com');
+  const list = await admin.get('/api/admin/abuse/reports?status=pending');
+  assert.equal(list.status, 200, list.text);
+  assert.ok(list.body.data.reports.some((row) => row.slug === slug));
+
+  const updated = await admin
+    .patch(`/api/admin/abuse/reports/${stored._id}`)
+    .send({ status: 'reviewed', reviewNotes: 'Confirmed phishing destination.' });
+  assert.equal(updated.status, 200, updated.text);
+  assert.equal(updated.body.data.report.status, 'reviewed');
+
+  const retired = await admin.post(
+    `/api/admin/abuse/reports/${stored._id}/retire`
+  );
+  assert.equal(retired.status, 200, retired.text);
+  assert.equal(retired.body.data.slug, slug);
+
+  const redirect = await request(app).get(`/${slug}`);
+  assert.equal(redirect.status, 410);
+
+  const nonAdmin = await register('not-admin@example.com');
+  const forbidden = await nonAdmin.get('/api/admin/abuse/reports');
+  assert.equal(forbidden.status, 403);
 });
 
 test('health, validation, auth, CORS, and public URL safety have smoke coverage', async () => {

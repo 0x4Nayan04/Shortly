@@ -5,9 +5,16 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "node scripts/generate-vercel-config.js && vite build && node scripts/generate-seo-shells.js",
+    "generate:vercel": "node scripts/generate-vercel-config.js",
+    "smoke:routing": "node scripts/smoke-short-link-routing.js",
     "lint": "eslint .",
     "css:check": "node scripts/assemble-design-css.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "doctor": "bunx react-doctor@latest . --verbose",
+    "check": "bun run lint && bun run css:check && bun run test && bun run build && bun run doctor",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -22,8 +29,11 @@
     "tailwindcss": "^4.1.7"
   },
   "devDependencies": {
-    "@tailwindcss/vite": "^4.1.7",
     "@eslint/js": "^9.25.0",
+    "@tailwindcss/vite": "^4.1.7",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",
     "@vitejs/plugin-react": "^4.4.1",
@@ -31,6 +41,10 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.19",
     "globals": "^16.0.0",
-    "vite": "^6.3.5"
+    "jsdom": "^29.1.1",
+    "@playwright/test": "^1.55.0",
+    "vitest-axe": "^0.1.0",
+    "vite": "^6.3.5",
+    "vitest": "^4.1.10"
   }
 }

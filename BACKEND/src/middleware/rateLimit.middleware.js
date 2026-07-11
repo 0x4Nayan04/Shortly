@@ -95,20 +95,49 @@ const hashEmail = (email) =>
   crypto.createHash('sha256').update(normalizeEmail(email)).digest('hex');
 
 /** In-process limiter for hot paths (e.g. redirects). Not shared across server instances. */
-export const memoryRateLimiter = ({ windowMs, max, keyGenerator }) => {
+export const memoryRateLimiter = ({
+  windowMs,
+  max,
+  keyGenerator,
+  maxBuckets = 10_000
+}) => {
   const buckets = new Map();
+  let sweepTimer = null;
+
+  const evictExpired = (now = Date.now()) => {
+    for (const [key, bucket] of buckets) {
+      if (bucket.resetAt <= now) {
+        buckets.delete(key);
+      }
+    }
+  };
+
+  const startSweep = () => {
+    if (sweepTimer) return;
+    sweepTimer = setInterval(() => evictExpired(), windowMs);
+    if (typeof sweepTimer.unref === 'function') {
+      sweepTimer.unref();
+    }
+  };
 
   return (req, res, next) => {
+    startSweep();
     const key = keyGenerator(req);
     const now = Date.now();
     let bucket = buckets.get(key);
 
     if (!bucket || bucket.resetAt <= now) {
+      if (bucket) buckets.delete(key);
       bucket = { count: 0, resetAt: now + windowMs };
       buckets.set(key, bucket);
     }
 
     bucket.count += 1;
+
+    if (buckets.size > maxBuckets) {
+      const oldestKey = buckets.keys().next().value;
+      if (oldestKey !== undefined) buckets.delete(oldestKey);
+    }
 
     const remaining = Math.max(0, max - bucket.count);
     const resetSeconds = Math.max(1, Math.ceil((bucket.resetAt - now) / 1000));

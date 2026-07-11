@@ -1,6 +1,7 @@
 import { createElement } from 'react';
 import { Link } from 'react-router-dom';
-import { LANDING_SECTION_LINKS } from '../../constants/landingNav';
+import { LANDING_SECTION_LINKS, LANDING_LEGAL_LINKS } from '../../constants/landingNav';
+import { ROUTES } from '../../constants/routes';
 import { SOCIAL_LINKS } from '../../constants/social';
 import { useAuth } from '../../contexts/AuthContext';
 import ShortlyLogo from '../ShortlyLogo';
@@ -33,10 +34,10 @@ const FooterInlineLink = ({ link }) => {
 
 const getFooterLinks = (user) => [
   ...LANDING_SECTION_LINKS,
-  { label: 'Privacy', to: '/privacy' },
+  ...LANDING_LEGAL_LINKS,
   user
-    ? { label: 'Dashboard', to: '/dashboard' }
-    : { label: 'Sign in', to: '/login' }
+    ? { label: 'Dashboard', to: ROUTES.DASHBOARD }
+    : { label: 'Sign in', to: ROUTES.LOGIN }
 ];
 
 const SOCIAL_ICON_LINKS = [

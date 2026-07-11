@@ -231,6 +231,7 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth, variant = 'default' }) => {
       showToast.dismiss(loadingToast);
       const message = 'Please sign in to use custom aliases';
       dispatch({ type: 'SET_ERROR', value: message });
+      dispatch({ type: 'SET_LOADING', value: false });
       showToast.error(message);
       return null;
     }

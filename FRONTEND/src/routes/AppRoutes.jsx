@@ -3,6 +3,7 @@ import { Route, Routes } from 'react-router-dom';
 import { ROUTES } from '../constants/routes';
 import GuestOnlyLayout from '../layouts/GuestOnlyLayout';
 import ProtectedLayout from '../layouts/ProtectedLayout';
+import AdminLayout from '../layouts/AdminLayout';
 import AuthPageLayout from '../layouts/AuthPageLayout';
 import CatalogPageLoader from '../layouts/CatalogPageLoader';
 import { AUTH_PAGE_HANDLES } from './authPageHandles';
@@ -18,6 +19,10 @@ const LandingPage = lazy(() => import('../components/LandingPage'));
 const Dashboard = lazy(() => import('../components/Dashboard'));
 const AccountSettings = lazy(() => import('../components/AccountSettings'));
 const PrivacyPage = lazy(() => import('../components/PrivacyPage'));
+const TermsPage = lazy(() => import('../components/TermsPage'));
+const ContactPage = lazy(() => import('../components/ContactPage'));
+const ReportAbusePage = lazy(() => import('../components/ReportAbusePage'));
+const AbuseAdminPage = lazy(() => import('../components/admin/AbuseAdminPage'));
 const NotFound = lazy(() => import('../components/NotFound'));
 
 const AppRoutes = () => (
@@ -60,7 +65,14 @@ const AppRoutes = () => (
         <Route path={ROUTES.SETTINGS} element={<AccountSettings />} />
       </Route>
 
+      <Route element={<AdminLayout />}>
+        <Route path={ROUTES.ADMIN_ABUSE} element={<AbuseAdminPage />} />
+      </Route>
+
       <Route path={ROUTES.PRIVACY} element={<PrivacyPage />} />
+      <Route path={ROUTES.TERMS} element={<TermsPage />} />
+      <Route path={ROUTES.CONTACT} element={<ContactPage />} />
+      <Route path={ROUTES.REPORT} element={<ReportAbusePage />} />
 
       <Route path="*" element={<NotFound />} />
     </Routes>

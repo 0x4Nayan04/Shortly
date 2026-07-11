@@ -8,6 +8,8 @@ import { isReservedSlug } from './constants/reservedSlugs.js';
 import { redirectFromShortUrl } from './controllers/shortUrl.controllers.js';
 import { getQrCode } from './controllers/qr.controller.js';
 import authRoutes from './routes/auth.routes.js';
+import abuseRoutes from './routes/abuse.routes.js';
+import adminAbuseRoutes from './routes/admin.abuse.routes.js';
 import shortUrlCreate from './routes/shortUrl.routes.js';
 import healthRoutes from './routes/health.routes.js';
 import { attachUser } from './utils/attachUser.js';
@@ -48,15 +50,24 @@ export function createApp() {
 
   const app = express();
 
-  const trustProxy = process.env.TRUST_PROXY ?? '1';
-  app.set(
-    'trust proxy',
-    trustProxy === 'true' || trustProxy === '1'
-      ? 1
-      : trustProxy === 'false' || trustProxy === '0'
-        ? false
-        : trustProxy
-  );
+  const trustProxy = process.env.TRUST_PROXY;
+  if (trustProxy === undefined || trustProxy.trim() === '') {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error(
+        'TRUST_PROXY must be explicitly set in production. See BACKEND/.env.example.'
+      );
+    }
+    app.set('trust proxy', 1);
+  } else {
+    app.set(
+      'trust proxy',
+      trustProxy === 'true' || trustProxy === '1'
+        ? 1
+        : trustProxy === 'false' || trustProxy === '0'
+          ? false
+          : trustProxy
+    );
+  }
 
   app.use(requestIdMiddleware);
   app.use(latencyMiddleware);
@@ -158,6 +169,10 @@ export function createApp() {
   app.use('/api/create', shortUrlCreate);
 
   app.use('/api/auth', authRoutes);
+
+  app.use('/api/abuse', abuseRoutes);
+
+  app.use('/api/admin/abuse', adminAbuseRoutes);
 
   const qrHandler = [
     qrLimiter,

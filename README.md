@@ -73,7 +73,28 @@ VITE_BACKEND_DEV_URL=http://127.0.0.1:3001
 ```
 
 For production builds, set `VITE_APP_URL` to your API origin (e.g.
-`https://api.example.com`). See [FRONTEND/.env.example](./FRONTEND/.env.example).
+`https://api.example.com`) and `VITE_PUBLIC_SHORT_URL` to your public short-link
+host (e.g. `https://shortly.example.com`). See
+[FRONTEND/.env.example](./FRONTEND/.env.example).
+
+**Production short-link routing:** The frontend build generates `vercel.json`
+rewrites that proxy slug-shaped paths (`/^[a-zA-Z0-9_-]{3,20}$/`, excluding SPA
+routes) to `SHORT_LINK_PROXY_ORIGIN` (defaults to `VITE_APP_URL`). This mirrors
+the Vite dev proxy in `FRONTEND/vite.config.js`. On Vercel, set both env vars
+in the frontend project. After deploy, smoke-test a live slug:
+
+```bash
+PUBLIC_SHORT_HOST=https://shortly.example.com \
+SHORT_LINK_PROXY_ORIGIN=https://api.example.com \
+bun run --cwd FRONTEND smoke:routing your-slug
+```
+
+**Production security headers:** The frontend build also writes baseline
+`Strict-Transport-Security`, `X-Content-Type-Options`, `X-Frame-Options`,
+`Referrer-Policy`, `Permissions-Policy`, and a report-only CSP into
+`vercel.json`. Crawlers requesting `/`, `/privacy`, `/terms`, or `/contact`
+receive route-specific Open Graph metadata via Vercel Edge Middleware and
+build-time SEO shells in `dist/_seo/`.
 
 Then in two terminals:
 

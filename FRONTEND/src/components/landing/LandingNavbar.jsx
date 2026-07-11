@@ -5,13 +5,10 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 import { useFocusTrap } from '../Accessibility';
 import ShortlyLogo from '../ShortlyLogo';
+import { LANDING_SECTION_LINKS, LANDING_LEGAL_LINKS } from '../../constants/landingNav';
 import { LandingFrameInner } from './LandingFrameInner';
 
-const NAV_LINKS = [
-  { label: 'Features', href: '#features' },
-  { label: 'FAQ', href: '#faq' },
-  { label: 'Privacy', to: '/privacy' }
-];
+const NAV_LINKS = [...LANDING_SECTION_LINKS, ...LANDING_LEGAL_LINKS];
 
 const LandingNavbarContent = memo(() => {
   const { user, logout } = useAuth();
@@ -110,7 +107,7 @@ const LandingNavbarContent = memo(() => {
                   className="sm-btn sm-btn-secondary hidden sm:inline-flex items-center gap-1.5"
                 >
                   <LogOut className="size-3.5" aria-hidden="true" />
-                  <span>Sign out</span>
+                  <span>Sign out everywhere</span>
                 </button>
               </>
             ) : (
@@ -205,7 +202,7 @@ const LandingNavbarContent = memo(() => {
                     className="sm-btn sm-btn-secondary w-full inline-flex items-center justify-center gap-1.5"
                   >
                     <LogOut className="size-3.5" aria-hidden="true" />
-                    <span>Sign out</span>
+                    <span>Sign out everywhere</span>
                   </button>
                 </>
               ) : (

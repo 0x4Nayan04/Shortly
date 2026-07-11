@@ -7,6 +7,10 @@ export const ROUTES = {
   DASHBOARD: '/dashboard',
   SETTINGS: '/settings',
   PRIVACY: '/privacy',
+  TERMS: '/terms',
+  CONTACT: '/contact',
+  REPORT: '/report',
+  ADMIN_ABUSE: '/admin/abuse',
   FORGOT_PASSWORD: '/forgot-password',
   RESET_PASSWORD: '/reset-password',
   VERIFY_EMAIL: '/verify-email'

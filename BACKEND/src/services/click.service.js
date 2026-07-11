@@ -19,7 +19,9 @@ export async function recordClickFromRequest({ shortUrlId, req }) {
     const { user_agent, device_type, browser, os } = parseUserAgent(req);
 
     await runWithTransaction(async (session) => {
-      await incrementClick(shortUrlId, session);
+      const incrementResult = await incrementClick(shortUrlId, session);
+      if (incrementResult.modifiedCount === 0) return;
+
       await insertClick(
         {
           short_url_id: shortUrlId,

@@ -1,9 +1,5 @@
 import mongoose from 'mongoose';
 import { logger } from '../utils/logger.js';
-import {
-  MIGRATION_COLLECTION,
-  REQUIRED_MIGRATION_ID
-} from '../constants/migrations.js';
 
 const mongooseOptions = {
   maxPoolSize: 10,
@@ -19,20 +15,6 @@ const mongooseOptions = {
 const ipFamily = process.env.MONGODB_IP_FAMILY?.trim();
 if (ipFamily !== undefined && ipFamily !== '') {
   mongooseOptions.family = Number(ipFamily);
-}
-
-export async function verifyRequiredMigration(
-  connection = mongoose.connection
-) {
-  const migration = await connection.db
-    .collection(MIGRATION_COLLECTION)
-    .findOne({ _id: REQUIRED_MIGRATION_ID });
-  if (migration) return;
-  const error = new Error(
-    'Required database migration is missing. Run "bun run migrate:resume-readiness" before starting the backend.'
-  );
-  error.code = 'MIGRATION_REQUIRED';
-  throw error;
 }
 
 const connectDB = async () => {
@@ -59,11 +41,8 @@ const connectDB = async () => {
         logger.info('MongoDB reconnected');
       });
 
-      await verifyRequiredMigration();
-
       break;
     } catch (error) {
-      if (error.code === 'MIGRATION_REQUIRED') throw error;
       retries--;
       logger.error('MongoDB connection error', {
         error: error.message,

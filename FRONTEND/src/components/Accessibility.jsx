@@ -29,11 +29,20 @@ export const LiveRegion = ({
 
 export const useAnnouncement = () => {
   const [announcement, setAnnouncement] = useState('');
+  const timeoutRef = useRef(null);
 
   const announce = useCallback((message, delay = 100) => {
     setAnnouncement('');
-    setTimeout(() => setAnnouncement(message), delay);
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => setAnnouncement(message), delay);
   }, []);
+
+  useEffect(
+    () => () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    },
+    []
+  );
 
   return [announcement, announce];
 };

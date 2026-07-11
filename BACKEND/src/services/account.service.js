@@ -14,6 +14,7 @@ import {
   dispatchPasswordResetForUser,
   isEmailServiceConfigured
 } from './email.service.js';
+import { alertEmailDeliveryFailure } from './opsAlert.service.js';
 import { logger } from '../utils/logger.js';
 
 const GENERIC_RESET_MESSAGE =
@@ -96,6 +97,11 @@ export const requestPasswordResetService = async ({ email }) => {
     logger.error('Failed to dispatch password reset email', {
       error: error.message,
       email
+    });
+    await alertEmailDeliveryFailure({
+      emailType: 'password_reset',
+      recipient: email,
+      error
     });
   }
 

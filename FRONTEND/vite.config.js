@@ -2,30 +2,11 @@ import http from 'node:http';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
+import { isShortLinkPath } from './config/shortLinkRouting.js';
 
 const BACKEND_ORIGIN =
   process.env.VITE_BACKEND_DEV_URL || 'http://127.0.0.1:3001';
 const BACKEND_HOST = new URL(BACKEND_ORIGIN).host;
-
-/** SPA routes — must not be proxied to the backend redirect handler. */
-const SPA_SLUGS = new Set([
-  'login',
-  'register',
-  'dashboard',
-  'settings',
-  'privacy',
-  'forgot-password',
-  'reset-password',
-  'verify-email'
-]);
-
-function isShortLinkPath(pathname) {
-  const parts = pathname.split('/').filter(Boolean);
-  if (parts.length !== 1) return false;
-  const slug = parts[0];
-  if (SPA_SLUGS.has(slug.toLowerCase())) return false;
-  return /^[a-zA-Z0-9_-]{3,20}$/.test(slug);
-}
 
 /** Dev: proxy /ZcrzivY → backend so short links work on the same port as the SPA (5173). */
 function shortUrlProxyPlugin() {
@@ -91,6 +72,12 @@ export default defineConfig(({ mode }) => {
     },
     optimizeDeps: {
       include: ['lucide-react']
+    },
+    test: {
+      environment: 'jsdom',
+      setupFiles: './src/test/setup.js',
+      restoreMocks: true,
+      exclude: ['**/node_modules/**', '**/e2e/**']
     },
     server: {
       host: true, // 0.0.0.0 — required for Windows browser → WSL (mirrored or not)

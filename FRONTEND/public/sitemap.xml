@@ -8,6 +8,16 @@
   <url>
     <loc>https://shortly.nayanswarnkar.com/privacy</loc>
     <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://shortly.nayanswarnkar.com/terms</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://shortly.nayanswarnkar.com/contact</loc>
+    <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
 </urlset>

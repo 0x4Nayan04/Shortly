@@ -1,7 +1,12 @@
 import { logger } from './logger.js';
 
 const requiredEnvVars = ['MONGODB_URI', 'JWT_SECRET', 'FRONT_END_URL', 'PORT'];
-const optionalEnvVars = ['NODE_ENV', 'ALLOWED_ORIGINS', 'RESEND_API_KEY'];
+const optionalEnvVars = [
+  'NODE_ENV',
+  'ALLOWED_ORIGINS',
+  'RESEND_API_KEY',
+  'OPERATIONS_ALERT_WEBHOOK_URL'
+];
 
 export const validateEnvironment = () => {
   const missing = requiredEnvVars.filter((varName) => !process.env[varName]);
@@ -95,7 +100,22 @@ export const validateEnvFormats = () => {
     );
   }
 
+  if (
+    process.env.OPERATIONS_ALERT_WEBHOOK_URL &&
+    !process.env.OPERATIONS_ALERT_WEBHOOK_URL.startsWith('http')
+  ) {
+    throw new Error(
+      'OPERATIONS_ALERT_WEBHOOK_URL must start with "http://" or "https://"'
+    );
+  }
+
   if (process.env.NODE_ENV === 'production') {
+    if (process.env.TRUST_PROXY === undefined || process.env.TRUST_PROXY.trim() === '') {
+      throw new Error(
+        'TRUST_PROXY must be explicitly set in production (e.g. 1 behind one reverse proxy on Railway/Render/Fly, 0 for direct exposure). See BACKEND/.env.example.'
+      );
+    }
+
     if (
       !process.env.PUBLIC_BASE_URL ||
       !process.env.PUBLIC_BASE_URL.startsWith('http')

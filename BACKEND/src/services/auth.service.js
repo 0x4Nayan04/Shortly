@@ -11,7 +11,9 @@ import {
   dispatchVerificationForUser,
   isEmailServiceConfigured
 } from './email.service.js';
+import { alertEmailDeliveryFailure } from './opsAlert.service.js';
 import { logger } from '../utils/logger.js';
+import { CURRENT_TERMS_VERSION } from '../constants/terms.js';
 import bcrypt from 'bcrypt';
 
 const GENERIC_RESEND_VERIFICATION_MESSAGE =
@@ -26,7 +28,13 @@ export const registerUserService = async ({ name, email, password }) => {
 
   let newUser;
   try {
-    newUser = await createUser({ name, email, password });
+    newUser = await createUser({
+      name,
+      email,
+      password,
+      acceptedTermsAt: new Date(),
+      termsVersion: CURRENT_TERMS_VERSION
+    });
   } catch (error) {
     if (error.code === 11000) return { accepted: true };
     throw error;
@@ -68,6 +76,11 @@ export const resendVerificationEmailService = async ({ email }) => {
     logger.error('Failed to dispatch verification email', {
       error: error.message,
       email
+    });
+    await alertEmailDeliveryFailure({
+      emailType: 'verification',
+      recipient: email,
+      error
     });
   }
 

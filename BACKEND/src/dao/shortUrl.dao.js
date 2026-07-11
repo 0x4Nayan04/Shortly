@@ -198,7 +198,11 @@ export const retireManyByIdsAndUser = async (ids, userId, session = null) => {
 };
 
 export const incrementClick = async (id, session) =>
-  short_urlModel.updateOne({ _id: id }, { $inc: { click: 1 } }, { session });
+  short_urlModel.updateOne(
+    { _id: id, ...ACTIVE_LINK_FILTER },
+    { $inc: { click: 1 } },
+    { session }
+  );
 
 export const claimAnonymousLink = async (id, manage_token, userId, session) =>
   short_urlModel

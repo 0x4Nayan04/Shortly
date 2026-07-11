@@ -24,6 +24,7 @@ import {
   getAuthSessionServerSnapshot,
   getAuthSessionSnapshot,
   refreshAuthSessionUser,
+  retryAuthSessionBootstrap,
   setAuthSessionUser,
   subscribeAuthSession
 } from './authSessionStore';
@@ -36,7 +37,7 @@ const PROFILE_LOAD_ERROR =
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const { user, authChecked } = useSyncExternalStore(
+  const { user, authChecked, authError } = useSyncExternalStore(
     subscribeAuthSession,
     getAuthSessionSnapshot,
     getAuthSessionServerSnapshot
@@ -126,6 +127,8 @@ export function AuthProvider({ children }) {
 
   const refreshUser = useCallback(() => refreshAuthSessionUser(), []);
 
+  const retryAuthCheck = useCallback(() => retryAuthSessionBootstrap(), []);
+
   const handleAccountDeleted = useCallback(() => {
     clearAuthSessionUser();
     navigate(ROUTES.HOME);
@@ -133,10 +136,10 @@ export function AuthProvider({ children }) {
 
   const logout = useCallback(async () => {
     const confirmed = await confirmLogout.confirm({
-      title: 'Sign out',
+      title: 'Sign out everywhere',
       message:
-        'Are you sure you want to sign out? You will need to sign in again to manage your links.',
-      confirmLabel: 'Sign out',
+        'This signs you out on this device and any other devices using your account. You will need to sign in again to manage your links.',
+      confirmLabel: 'Sign out everywhere',
       cancelLabel: 'Cancel',
       variant: 'danger'
     });
@@ -147,10 +150,10 @@ export function AuthProvider({ children }) {
       .then(() => true)
       .catch(() => false);
     if (loggedOut) {
-      showToast.success('You have been signed out.');
+      showToast.success('You have been signed out everywhere.');
     }
     clearAuthSessionUser();
-    announce('You have been signed out.');
+    announce('You have been signed out everywhere.');
     navigate(ROUTES.HOME);
   }, [navigate, announce, confirmLogout]);
 
@@ -169,6 +172,7 @@ export function AuthProvider({ children }) {
     () => ({
       user,
       authChecked,
+      authError,
       stats,
       statsLoading,
       refetchStats,
@@ -176,6 +180,7 @@ export function AuthProvider({ children }) {
       logout,
       updateUser,
       refreshUser,
+      retryAuthCheck,
       handleAccountDeleted,
       openLogin,
       openRegister,
@@ -186,6 +191,7 @@ export function AuthProvider({ children }) {
     [
       user,
       authChecked,
+      authError,
       stats,
       statsLoading,
       refetchStats,
@@ -193,6 +199,7 @@ export function AuthProvider({ children }) {
       logout,
       updateUser,
       refreshUser,
+      retryAuthCheck,
       handleAccountDeleted,
       openLogin,
       openRegister,

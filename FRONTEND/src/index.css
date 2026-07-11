@@ -29,6 +29,16 @@ select {
   cursor: pointer;
 }
 
+:where(button, input, select, textarea):disabled,
+[aria-disabled='true'] {
+  cursor: not-allowed;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--color-primary) 22%, transparent);
+  color: var(--color-ink);
+}
+
 /* Catalog row labels should never render an underline or pseudo underline. */
 .catalog-list .catalog-row-label,
 .catalog-list .catalog-row-label::before,

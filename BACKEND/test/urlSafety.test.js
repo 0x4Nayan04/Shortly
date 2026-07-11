@@ -6,9 +6,10 @@ import { parseUserAgent } from '../src/utils/userAgent.js';
 import { keyGenerators } from '../src/middleware/rateLimit.middleware.js';
 import { resolveSameSite } from '../src/config/config.js';
 import { checkMongoReadiness } from '../src/routes/health.routes.js';
-import { verifyRequiredMigration } from '../src/config/mongo.config.js';
 import { errorHandler } from '../src/utils/errorHandler.js';
+import { validateEnvFormats } from '../src/utils/validateEnv.js';
 import { logger } from '../src/utils/logger.js';
+import { alertEmailDeliveryFailure } from '../src/services/opsAlert.service.js';
 
 test('redirect validation blocks unsafe schemes and literal local addresses', () => {
   const blocked = [
@@ -89,18 +90,6 @@ test('readiness requires a successful MongoDB ping', async () => {
   assert.equal(await checkMongoReadiness({ readyState: 0 }), false);
 });
 
-test('startup refuses to run without the required migration marker', async () => {
-  const connection = {
-    db: {
-      collection: () => ({ findOne: async () => null })
-    }
-  };
-  await assert.rejects(
-    verifyRequiredMigration(connection),
-    (error) => error.code === 'MIGRATION_REQUIRED'
-  );
-});
-
 test('MongoDB duplicate conflicts are logged as warnings with status 409', () => {
   const originalError = logger.error;
   const originalWarn = logger.warn;
@@ -134,5 +123,56 @@ test('MongoDB duplicate conflicts are logged as warnings with status 409', () =>
   } finally {
     logger.error = originalError;
     logger.warn = originalWarn;
+  }
+});
+
+test('operations alert webhook URL must be absolute http(s)', () => {
+  const previous = process.env.OPERATIONS_ALERT_WEBHOOK_URL;
+  process.env.OPERATIONS_ALERT_WEBHOOK_URL = 'alerts.local/shortly';
+  try {
+    assert.throws(
+      () => validateEnvFormats(),
+      /OPERATIONS_ALERT_WEBHOOK_URL must start/
+    );
+  } finally {
+    if (previous === undefined) delete process.env.OPERATIONS_ALERT_WEBHOOK_URL;
+    else process.env.OPERATIONS_ALERT_WEBHOOK_URL = previous;
+  }
+});
+
+test('email delivery failures emit structured operator alerts and webhooks', async () => {
+  const previousWebhook = process.env.OPERATIONS_ALERT_WEBHOOK_URL;
+  const originalError = logger.error;
+  const originalFetch = globalThis.fetch;
+  let logged;
+  let webhookPayload;
+
+  process.env.OPERATIONS_ALERT_WEBHOOK_URL = 'https://alerts.example.test/hook';
+  logger.error = (_message, context) => {
+    logged = context;
+  };
+  globalThis.fetch = async (_url, options) => {
+    webhookPayload = JSON.parse(options.body);
+    return { ok: true, status: 202 };
+  };
+
+  try {
+    await alertEmailDeliveryFailure({
+      emailType: 'password_reset',
+      recipient: 'user@example.com',
+      error: new Error('Resend unavailable')
+    });
+
+    assert.equal(logged.alertType, 'email_delivery_failure');
+    assert.equal(logged.emailType, 'password_reset');
+    assert.equal(logged.recipient, 'user@example.com');
+    assert.equal(logged.error, 'Resend unavailable');
+    assert.equal(webhookPayload.alertType, 'email_delivery_failure');
+    assert.equal(webhookPayload.emailType, 'password_reset');
+  } finally {
+    logger.error = originalError;
+    globalThis.fetch = originalFetch;
+    if (previousWebhook === undefined) delete process.env.OPERATIONS_ALERT_WEBHOOK_URL;
+    else process.env.OPERATIONS_ALERT_WEBHOOK_URL = previousWebhook;
   }
 });

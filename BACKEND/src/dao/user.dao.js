@@ -9,8 +9,20 @@ export const findById = async (id) => User.findById(id);
 export const findByIdAndDelete = async (id, session = null) =>
   User.findByIdAndDelete(id, session ? { session } : undefined);
 
-export const create = async ({ name, email, password }) => {
-  const user = new User({ name, email, password });
+export const create = async ({
+  name,
+  email,
+  password,
+  acceptedTermsAt = null,
+  termsVersion = null
+}) => {
+  const user = new User({
+    name,
+    email,
+    password,
+    acceptedTermsAt,
+    termsVersion
+  });
   await user.save();
   return user;
 };

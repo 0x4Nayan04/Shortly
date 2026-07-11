@@ -1,11 +1,21 @@
 const STORAGE_KEY = 'shortly_anonymous_links:v1';
 
+function writeAnonymousLinks(links) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(links));
+    return true;
+  } catch {
+    // Storage can be unavailable in private browsing or when the quota is full.
+    return false;
+  }
+}
+
 export function rememberAnonymousLink({ id, manage_token, short_url }) {
   if (!id || !manage_token) return;
 
   const existing = readAnonymousLinks().filter((link) => link.id !== id);
   existing.push({ id, manage_token, short_url });
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(existing.slice(-50)));
+  writeAnonymousLinks(existing.slice(-50));
 }
 
 export function readAnonymousLinks() {
@@ -25,5 +35,5 @@ export function clearAnonymousLinksByIds(ids = []) {
   const remaining = readAnonymousLinks().filter(
     (link) => !processed.has(link.id)
   );
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(remaining));
+  writeAnonymousLinks(remaining);
 }

@@ -7,10 +7,14 @@ import {
   Clock,
   Database,
   FileText,
+  Globe,
   Info,
+  Scale,
   ScrollText,
+  Shield,
   Trash2,
   User,
+  Users,
   X
 } from 'lucide-react';
 import AppCatalogShell, {
@@ -18,6 +22,11 @@ import AppCatalogShell, {
   LandingSectionBlock
 } from './app/AppCatalogShell';
 import AppNavbar from './app/AppNavbar';
+import {
+  ContactChannelsList,
+  ContactMailtoLink
+} from './legal/ContactChannels';
+import { OPERATOR_NAME, SUPPORT_EMAIL } from '../constants/contacts';
 import { ROUTES } from '../constants/routes';
 
 const PRIVACY_LAST_UPDATED = 'July 2026';
@@ -39,17 +48,17 @@ const redirectFields = [
 ];
 
 const privacyExclusions = [
-  'Full IP addresses',
+  'Stored full IP addresses',
   'Fingerprints or cross-site identifiers',
-  'Cookies for tracking',
+  'Cookies for tracking visitors across sites',
   'Exact location data (city, GPS)',
-  'Personal information about visitors'
+  'Marketing profiles of anonymous visitors'
 ];
 
 const privacyHighlights = [
   {
     label: 'Minimal collection',
-    value: 'Only redirect analytics',
+    value: 'Redirect analytics only',
     description: 'We store the least data needed to show useful insights.'
   },
   {
@@ -66,6 +75,34 @@ const privacyHighlights = [
   }
 ];
 
+const subprocessors = [
+  {
+    name: 'MongoDB Atlas',
+    purpose: 'Database hosting',
+    data: 'Accounts, links, click events'
+  },
+  {
+    name: 'Resend',
+    purpose: 'Transactional email',
+    data: 'Email address, message content'
+  },
+  {
+    name: 'Hosting providers',
+    purpose: 'App & API delivery (e.g. Vercel, Railway/Render/Fly)',
+    data: 'Request metadata, operational logs'
+  },
+  {
+    name: 'GeoIP (geoip-lite)',
+    purpose: 'Country lookup at redirect time',
+    data: 'IP used transiently, not stored'
+  },
+  {
+    name: 'Gravatar',
+    purpose: 'Default account avatar',
+    data: 'Email hash'
+  }
+];
+
 const privacyPolicySections = [
   {
     id: 'retention',
@@ -79,20 +116,19 @@ const privacyPolicySections = [
           <>
             Raw click events are automatically deleted after{' '}
             <strong className="text-ink">30 days</strong> via a MongoDB TTL on
-            the timestamp field. Once removed, individual records are
-            permanently gone.
+            the timestamp field.
           </>
         )
       },
       {
         id: 'aggregated',
         icon: Archive,
-        text: 'Aggregated statistics (totals, top countries, device breakdowns) are computed on demand from remaining raw data and are not stored permanently.'
+        text: 'Aggregated statistics are computed on demand from remaining raw data and are not stored permanently.'
       },
       {
-        id: 'deleted-link-events',
+        id: 'accounts',
         icon: Database,
-        text: 'If you delete a short URL, its click events remain until their 30-day expiry but are no longer linked to an active account or destination.'
+        text: 'Account data is retained while your account is active and removed when you delete your account, subject to brief backup retention by subprocessors.'
       }
     ]
   },
@@ -104,29 +140,79 @@ const privacyPolicySections = [
       {
         id: 'delete-link',
         icon: Trash2,
-        text: 'Deleting a short URL immediately clears its destination, owner, management token, and lifetime click counter. A non-identifying slug tombstone remains permanently to prevent reuse; raw events expire after 30 days.'
+        text: 'Deleting a short URL immediately clears its destination, owner, management token, and lifetime click counter. A non-identifying slug tombstone remains permanently to prevent reuse.'
       },
       {
         id: 'account-deletion',
         icon: Trash2,
         text: 'You can delete your account and associated data at any time. Account deletion removes your user record and click data, and retires owned slugs as non-identifying tombstones, in one server transaction.'
+      },
+      {
+        id: 'rights',
+        icon: Scale,
+        text: (
+          <>
+            Depending on your location, you may have rights to access, correct,
+            delete, or export personal data. Contact{' '}
+            <ContactMailtoLink
+              email={SUPPORT_EMAIL}
+              className="landing-text-link"
+            />{' '}
+            to exercise these rights.
+          </>
+        )
+      }
+    ]
+  },
+  {
+    id: 'legal',
+    title: 'Legal basis & transfers',
+    headingId: 'privacy-legal-heading',
+    items: [
+      {
+        id: 'basis',
+        icon: FileText,
+        text: 'We process account data to perform our contract with you. We rely on legitimate interests for minimal redirect analytics, balanced against visitor privacy (no raw IP storage, short TTL).'
+      },
+      {
+        id: 'transfers',
+        icon: Globe,
+        text: 'Infrastructure may be located outside your country. Where required, we use appropriate safeguards for international data transfers.'
       }
     ]
   },
   {
     id: 'transparency',
-    title: 'Transparency',
+    title: 'Transparency & safety',
     headingId: 'privacy-transparency-heading',
     items: [
       {
         id: 'policy-updates',
         icon: Bell,
-        text: 'This policy is updated whenever we change analytics collection or retention practices.'
+        text: 'This policy is updated whenever we change collection, retention, or sharing practices. Material updates appear here with a new last-updated date.'
       },
       {
-        id: 'change-log',
-        icon: ScrollText,
-        text: 'We will always document what changes and why.'
+        id: 'abuse',
+        icon: Shield,
+        text: (
+          <>
+            Abuse reports may include an optional reporter email and reported slug.
+            See the{' '}
+            <Link to={ROUTES.REPORT} className="landing-text-link">
+              abuse report form
+            </Link>{' '}
+            and our{' '}
+            <Link to={ROUTES.TERMS} className="landing-text-link">
+              Terms of Service
+            </Link>
+            .
+          </>
+        )
+      },
+      {
+        id: 'children',
+        icon: Users,
+        text: 'Shortly is not directed at children under 13 (or the minimum age in your jurisdiction). Contact us if you believe a child has provided personal data.'
       }
     ]
   }
@@ -197,12 +283,19 @@ const PrivacyPage = () => {
                 Privacy policy
               </h1>
               <p className="mt-2 max-w-2xl text-sm text-muted-strong sm:text-base">
-                Shortly is built as a privacy-first URL shortener. We collect
-                the smallest amount of data needed to provide useful analytics,
-                and we never sell or share that data with third parties.
+                {OPERATOR_NAME} is built as a privacy-first URL shortener. We
+                collect the smallest amount of data needed to operate the service
+                and show useful analytics. We do not sell personal information.
+                We share data only with subprocessors that help us run Shortly,
+                as described below.
               </p>
               <p className="mt-3 text-xs text-muted">
-                Last updated: {PRIVACY_LAST_UPDATED}
+                Last updated: {PRIVACY_LAST_UPDATED} · Data controller:{' '}
+                {OPERATOR_NAME} (
+                <Link to={ROUTES.CONTACT} className="landing-text-link">
+                  contact
+                </Link>
+                )
               </p>
             </header>
 
@@ -268,15 +361,15 @@ const PrivacyPage = () => {
                   <strong className="text-ink">Registered accounts:</strong> We
                   store your name, email, and password hash so you can sign in
                   and manage your links. Session auth uses an HTTP-only cookie
-                  (not used to track visitors). Email addresses are used for
-                  verification and password reset when email is enabled.
+                  (not used to track visitors). We record when you accepted our
+                  Terms (<code className="text-xs">acceptedTermsAt</code>,{' '}
+                  <code className="text-xs">termsVersion</code>).
                 </PrivacyCallout>
 
                 <PrivacyCallout variant="muted">
                   <strong className="text-ink">Click counts:</strong> We send
                   the redirect first, then record the visit so links stay fast.
-                  In rare cases — for example, if someone closes the tab very
-                  quickly — a visit may not appear in your analytics. We
+                  In rare cases a visit may not appear in your analytics. We
                   prioritize fast redirects over perfectly exact counts.
                 </PrivacyCallout>
               </div>
@@ -306,6 +399,48 @@ const PrivacyPage = () => {
                     </li>
                   ))}
                 </ul>
+              </div>
+
+              <div className="p-6 sm:p-8">
+                <header className="mb-6 flex items-center gap-3">
+                  <ScrollText
+                    className="size-5 text-primary"
+                    aria-hidden="true"
+                  />
+                  <h2 className="text-lg font-semibold text-ink">
+                    Subprocessors
+                  </h2>
+                </header>
+                <p className="mb-4 text-sm text-muted-strong">
+                  We use trusted providers to host and operate Shortly. They
+                  process data on our instructions and are not authorized to
+                  use your data for their own marketing.
+                </p>
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[32rem] border-collapse text-left text-sm">
+                    <thead>
+                      <tr className="border-b border-border text-xs uppercase tracking-wider text-muted">
+                        <th className="px-3 py-2 font-semibold">Provider</th>
+                        <th className="px-3 py-2 font-semibold">Purpose</th>
+                        <th className="px-3 py-2 font-semibold">Data</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {subprocessors.map((row) => (
+                        <tr
+                          key={row.name}
+                          className="border-b border-border text-muted-strong"
+                        >
+                          <td className="px-3 py-3 font-medium text-ink">
+                            {row.name}
+                          </td>
+                          <td className="px-3 py-3">{row.purpose}</td>
+                          <td className="px-3 py-3">{row.data}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           </LandingFrameInner>
@@ -340,6 +475,17 @@ const PrivacyPage = () => {
                 ))}
               </div>
             </div>
+          </LandingFrameInner>
+        </LandingSectionBlock>
+
+        <LandingSectionBlock>
+          <LandingFrameInner className="py-8">
+            <h2 className="mb-4 text-lg font-semibold text-ink">Contact</h2>
+            <p className="mb-6 max-w-2xl text-sm text-muted-strong">
+              Questions about this policy, data rights requests, or security
+              disclosures:
+            </p>
+            <ContactChannelsList />
           </LandingFrameInner>
         </LandingSectionBlock>
       </main>
