@@ -24,11 +24,7 @@ export const registerSchema = Joi.object({
     'string.email': 'Please provide a valid email address',
     'any.required': 'Email is required'
   }),
-  password: passwordSchema,
-  acceptedTerms: Joi.boolean().valid(true).required().messages({
-    'any.only': 'You must accept the Terms of Service',
-    'any.required': 'You must accept the Terms of Service'
-  })
+  password: passwordSchema
 });
 
 export const abuseReportSchema = Joi.object({

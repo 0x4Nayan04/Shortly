@@ -1,7 +1,6 @@
 import { memo } from 'react';
 import { RotateCw } from 'lucide-react';
 import { ErrorPanel, errorActionButtonClass } from '../ErrorPanel';
-import { ContactSupportHint } from '../legal/ContactChannels';
 
 export const ErrorRecovery = memo(
   ({
@@ -34,7 +33,11 @@ export const ErrorRecovery = memo(
           </button>
         )}
 
-        {!canRetry && <ContactSupportHint />}
+        {!canRetry && (
+          <p className="text-sm text-error">
+            Maximum retry attempts reached. Please refresh the page.
+          </p>
+        )}
       </ErrorPanel>
     );
   }

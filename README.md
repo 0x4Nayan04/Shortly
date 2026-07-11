@@ -3,10 +3,10 @@
 > Privacy-first URL shortener with click analytics, custom aliases, and a dashboard.
 > Built to learn end-to-end full-stack development with React, Express, and MongoDB.
 
-**Live demo:** [shortly.nayanswarnkar.com](https://shortly.nayanswarnkar.com/)
+**Live demo:** Deploy the frontend and backend with your own domains (see environment examples below).
 
 <p align="left">
-  <img src="https://img.shields.io/badge/status-live-brightgreen" alt="Status" />
+  <img src="https://img.shields.io/badge/status-portfolio-blue" alt="Status" />
   <img src="https://img.shields.io/badge/license-MIT-blue" alt="License" />
   <img src="https://img.shields.io/badge/node-18%2B-339933" alt="Node" />
   <img src="https://img.shields.io/badge/mongo-replica%20set-47A248" alt="MongoDB" />
@@ -86,14 +86,13 @@ in the frontend project. After deploy, smoke-test a live slug:
 ```bash
 PUBLIC_SHORT_HOST=https://shortly.example.com \
 SHORT_LINK_PROXY_ORIGIN=https://api.example.com \
-bun run --cwd FRONTEND smoke:routing your-slug
+npm run smoke:routing --prefix FRONTEND your-slug
 ```
 
 **Production security headers:** The frontend build also writes baseline
 `Strict-Transport-Security`, `X-Content-Type-Options`, `X-Frame-Options`,
 `Referrer-Policy`, `Permissions-Policy`, and a report-only CSP into
-`vercel.json`. Crawlers requesting `/`, `/privacy`, `/terms`, or `/contact`
-receive route-specific Open Graph metadata via Vercel Edge Middleware and
+`vercel.json`. Crawlers requesting `/` receive route-specific Open Graph metadata via Vercel Edge Middleware and
 build-time SEO shells in `dist/_seo/`.
 
 Then in two terminals:
@@ -114,11 +113,10 @@ Open <http://127.0.0.1:5173>.
 
 ## Documentation
 
-| Doc                                              | Contents                              |
-| ------------------------------------------------ | ------------------------------------- |
-| [PRIVACY.md](./PRIVACY.md)                       | Public analytics and retention policy |
-| [BACKEND/.env.example](./BACKEND/.env.example)   | All backend environment variables     |
-| [FRONTEND/.env.example](./FRONTEND/.env.example) | All frontend environment variables    |
+| Doc                                              | Contents                           |
+| ------------------------------------------------ | ---------------------------------- |
+| [BACKEND/.env.example](./BACKEND/.env.example)   | All backend environment variables  |
+| [FRONTEND/.env.example](./FRONTEND/.env.example) | All frontend environment variables |
 
 ## Architecture
 
@@ -149,7 +147,6 @@ never show a stale display name after edits.
 | `/`                                                                                         | Public    | Landing                                |
 | `/login`, `/register`, `/verify-email/:token`, `/forgot-password`, `/reset-password/:token` | Guest     | Auth                                   |
 | `/dashboard`, `/settings`                                                                   | Signed in | Dashboard, account settings            |
-| `/privacy`                                                                                  | Public    | Privacy policy                         |
 | `/:short_url`                                                                               | Public    | Proxied redirect (dev: Vite → backend) |
 
 **Layout:** `api/` (axios clients), `contexts/` (`authSessionStore` +
@@ -170,8 +167,7 @@ repo root after token/CSS edits (syncs with `Design/` variables when present).
 ## Design tradeoffs
 
 These are intentional product/engineering decisions — useful context for
-reviewers and interviews. See [PRIVACY.md](./PRIVACY.md) for the public-facing
-analytics policy.
+reviewers and interviews.
 
 ### 1. Fast redirects over exact click counts
 

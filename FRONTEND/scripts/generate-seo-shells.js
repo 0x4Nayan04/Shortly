@@ -7,6 +7,7 @@ import {
   getDocumentMetaForPath
 } from '../config/documentMeta.js';
 import { injectDocumentMeta } from '../config/injectDocumentMeta.js';
+import { buildRobotsTxt, buildSitemapXml } from '../config/sitemap.js';
 
 const rootDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const distDir = resolve(rootDir, 'dist');
@@ -35,6 +36,17 @@ for (const pathname of SEO_PUBLIC_PATHS) {
   writeFileSync(outputPath, shellHtml);
 }
 
+if (siteOrigin) {
+  writeFileSync(resolve(distDir, 'sitemap.xml'), buildSitemapXml(siteOrigin));
+  writeFileSync(resolve(distDir, 'robots.txt'), buildRobotsTxt(siteOrigin));
+}
+
 console.log(
-  `[Shortly] Wrote ${SEO_PUBLIC_PATHS.length} SEO shells in dist/_seo/ for ${siteOrigin.replace(/\/$/, '')}`
+  `[Shortly] Wrote ${SEO_PUBLIC_PATHS.length} SEO shells in dist/_seo/ for ${siteOrigin.replace(/\/$/, '') || '(no site origin)'}`
 );
+
+if (siteOrigin) {
+  console.log(
+    `[Shortly] Wrote dist/sitemap.xml and dist/robots.txt for ${siteOrigin.replace(/\/$/, '')}`
+  );
+}

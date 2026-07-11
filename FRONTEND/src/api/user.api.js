@@ -8,12 +8,11 @@ export const loginUser = async (email, password) => {
   return data;
 };
 
-export const registerUser = async (name, email, password, acceptedTerms) => {
+export const registerUser = async (name, email, password) => {
   const { data } = await axiosinstance.post(`/api/auth/register`, {
     name,
     email,
-    password,
-    acceptedTerms
+    password
   });
   return data;
 };

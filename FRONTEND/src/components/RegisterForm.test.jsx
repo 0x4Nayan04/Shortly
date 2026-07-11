@@ -27,27 +27,7 @@ describe('RegisterForm', () => {
     vi.clearAllMocks();
   });
 
-  it('requires terms acceptance before submitting', async () => {
-    const user = userEvent.setup();
-    renderWithProviders(<RegisterForm />);
-
-    await user.type(screen.getByLabelText(/full name/i), 'Test User');
-    await user.type(screen.getByLabelText(/email address/i), 'user@example.com');
-    await user.type(screen.getByLabelText(/^password$/i), validPassword);
-    await user.type(screen.getByLabelText(/confirm password/i), validPassword);
-    await user.click(
-      within(screen.getByRole('form')).getByRole('button', {
-        name: /create account/i
-      })
-    );
-
-    expect(
-      screen.getByText(/must accept the terms of service/i)
-    ).toBeInTheDocument();
-    expect(registerUser).not.toHaveBeenCalled();
-  });
-
-  it('submits registration when the form is valid and terms are accepted', async () => {
+  it('submits registration when the form is valid', async () => {
     registerUser.mockResolvedValue({
       success: true,
       accepted: true,
@@ -62,7 +42,6 @@ describe('RegisterForm', () => {
     await user.type(screen.getByLabelText(/email address/i), 'user@example.com');
     await user.type(screen.getByLabelText(/^password$/i), validPassword);
     await user.type(screen.getByLabelText(/confirm password/i), validPassword);
-    await user.click(screen.getByLabelText(/terms of service/i));
     await user.click(
       within(screen.getByRole('form')).getByRole('button', {
         name: /create account/i
@@ -73,8 +52,7 @@ describe('RegisterForm', () => {
       expect(registerUser).toHaveBeenCalledWith(
         'Test User',
         'user@example.com',
-        validPassword,
-        true
+        validPassword
       );
     });
     expect(switchToLogin).toHaveBeenCalled();

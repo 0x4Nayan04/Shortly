@@ -3,7 +3,6 @@ export const registerInitialState = {
   email: '',
   password: '',
   confirmPassword: '',
-  acceptedTerms: false,
   loading: false,
   error: '',
   verificationPending: false,
@@ -33,8 +32,6 @@ export function registerReducer(state, action) {
       return { ...state, showPassword: !state.showPassword };
     case 'TOGGLE_CONFIRM_PASSWORD':
       return { ...state, showConfirmPassword: !state.showConfirmPassword };
-    case 'TOGGLE_ACCEPTED_TERMS':
-      return { ...state, acceptedTerms: !state.acceptedTerms, error: '' };
     case 'REGISTER_START':
       return { ...state, loading: true, error: '' };
     case 'REGISTER_SUCCESS':

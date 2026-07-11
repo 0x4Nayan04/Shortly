@@ -6,7 +6,7 @@ import AppCatalogShell, {
 } from './app/AppCatalogShell';
 import AppNavbar from './app/AppNavbar';
 import { ROUTES } from '../constants/routes';
-import { LANDING_LEGAL_LINKS } from '../constants/landingNav';
+import { LANDING_INFO_LINKS } from '../constants/landingNav';
 
 const NotFound = () => {
   const navigate = useNavigate();
@@ -75,7 +75,7 @@ const NotFound = () => {
                     Sign up{' '}
                     <ExternalLink className="size-3" aria-hidden="true" />
                   </Link>
-                  {LANDING_LEGAL_LINKS.map((link) => (
+                  {LANDING_INFO_LINKS.map((link) => (
                     <Link
                       key={link.label}
                       to={link.to}

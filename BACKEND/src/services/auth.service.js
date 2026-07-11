@@ -13,7 +13,6 @@ import {
 } from './email.service.js';
 import { alertEmailDeliveryFailure } from './opsAlert.service.js';
 import { logger } from '../utils/logger.js';
-import { CURRENT_TERMS_VERSION } from '../constants/terms.js';
 import bcrypt from 'bcrypt';
 
 const GENERIC_RESEND_VERIFICATION_MESSAGE =
@@ -31,9 +30,7 @@ export const registerUserService = async ({ name, email, password }) => {
     newUser = await createUser({
       name,
       email,
-      password,
-      acceptedTermsAt: new Date(),
-      termsVersion: CURRENT_TERMS_VERSION
+      password
     });
   } catch (error) {
     if (error.code === 11000) return { accepted: true };

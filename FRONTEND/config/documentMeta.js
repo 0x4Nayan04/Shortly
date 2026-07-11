@@ -11,25 +11,16 @@ export const SHORTLY_OG_IMAGE = '/og-image.png';
 export const SHORTLY_OG_IMAGE_WIDTH = 1200;
 export const SHORTLY_OG_IMAGE_HEIGHT = 630;
 
-/** Production canonical origin; override with VITE_PUBLIC_SHORT_URL at build time. */
-export const SHORTLY_SITE_URL = 'https://shortly.nayanswarnkar.com';
+/** Production canonical origin; set VITE_PUBLIC_SHORT_URL at build time. */
+export const SHORTLY_SITE_URL = '';
 
 /** Routes that receive crawler-specific HTML shells and static SEO metadata. */
-export const SEO_PUBLIC_PATHS = [
-  ROUTES.HOME,
-  ROUTES.PRIVACY,
-  ROUTES.TERMS,
-  ROUTES.CONTACT
-];
+export const SEO_PUBLIC_PATHS = [ROUTES.HOME, ROUTES.PRIVACY];
 
 const ROUTE_META_DESCRIPTIONS = {
   [ROUTES.HOME]: SHORTLY_META_DESCRIPTION,
   [ROUTES.PRIVACY]:
-    'Shortly privacy policy: what data we collect for accounts and click analytics, subprocessors, retention, your rights, and how to contact the operator.',
-  [ROUTES.TERMS]:
-    'Shortly Terms of Service: acceptable use, link suspension, liability limits, and how we handle abuse reports.',
-  [ROUTES.CONTACT]:
-    'Contact Shortly for product support, abuse reports, security disclosures, and privacy requests.',
+    'How Shortly handles data: redirect analytics, account storage, retention, subprocessors, and what we do not collect.',
   [ROUTES.LOGIN]:
     'Sign in to your Shortly account to manage short links, aliases, and click analytics.',
   [ROUTES.REGISTER]:
@@ -38,8 +29,6 @@ const ROUTE_META_DESCRIPTIONS = {
     'Manage your Shortly short links, aliases, QR codes, and click analytics from your dashboard.',
   [ROUTES.SETTINGS]:
     'Update your Shortly profile, password, and account settings.',
-  [ROUTES.REPORT]:
-    'Report abusive, malicious, or misleading Shortly short links for operator review.',
   [ROUTES.FORGOT_PASSWORD]:
     'Request a password reset link for your Shortly account.'
 };
@@ -54,9 +43,6 @@ const ROUTE_PAGE_TITLES = {
   [ROUTES.DASHBOARD]: formatPageTitle('Dashboard'),
   [ROUTES.SETTINGS]: formatPageTitle('Settings'),
   [ROUTES.PRIVACY]: formatPageTitle('Privacy'),
-  [ROUTES.TERMS]: formatPageTitle('Terms'),
-  [ROUTES.CONTACT]: formatPageTitle('Contact'),
-  [ROUTES.REPORT]: formatPageTitle('Report abuse'),
   [ROUTES.FORGOT_PASSWORD]: formatPageTitle('Reset password')
 };
 

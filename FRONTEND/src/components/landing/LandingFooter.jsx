@@ -1,6 +1,6 @@
 import { createElement } from 'react';
 import { Link } from 'react-router-dom';
-import { LANDING_SECTION_LINKS, LANDING_LEGAL_LINKS } from '../../constants/landingNav';
+import { LANDING_SECTION_LINKS, LANDING_INFO_LINKS } from '../../constants/landingNav';
 import { ROUTES } from '../../constants/routes';
 import { SOCIAL_LINKS } from '../../constants/social';
 import { useAuth } from '../../contexts/AuthContext';
@@ -34,7 +34,7 @@ const FooterInlineLink = ({ link }) => {
 
 const getFooterLinks = (user) => [
   ...LANDING_SECTION_LINKS,
-  ...LANDING_LEGAL_LINKS,
+  ...LANDING_INFO_LINKS,
   user
     ? { label: 'Dashboard', to: ROUTES.DASHBOARD }
     : { label: 'Sign in', to: ROUTES.LOGIN }

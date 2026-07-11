@@ -28,7 +28,7 @@ export default defineConfig({
     },
     {
       command:
-        'bun run dev -- --host localhost --port 5173 --strictPort',
+        'npm run dev -- --host localhost --port 5173 --strictPort',
       url: 'http://localhost:5173',
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,

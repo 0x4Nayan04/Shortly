@@ -9,7 +9,7 @@ import {
 
 describe('normalizePublicPath', () => {
   it('normalizes trailing slashes', () => {
-    expect(normalizePublicPath('/privacy/')).toBe('/privacy');
+    expect(normalizePublicPath('/dashboard/')).toBe('/dashboard');
     expect(normalizePublicPath('/')).toBe('/');
   });
 });
@@ -21,10 +21,8 @@ describe('getDocumentMetaForPath', () => {
     expect(meta.ogImageUrl).toBe('https://shortly.example.com/og-image.png');
   });
 
-  it('uses route-specific descriptions for legal pages', () => {
-    expect(getMetaDescriptionForPath('/privacy')).toContain('privacy policy');
-    expect(getMetaDescriptionForPath('/terms')).toContain('Terms of Service');
-    expect(getMetaDescriptionForPath('/contact')).toContain('Contact Shortly');
+  it('uses route-specific descriptions for public pages', () => {
+    expect(getMetaDescriptionForPath('/privacy')).toContain('Shortly handles data');
   });
 
   it('maps SEO routes to crawler shell paths', () => {

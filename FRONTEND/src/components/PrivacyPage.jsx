@@ -22,11 +22,6 @@ import AppCatalogShell, {
   LandingSectionBlock
 } from './app/AppCatalogShell';
 import AppNavbar from './app/AppNavbar';
-import {
-  ContactChannelsList,
-  ContactMailtoLink
-} from './legal/ContactChannels';
-import { OPERATOR_NAME, SUPPORT_EMAIL } from '../constants/contacts';
 import { ROUTES } from '../constants/routes';
 
 const PRIVACY_LAST_UPDATED = 'July 2026';
@@ -145,39 +140,29 @@ const privacyPolicySections = [
       {
         id: 'account-deletion',
         icon: Trash2,
-        text: 'You can delete your account and associated data at any time. Account deletion removes your user record and click data, and retires owned slugs as non-identifying tombstones, in one server transaction.'
+        text: 'You can delete your account and associated data from Settings. Account deletion removes your user record and click data, and retires owned slugs as non-identifying tombstones, in one server transaction.'
       },
       {
         id: 'rights',
         icon: Scale,
-        text: (
-          <>
-            Depending on your location, you may have rights to access, correct,
-            delete, or export personal data. Contact{' '}
-            <ContactMailtoLink
-              email={SUPPORT_EMAIL}
-              className="landing-text-link"
-            />{' '}
-            to exercise these rights.
-          </>
-        )
+        text: 'You can manage links, review analytics, update your profile, and delete your account from the dashboard and settings pages.'
       }
     ]
   },
   {
     id: 'legal',
-    title: 'Legal basis & transfers',
+    title: 'How we use data',
     headingId: 'privacy-legal-heading',
     items: [
       {
         id: 'basis',
         icon: FileText,
-        text: 'We process account data to perform our contract with you. We rely on legitimate interests for minimal redirect analytics, balanced against visitor privacy (no raw IP storage, short TTL).'
+        text: 'Account data powers sign-in and link management. Redirect analytics help link owners understand traffic while keeping visitor data minimal — no raw IP storage and a short retention window.'
       },
       {
         id: 'transfers',
         icon: Globe,
-        text: 'Infrastructure may be located outside your country. Where required, we use appropriate safeguards for international data transfers.'
+        text: 'Infrastructure may be located outside your country depending on where the app is hosted and which providers are used.'
       }
     ]
   },
@@ -189,30 +174,17 @@ const privacyPolicySections = [
       {
         id: 'policy-updates',
         icon: Bell,
-        text: 'This policy is updated whenever we change collection, retention, or sharing practices. Material updates appear here with a new last-updated date.'
+        text: 'This page is updated when collection, retention, or sharing practices change. The last-updated date at the top reflects the latest revision.'
       },
       {
         id: 'abuse',
         icon: Shield,
-        text: (
-          <>
-            Abuse reports may include an optional reporter email and reported slug.
-            See the{' '}
-            <Link to={ROUTES.REPORT} className="landing-text-link">
-              abuse report form
-            </Link>{' '}
-            and our{' '}
-            <Link to={ROUTES.TERMS} className="landing-text-link">
-              Terms of Service
-            </Link>
-            .
-          </>
-        )
+        text: 'Abuse reports stored by operators may include an optional reporter email, reported slug, and description to investigate malicious links.'
       },
       {
         id: 'children',
         icon: Users,
-        text: 'Shortly is not directed at children under 13 (or the minimum age in your jurisdiction). Contact us if you believe a child has provided personal data.'
+        text: 'Shortly is not directed at children under 13 (or the minimum age in your jurisdiction).'
       }
     ]
   }
@@ -274,28 +246,22 @@ const PrivacyPage = () => {
                 Back to home
               </Link>
               <p className="mb-4 font-mono text-[11px] font-medium uppercase tracking-[0.08em] text-primary">
-                Privacy policy
+                Privacy
               </p>
               <h1
                 id="privacy-heading"
                 className="font-display text-2xl font-medium tracking-display text-ink sm:text-3xl"
               >
-                Privacy policy
+                How Shortly handles data
               </h1>
               <p className="mt-2 max-w-2xl text-sm text-muted-strong sm:text-base">
-                {OPERATOR_NAME} is built as a privacy-first URL shortener. We
-                collect the smallest amount of data needed to operate the service
-                and show useful analytics. We do not sell personal information.
-                We share data only with subprocessors that help us run Shortly,
-                as described below.
+                Shortly is built as a privacy-first URL shortener. This page
+                explains what the app collects, what it avoids, and how long data
+                is kept. It is an informational overview of the product — not a
+                formal legal agreement.
               </p>
               <p className="mt-3 text-xs text-muted">
-                Last updated: {PRIVACY_LAST_UPDATED} · Data controller:{' '}
-                {OPERATOR_NAME} (
-                <Link to={ROUTES.CONTACT} className="landing-text-link">
-                  contact
-                </Link>
-                )
+                Last updated: {PRIVACY_LAST_UPDATED}
               </p>
             </header>
 
@@ -361,9 +327,7 @@ const PrivacyPage = () => {
                   <strong className="text-ink">Registered accounts:</strong> We
                   store your name, email, and password hash so you can sign in
                   and manage your links. Session auth uses an HTTP-only cookie
-                  (not used to track visitors). We record when you accepted our
-                  Terms (<code className="text-xs">acceptedTermsAt</code>,{' '}
-                  <code className="text-xs">termsVersion</code>).
+                  (not used to track visitors).
                 </PrivacyCallout>
 
                 <PrivacyCallout variant="muted">
@@ -412,9 +376,9 @@ const PrivacyPage = () => {
                   </h2>
                 </header>
                 <p className="mb-4 text-sm text-muted-strong">
-                  We use trusted providers to host and operate Shortly. They
-                  process data on our instructions and are not authorized to
-                  use your data for their own marketing.
+                  Shortly relies on these providers to run. They process data
+                  on our instructions and are not used for separate marketing
+                  profiles.
                 </p>
                 <div className="overflow-x-auto">
                   <table className="w-full min-w-[32rem] border-collapse text-left text-sm">
@@ -475,17 +439,6 @@ const PrivacyPage = () => {
                 ))}
               </div>
             </div>
-          </LandingFrameInner>
-        </LandingSectionBlock>
-
-        <LandingSectionBlock>
-          <LandingFrameInner className="py-8">
-            <h2 className="mb-4 text-lg font-semibold text-ink">Contact</h2>
-            <p className="mb-6 max-w-2xl text-sm text-muted-strong">
-              Questions about this policy, data rights requests, or security
-              disclosures:
-            </p>
-            <ContactChannelsList />
           </LandingFrameInner>
         </LandingSectionBlock>
       </main>

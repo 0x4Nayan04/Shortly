@@ -9,7 +9,6 @@ test('account deletion removes access to protected routes', async ({ page }) => 
   await page.getByLabel('Email address').fill(email);
   await page.getByLabel('Password', { exact: true }).fill(password);
   await page.getByLabel('Confirm password').fill(password);
-  await page.getByLabel(/terms of service/i).check();
   await page
     .getByRole('form', { name: 'Create account' })
     .getByRole('button', { name: 'Create account' })

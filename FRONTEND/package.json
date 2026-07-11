@@ -13,8 +13,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "doctor": "bunx react-doctor@latest . --verbose",
-    "check": "bun run lint && bun run css:check && bun run test && bun run build && bun run doctor",
+    "doctor": "npx react-doctor@latest . --verbose",
+    "check": "npm run lint && npm run css:check && npm run test && npm run build && npm run doctor",
     "preview": "vite preview"
   },
   "dependencies": {

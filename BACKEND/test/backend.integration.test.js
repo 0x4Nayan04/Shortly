@@ -32,8 +32,7 @@ async function register(email) {
   const response = await agent.post('/api/auth/register').send({
     name: 'Test User',
     email,
-    password,
-    acceptedTerms: true
+    password
   });
   assert.equal(response.status, 202, response.text);
   const login = await agent.post('/api/auth/login').send({ email, password });
@@ -167,8 +166,7 @@ test('registration is generic for new and existing emails and weak passwords fai
   const payload = {
     name: 'Privacy Test',
     email: 'privacy@example.com',
-    password,
-    acceptedTerms: true
+    password
   };
   const first = await request(app).post('/api/auth/register').send(payload);
   const second = await request(app).post('/api/auth/register').send(payload);
@@ -176,30 +174,20 @@ test('registration is generic for new and existing emails and weak passwords fai
   assert.equal(second.status, 202);
   assert.deepEqual(first.body, second.body);
   const user = await User.findOne({ email: payload.email });
-  assert.ok(user.acceptedTermsAt);
-  assert.equal(user.termsVersion, '2026-07');
+  assert.ok(user);
   const weak = await request(app).post('/api/auth/register').send({
     name: 'Weak Test',
     email: 'weak@example.com',
-    password: 'short123',
-    acceptedTerms: true
+    password: 'short123'
   });
   assert.equal(weak.status, 400);
-
-  const noTerms = await request(app).post('/api/auth/register').send({
-    name: 'No Terms',
-    email: 'noterms@example.com',
-    password
-  });
-  assert.equal(noTerms.status, 400);
 });
 
 test('concurrent same-email registrations remain generic', async () => {
   const payload = {
     name: 'Concurrent User',
     email: 'concurrent-register@example.com',
-    password,
-    acceptedTerms: true
+    password
   };
   const responses = await Promise.all([
     request(app).post('/api/auth/register').send(payload),
@@ -234,8 +222,7 @@ test('login has an IP-wide limit and logout revokes the old token', async () => 
   await request(app).post('/api/auth/register').send({
     name: 'Revoke User',
     email,
-    password,
-    acceptedTerms: true
+    password
   });
   const login = await request(app)
     .post('/api/auth/login')
@@ -449,13 +436,14 @@ test('admin abuse queue supports list, update, and retire actions', async () => 
 
   const updated = await admin
     .patch(`/api/admin/abuse/reports/${stored._id}`)
+    .set(origin)
     .send({ status: 'reviewed', reviewNotes: 'Confirmed phishing destination.' });
   assert.equal(updated.status, 200, updated.text);
   assert.equal(updated.body.data.report.status, 'reviewed');
 
-  const retired = await admin.post(
-    `/api/admin/abuse/reports/${stored._id}/retire`
-  );
+  const retired = await admin
+    .post(`/api/admin/abuse/reports/${stored._id}/retire`)
+    .set(origin);
   assert.equal(retired.status, 200, retired.text);
   assert.equal(retired.body.data.slug, slug);
 

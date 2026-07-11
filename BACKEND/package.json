@@ -10,8 +10,8 @@
     "lint": "eslint .",
     "test": "node --test --test-concurrency=1",
     "test:watch": "node --test --test-concurrency=1 --watch",
-    "audit": "bun audit --audit-level high",
-    "ci": "bun run lint && bun run test"
+    "audit": "npm audit --audit-level=high",
+    "ci": "npm run lint && npm run test"
   },
   "keywords": [
     "url-shortener",

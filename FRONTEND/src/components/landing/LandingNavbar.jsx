@@ -5,10 +5,10 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 import { useFocusTrap } from '../Accessibility';
 import ShortlyLogo from '../ShortlyLogo';
-import { LANDING_SECTION_LINKS, LANDING_LEGAL_LINKS } from '../../constants/landingNav';
+import { LANDING_SECTION_LINKS, LANDING_INFO_LINKS } from '../../constants/landingNav';
 import { LandingFrameInner } from './LandingFrameInner';
 
-const NAV_LINKS = [...LANDING_SECTION_LINKS, ...LANDING_LEGAL_LINKS];
+const NAV_LINKS = [...LANDING_SECTION_LINKS, ...LANDING_INFO_LINKS];
 
 const LandingNavbarContent = memo(() => {
   const { user, logout } = useAuth();

@@ -22,14 +22,13 @@ jobs:
         working-directory: FRONTEND
     steps:
       - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.3.14
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: bun install --frozen-lockfile
-      - run: bun run test
+          cache: npm
+          cache-dependency-path: FRONTEND/package-lock.json
+      - run: npm ci
+      - run: npm test
 
   e2e:
     runs-on: ubuntu-latest
@@ -38,14 +37,15 @@ jobs:
         working-directory: FRONTEND
     steps:
       - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.3.14
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: bun install --frozen-lockfile
-      - run: bun install --frozen-lockfile
+          cache: npm
+          cache-dependency-path: |
+            FRONTEND/package-lock.json
+            BACKEND/package-lock.json
+      - run: npm ci
+      - run: npm ci
         working-directory: BACKEND
-      - run: bunx playwright install --with-deps chromium
-      - run: node node_modules/@playwright/test/cli.js test
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e

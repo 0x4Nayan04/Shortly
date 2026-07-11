@@ -1,10 +1,8 @@
-import { Link } from 'react-router-dom';
 import AuthSubmitButton from '../AuthSubmitButton';
 import FormField from '../forms/FormField';
 import PasswordField from '../forms/PasswordField';
 import PasswordStrengthMeter from './PasswordStrengthMeter';
 import PasswordHint from './PasswordHint';
-import { ROUTES } from '../../constants/routes';
 
 const RegisterFormFields = ({
   dispatch,
@@ -17,7 +15,6 @@ const RegisterFormFields = ({
   onConfirmPasswordChange,
   showPassword,
   showConfirmPassword,
-  acceptedTerms,
   loading,
   onSubmit
 }) => {
@@ -107,32 +104,6 @@ const RegisterFormFields = ({
         showPassword={showConfirmPassword}
         onToggleVisibility={() => dispatch({ type: 'TOGGLE_CONFIRM_PASSWORD' })}
       />
-
-      <div className="flex items-start gap-3 border border-border bg-[var(--color-surface-muted)] px-4 py-3">
-        <input
-          id="register-accepted-terms"
-          type="checkbox"
-          checked={acceptedTerms}
-          onChange={() => dispatch({ type: 'TOGGLE_ACCEPTED_TERMS' })}
-          className="mt-0.5 size-4 shrink-0 accent-primary"
-          aria-describedby="register-terms-description"
-        />
-        <label
-          htmlFor="register-accepted-terms"
-          id="register-terms-description"
-          className="text-sm text-muted-strong"
-        >
-          I agree to the{' '}
-          <Link to={ROUTES.TERMS} className="landing-text-link font-medium">
-            Terms of Service
-          </Link>{' '}
-          and{' '}
-          <Link to={ROUTES.PRIVACY} className="landing-text-link font-medium">
-            Privacy Policy
-          </Link>
-          .
-        </label>
-      </div>
 
       <AuthSubmitButton loading={loading} loadingLabel="Creating account…">
         Create account

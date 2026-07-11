@@ -16,13 +16,15 @@ const BASE_HTML = `<!doctype html>
 
 describe('injectDocumentMeta', () => {
   it('replaces title, description, social tags, and canonical link', () => {
-    const meta = getDocumentMetaForPath('/privacy', 'https://shortly.example.com');
+    const meta = getDocumentMetaForPath('/', 'https://shortly.example.com');
     const html = injectDocumentMeta(BASE_HTML, meta);
 
-    expect(html).toContain('<title>Privacy · Shortly</title>');
-    expect(html).toContain('content="Shortly privacy policy');
-    expect(html).toContain('property="og:url" content="https://shortly.example.com/privacy"');
-    expect(html).toContain('rel="canonical" href="https://shortly.example.com/privacy"');
-    expect(html).toContain('name="twitter:title" content="Privacy · Shortly"');
+    expect(html).toContain('<title>Shortly · Short links &amp; analytics</title>');
+    expect(html).toContain('content="Shortly is a privacy-first URL shortener');
+    expect(html).toContain('property="og:url" content="https://shortly.example.com"');
+    expect(html).toContain('rel="canonical" href="https://shortly.example.com"');
+    expect(html).toContain(
+      'name="twitter:title" content="Shortly · Short links &amp; analytics"'
+    );
   });
 });

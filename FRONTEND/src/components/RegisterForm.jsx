@@ -34,8 +34,7 @@ const RegisterForm = ({ switchToLogin }) => {
     registeredEmail,
     resendingVerification,
     showPassword,
-    showConfirmPassword,
-    acceptedTerms
+    showConfirmPassword
   } = state;
 
   const { isOnline } = useOnlineStatus();
@@ -67,8 +66,7 @@ const RegisterForm = ({ switchToLogin }) => {
   );
 
   const hasUnsavedChanges =
-    !loading &&
-    (name || email || password || confirmPassword || acceptedTerms);
+    !loading && (name || email || password || confirmPassword);
   const unsavedDialog = useUnsavedNavigationGuard(hasUnsavedChanges);
 
   const formValues = { name, email, password, confirmPassword };
@@ -115,18 +113,11 @@ const RegisterForm = ({ switchToLogin }) => {
       return;
     }
     if (!validateAll(formValues).valid) return;
-    if (!acceptedTerms) {
-      dispatch({
-        type: 'SET_ERROR',
-        value: 'You must accept the Terms of Service and Privacy Policy.'
-      });
-      return;
-    }
 
     dispatch({ type: 'REGISTER_START' });
 
     try {
-      const response = await registerUser(name, email, password, acceptedTerms);
+      const response = await registerUser(name, email, password);
       const accepted = response.data?.accepted ?? response.accepted;
       if (response.success !== false && accepted) {
         handleRegisterSuccess(response);
@@ -215,7 +206,6 @@ const RegisterForm = ({ switchToLogin }) => {
         onConfirmPasswordChange={onConfirmPasswordChange}
         showPassword={showPassword}
         showConfirmPassword={showConfirmPassword}
-        acceptedTerms={acceptedTerms}
         loading={loading}
         onSubmit={handleSubmit}
       />
