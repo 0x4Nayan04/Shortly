@@ -1,23 +1,12 @@
-function resolveSameSite() {
+export function resolveSameSite() {
   const override = process.env.COOKIE_SAME_SITE?.trim().toLowerCase();
   if (override === 'lax' || override === 'strict' || override === 'none') {
     return override;
   }
 
-  if (process.env.NODE_ENV !== 'production') {
-    return 'lax';
-  }
-
-  try {
-    const front = new URL(process.env.FRONT_END_URL);
-    const apiBase =
-      process.env.PUBLIC_BASE_URL?.trim() ||
-      `http://127.0.0.1:${process.env.PORT || 3001}`;
-    const api = new URL(apiBase);
-    return front.hostname === api.hostname ? 'lax' : 'none';
-  } catch {
-    return 'lax';
-  }
+  // Shortly's supported deployment uses same-site frontend/API subdomains.
+  // Cross-site deployments must explicitly opt in with COOKIE_SAME_SITE=none.
+  return 'lax';
 }
 
 const sameSite = resolveSameSite();

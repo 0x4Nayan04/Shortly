@@ -10,7 +10,7 @@ For each redirect, we record:
 
 - Timestamp (when the redirect occurred)
 - Country (derived from IP address via GeoIP lookup)
-- Referrer domain (if provided by the browser)
+- Normalized referrer hostname (if a valid HTTP(S) referrer is provided)
 - User agent details (device type, browser, OS)
 
 We do not store raw IP addresses. We use the IP address only at request time to
@@ -43,17 +43,18 @@ perfectly exact counts.
 - **Aggregated statistics** (total clicks, top countries, device breakdowns) are
   computed on-demand from the remaining raw data and are not stored permanently.
 - If you delete a short URL, its associated click events remain until their
-  30-day expiry but are no longer linked to any active account.
+  30-day expiry but are no longer linked to an active account or destination.
 
 ## Your Control
 
-- Deleting a short URL hides it from your dashboard immediately, but the
-  underlying link record, lifetime click counter, and raw click events remain in
-  storage until the 30-day TTL expires. To remove your data sooner, delete your
-  account.
+- Deleting a short URL immediately clears its destination, owner, management
+  token, and lifetime click counter. A non-identifying slug and retirement time
+  are retained permanently so nobody can reuse an old public link. Raw click
+  events expire under the 30-day TTL.
 - You can request deletion of your account and associated data at any time.
-  Account deletion removes your user record, short URLs, and click data in a
-  single transactional flow on the server.
+  Account deletion removes your user record and click data, and converts owned
+  short URLs to the same non-identifying permanent tombstones, in a single
+  transactional flow on the server.
 
 ## Transparency
 
@@ -61,4 +62,4 @@ perfectly exact counts.
   retention practices.
 - We will always document what changes and why.
 
-_Last updated: June 2026_
+_Last updated: July 2026_

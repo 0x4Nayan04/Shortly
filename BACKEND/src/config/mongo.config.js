@@ -1,7 +1,9 @@
 import mongoose from 'mongoose';
-import User from '../schema/user.model.js';
-import { migrateShortUrlData } from './shortUrlMigration.js';
 import { logger } from '../utils/logger.js';
+import {
+  MIGRATION_COLLECTION,
+  REQUIRED_MIGRATION_ID
+} from '../constants/migrations.js';
 
 const mongooseOptions = {
   maxPoolSize: 10,
@@ -19,15 +21,19 @@ if (ipFamily !== undefined && ipFamily !== '') {
   mongooseOptions.family = Number(ipFamily);
 }
 
-const backfillUserTimestamps = async () => {
-  const result = await User.updateMany(
-    { $or: [{ createdAt: { $exists: false } }, { createdAt: null }] },
-    { $set: { createdAt: new Date(), updatedAt: new Date() } }
+export async function verifyRequiredMigration(
+  connection = mongoose.connection
+) {
+  const migration = await connection.db
+    .collection(MIGRATION_COLLECTION)
+    .findOne({ _id: REQUIRED_MIGRATION_ID });
+  if (migration) return;
+  const error = new Error(
+    'Required database migration is missing. Run "bun run migrate:resume-readiness" before starting the backend.'
   );
-  if (result.modifiedCount > 0) {
-    logger.info('Backfilled user timestamps', { count: result.modifiedCount });
-  }
-};
+  error.code = 'MIGRATION_REQUIRED';
+  throw error;
+}
 
 const connectDB = async () => {
   let retries = 3;
@@ -53,10 +59,11 @@ const connectDB = async () => {
         logger.info('MongoDB reconnected');
       });
 
-      await backfillUserTimestamps();
-      await migrateShortUrlData();
+      await verifyRequiredMigration();
+
       break;
     } catch (error) {
+      if (error.code === 'MIGRATION_REQUIRED') throw error;
       retries--;
       logger.error('MongoDB connection error', {
         error: error.message,

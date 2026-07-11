@@ -27,7 +27,7 @@ export const validators = {
   },
 
   password: (value, options = {}) => {
-    const { minLength = 6, required = true } = options;
+    const { minLength = 12, required = true } = options;
 
     if (required && (!value || !value.trim())) {
       return 'Password is required';

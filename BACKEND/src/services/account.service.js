@@ -6,7 +6,7 @@ import {
   updateNameById
 } from '../dao/user.dao.js';
 import { deleteClicksForUser } from '../dao/click.dao.js';
-import { deleteAllForUser } from '../dao/shortUrl.dao.js';
+import { retireAllForUser } from '../dao/shortUrl.dao.js';
 import { runWithTransaction } from '../utils/mongoTransaction.js';
 import { signToken } from '../utils/helper.js';
 import { AppError } from '../utils/errorHandler.js';
@@ -59,15 +59,19 @@ export const updateProfileService = async ({ userId, name }) => {
   return { user };
 };
 
-export const deleteAccountService = async ({ userId }) => {
+export const deleteAccountService = async ({ userId, password }) => {
   const user = await findUserById(userId);
   if (!user) {
     throw new AppError('User not found', 404);
   }
 
+  if (!(await user.comparePassword(password))) {
+    throw new AppError('Current password is incorrect', 401);
+  }
+
   await runWithTransaction(async (session) => {
     await deleteClicksForUser(userId, session);
-    await deleteAllForUser(userId, session);
+    await retireAllForUser(userId, session);
     await findUserByIdAndDelete(userId, session);
   });
 };

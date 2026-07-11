@@ -5,13 +5,16 @@ import { logger } from '../utils/logger.js';
 import { runWithTransaction } from '../utils/mongoTransaction.js';
 import { incrementClick } from '../dao/shortUrl.dao.js';
 import { insertClick } from '../dao/click.dao.js';
+import { normalizeReferrerHostname } from '../utils/normalizeReferrerHostname.js';
 
 export async function recordClickFromRequest({ shortUrlId, req }) {
   if (!req) return false;
   if (isBotUserAgent(req.headers['user-agent'] || '')) return false;
 
   try {
-    const referrer = req.get('referer') || req.get('referrer') || '';
+    const referrer = normalizeReferrerHostname(
+      req.get('referer') || req.get('referrer') || ''
+    );
     const country = getCountryFromRequest(req);
     const { user_agent, device_type, browser, os } = parseUserAgent(req);
 

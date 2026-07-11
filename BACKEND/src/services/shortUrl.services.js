@@ -7,10 +7,9 @@ import {
   findTopClickedForUser,
   isSlugAvailable,
   listForUser,
-  purgeReclaimableSlug,
   saveShortUrl,
-  softDeleteByIdAndUser,
-  softDeleteManyByIdsAndUser,
+  retireByIdAndUser,
+  retireManyByIdsAndUser,
   aggregateLifetimeStatsForUser,
   aggregateRecentActivityForUser,
   updateByIdAndUser
@@ -19,14 +18,17 @@ import { AppError, NotFoundError } from '../utils/errorHandler.js';
 import { normalizeSlug } from '../utils/normalizeSlug.js';
 import { normalizeUrl } from '../utils/normalizeUrl.js';
 import { validateCustomSlug } from '../utils/validateCustomSlug.js';
-import { invalidateRedirectSlugCache } from '../utils/redirectSlugCache.js';
 import { getClickAggregates } from './analytics.service.js';
 import {
   CUSTOM_SLUG_TAKEN_MESSAGE,
   withSlugConflictHandler
 } from '../utils/slugErrors.js';
 import { hashEmailToken } from '../utils/hashToken.js';
-import { assertUserLinkCapacity } from './shortUrl/linkCapacity.js';
+import {
+  reserveActiveLinkSlot,
+  releaseActiveLinkSlots
+} from '../dao/user.dao.js';
+import { runWithTransaction } from '../utils/mongoTransaction.js';
 import {
   buildExistingReuseResult,
   generateUniqueShortUrl,
@@ -41,25 +43,52 @@ export {
 const generateManageToken = () => crypto.randomBytes(24).toString('hex');
 const hashManageToken = (token) => hashEmailToken(token);
 
+const reserveSlotOrThrow = async (userId, session) => {
+  const reserved = await reserveActiveLinkSlot(userId, session);
+  if (reserved) return;
+  throw new AppError('Link limit reached. Delete unused links first.', 403);
+};
+
 export async function createShortUrlService({ full_url, userId = null }) {
   const canonical_url = normalizeUrl(full_url);
-  const existingDoc = await findExistingForCanonical(canonical_url, userId);
-  if (existingDoc) return buildExistingReuseResult(existingDoc);
-
-  if (userId) await assertUserLinkCapacity(userId);
+  if (userId) {
+    const existingDoc = await findExistingForCanonical(canonical_url, userId);
+    if (existingDoc) return buildExistingReuseResult(existingDoc);
+  }
 
   const short_url = await generateUniqueShortUrl();
   const rawManageToken = userId ? null : generateManageToken();
   const storedManageToken = rawManageToken
     ? hashManageToken(rawManageToken)
     : null;
-  const saved = await saveShortUrlOnDuplicateSlug({
-    short_url,
-    full_url: canonical_url,
-    canonical_url,
-    userId,
-    manage_token: storedManageToken
-  });
+  let saved;
+  if (userId) {
+    try {
+      saved = await runWithTransaction(async (session) => {
+        await reserveSlotOrThrow(userId, session);
+        return saveShortUrlOnDuplicateSlug({
+          short_url,
+          full_url: canonical_url,
+          canonical_url,
+          userId,
+          session
+        });
+      });
+    } catch (error) {
+      if (error.code !== 11000 || !error.keyPattern?.canonical_url) throw error;
+      const existing = await findExistingForCanonical(canonical_url, userId);
+      if (existing) return buildExistingReuseResult(existing);
+      throw error;
+    }
+  } else {
+    saved = await saveShortUrlOnDuplicateSlug({
+      short_url,
+      full_url: canonical_url,
+      canonical_url,
+      userId,
+      manage_token: storedManageToken
+    });
+  }
 
   return rawManageToken ? { ...saved, manage_token: rawManageToken } : saved;
 }
@@ -69,8 +98,6 @@ export async function createCustomShortUrlService({
   custom_url,
   userId
 }) {
-  await assertUserLinkCapacity(userId);
-
   const canonical_url = normalizeUrl(full_url);
   let slug;
   try {
@@ -83,15 +110,17 @@ export async function createCustomShortUrlService({
     throw new AppError(CUSTOM_SLUG_TAKEN_MESSAGE, 409);
   }
 
-  await purgeReclaimableSlug(slug);
-
   const saved = await withSlugConflictHandler(
     () =>
-      saveShortUrl({
-        short_url: slug,
-        full_url: canonical_url,
-        canonical_url,
-        userId
+      runWithTransaction(async (session) => {
+        await reserveSlotOrThrow(userId, session);
+        return saveShortUrl({
+          short_url: slug,
+          full_url: canonical_url,
+          canonical_url,
+          userId,
+          session
+        });
       }),
     CUSTOM_SLUG_TAKEN_MESSAGE
   );
@@ -115,18 +144,15 @@ export async function updateOwnedShortUrlService({ userId, id, updates }) {
 
   const previousSlug = url.short_url;
   const patch = {};
-  const slugsToInvalidate = new Set();
 
   if (updates.full_url !== undefined) {
     const canonical_url = normalizeUrl(updates.full_url);
     patch.full_url = canonical_url;
     patch.canonical_url = canonical_url;
-    slugsToInvalidate.add(previousSlug);
   }
 
   if (updates.disabled !== undefined) {
     patch.disabled = updates.disabled;
-    slugsToInvalidate.add(previousSlug);
   }
 
   if (updates.short_url !== undefined) {
@@ -140,10 +166,7 @@ export async function updateOwnedShortUrlService({ userId, id, updates }) {
       if (!(await isSlugAvailable(nextSlug))) {
         throw new AppError(CUSTOM_SLUG_TAKEN_MESSAGE, 409);
       }
-      await purgeReclaimableSlug(nextSlug);
       patch.short_url = nextSlug;
-      slugsToInvalidate.add(previousSlug);
-      slugsToInvalidate.add(nextSlug);
     }
   }
 
@@ -152,10 +175,6 @@ export async function updateOwnedShortUrlService({ userId, id, updates }) {
     updated = await withSlugConflictHandler(() =>
       updateByIdAndUser(id, userId, patch)
     );
-  }
-
-  for (const slug of slugsToInvalidate) {
-    invalidateRedirectSlugCache(slug);
   }
 
   return updated;
@@ -197,12 +216,14 @@ export async function softDeleteLinkService({ userId, id }) {
     throw new NotFoundError('URL not found');
   }
 
-  const removed = await softDeleteByIdAndUser(id, userId);
+  const removed = await runWithTransaction(async (session) => {
+    const retired = await retireByIdAndUser(id, userId, session);
+    if (retired) await releaseActiveLinkSlots(userId, 1, session);
+    return retired;
+  });
   if (!removed) {
     throw new AppError('You can only delete your own URLs', 403);
   }
-
-  invalidateRedirectSlugCache(existing.short_url);
 }
 
 export async function softDeleteLinksService({ userId, ids }) {
@@ -217,11 +238,11 @@ export async function softDeleteLinksService({ userId, ids }) {
     };
   }
 
-  const deletedCount = await softDeleteManyByIdsAndUser(ownedIds, userId);
-
-  for (const url of owned) {
-    invalidateRedirectSlugCache(url.short_url);
-  }
+  const deletedCount = await runWithTransaction(async (session) => {
+    const count = await retireManyByIdsAndUser(ownedIds, userId, session);
+    await releaseActiveLinkSlots(userId, count, session);
+    return count;
+  });
 
   const skippedIds = ids
     .filter((id) => !ownedIds.includes(id))

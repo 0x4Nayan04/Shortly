@@ -31,7 +31,7 @@ const buildUserClickFacetsPipeline = (userId, since) => [
   {
     $match: {
       'url.user': userId,
-      'url.deletedAt': null,
+      'url.retiredAt': null,
       timestamp: { $gte: since }
     }
   },

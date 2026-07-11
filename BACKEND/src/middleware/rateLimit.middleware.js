@@ -1,6 +1,7 @@
 import RateLimit from '../schema/rateLimit.model.js';
 import { AppError } from '../utils/errorHandler.js';
 import { logger } from '../utils/logger.js';
+import crypto from 'node:crypto';
 
 export const rateLimiter = ({
   windowMs,
@@ -90,6 +91,9 @@ function normalizeEmail(email) {
   return email.toLowerCase().trim().slice(0, 254);
 }
 
+const hashEmail = (email) =>
+  crypto.createHash('sha256').update(normalizeEmail(email)).digest('hex');
+
 /** In-process limiter for hot paths (e.g. redirects). Not shared across server instances. */
 export const memoryRateLimiter = ({ windowMs, max, keyGenerator }) => {
   const buckets = new Map();
@@ -129,10 +133,12 @@ export const memoryRateLimiter = ({ windowMs, max, keyGenerator }) => {
 
 export const keyGenerators = {
   ip: (req) => `ip:${req.ip}`,
-  emailIp: (req) =>
-    `login:${normalizeEmail(req.validatedBody?.email ?? req.body?.email)}:${req.ip}`,
-  forgotPasswordEmailIp: (req) =>
-    `forgot:${normalizeEmail(req.validatedBody?.email ?? req.body?.email)}:${req.ip}`,
+  loginAccount: (req) =>
+    `login-account:${hashEmail(req.validatedBody?.email ?? req.body?.email)}`,
+  loginIp: (req) => `login-ip:${req.ip}`,
+  recoveryAccount: (req) =>
+    `recovery-account:${hashEmail(req.validatedBody?.email ?? req.body?.email)}`,
+  recoveryIp: (req) => `recovery-ip:${req.ip}`,
   userId: (req) => `user:${req.user?._id || 'anon'}`,
   ipPerEndpoint: (endpoint) => (req) => `${endpoint}:${req.ip}`
 };

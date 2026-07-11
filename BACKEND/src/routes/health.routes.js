@@ -1,21 +1,42 @@
 import { Router } from 'express';
 import mongoose from 'mongoose';
 import { successResponse } from '../utils/responseMessages.js';
-import {
-  rateLimiter,
-  keyGenerators
-} from '../middleware/rateLimit.middleware.js';
 
 const router = Router();
 
-const healthLimiter = rateLimiter({
-  windowMs: 10 * 1000,
-  max: 10,
-  keyGenerator: keyGenerators.ip,
-  failClosed: false
+router.get('/live', (_req, res) => {
+  res.json(
+    successResponse('Service is live', {
+      status: 'ok',
+      uptime: process.uptime(),
+      timestamp: new Date().toISOString()
+    })
+  );
 });
 
-router.get('/', healthLimiter, (_req, res) => {
+export async function checkMongoReadiness(connection = mongoose.connection) {
+  if (connection.readyState !== 1 || !connection.db) return false;
+  let timeout;
+  try {
+    await Promise.race([
+      connection.db.admin().command({ ping: 1 }, { maxTimeMS: 1000 }),
+      new Promise(
+        (_, reject) =>
+          (timeout = setTimeout(
+            () => reject(new Error('MongoDB readiness ping timed out')),
+            1500
+          ))
+      )
+    ]);
+    return true;
+  } catch {
+    return false;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+const readiness = async (_req, res) => {
   const mongoStates = [
     'disconnected',
     'connected',
@@ -23,7 +44,7 @@ router.get('/', healthLimiter, (_req, res) => {
     'disconnecting'
   ];
   const mongoState = mongoose.connection.readyState;
-  const mongoConnected = mongoState === 1;
+  const mongoConnected = await checkMongoReadiness();
 
   const payload = {
     status: mongoConnected ? 'ok' : 'degraded',
@@ -37,12 +58,17 @@ router.get('/', healthLimiter, (_req, res) => {
   };
 
   if (!mongoConnected) {
-    return res
-      .status(503)
-      .json(successResponse('Service unavailable', payload));
+    return res.status(503).json({
+      success: false,
+      message: 'Service unavailable',
+      data: payload
+    });
   }
 
   res.json(successResponse('Service is healthy', payload));
-});
+};
+
+router.get('/', readiness);
+router.get('/ready', readiness);
 
 export default router;

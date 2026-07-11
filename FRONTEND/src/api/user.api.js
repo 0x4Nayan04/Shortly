@@ -71,7 +71,9 @@ export const updateProfile = async (name) => {
   return data;
 };
 
-export const deleteAccount = async () => {
-  const { data } = await axiosinstance.delete(`/api/auth/me`);
+export const deleteAccount = async (password) => {
+  const { data } = await axiosinstance.delete(`/api/auth/me`, {
+    data: { password }
+  });
   return data;
 };

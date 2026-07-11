@@ -7,10 +7,6 @@ const frontendRoot = path.resolve(__dirname, '..');
 const stylesDir = path.join(frontendRoot, 'src/styles');
 const domainsDir = path.join(stylesDir, 'domains');
 const outFile = path.join(stylesDir, '.assembled-check.css');
-const designVariablesFile = path.resolve(
-  frontendRoot,
-  '../Design/supermemory-ai-variables.css'
-);
 
 const DOMAIN_FILES = [
   'tokens.css',
@@ -23,11 +19,11 @@ const DOMAIN_FILES = [
   'mobile.css'
 ];
 
-/** CSS custom properties that must stay in sync between Design/ and tokens.css */
+/** Required CSS custom properties in the repository's token source of truth. */
 const DESIGN_VARIABLE_CHECKS = [
   '--color-primary',
   '--color-accent',
-  '--color-text-1',
+  '--color-ink',
   '--color-border'
 ];
 
@@ -42,35 +38,18 @@ function parseCssVariables(css) {
 }
 
 async function verifyDesignTokenSync() {
-  const [designVariablesRaw, tokensCss] = await Promise.all([
-    readFile(designVariablesFile, 'utf8'),
-    readFile(path.join(domainsDir, 'tokens.css'), 'utf8')
-  ]);
-
-  const designVariables = parseCssVariables(designVariablesRaw);
-  const missing = [];
-
-  for (const name of DESIGN_VARIABLE_CHECKS) {
-    const designValue = designVariables.get(name);
-    if (!designValue) {
-      missing.push(`${name}: missing in Design/supermemory-ai-variables.css`);
-      continue;
-    }
-
-    const normalized = designValue.toLowerCase();
-    if (!tokensCss.toLowerCase().includes(normalized)) {
-      missing.push(`${name} (${designValue}) not found in domains/tokens.css`);
-    }
-  }
+  const tokensCss = await readFile(path.join(domainsDir, 'tokens.css'), 'utf8');
+  const variables = parseCssVariables(tokensCss);
+  const missing = DESIGN_VARIABLE_CHECKS.filter((name) => !variables.has(name));
 
   if (missing.length > 0) {
     throw new Error(
-      `Design token sync failed:\n${missing.map((line) => `  - ${line}`).join('\n')}`
+      `Design token check failed:\n${missing.map((name) => `  - ${name} is missing from domains/tokens.css`).join('\n')}`
     );
   }
 
   console.log(
-    `Design token sync OK (${DESIGN_VARIABLE_CHECKS.length} variables checked)`
+    `Design token check OK (${DESIGN_VARIABLE_CHECKS.length} variables checked)`
   );
 }
 

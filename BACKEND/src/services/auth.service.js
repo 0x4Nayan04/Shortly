@@ -12,6 +12,7 @@ import {
   isEmailServiceConfigured
 } from './email.service.js';
 import { logger } from '../utils/logger.js';
+import bcrypt from 'bcrypt';
 
 const GENERIC_RESEND_VERIFICATION_MESSAGE =
   'If your account needs verification, a new link has been sent.';
@@ -19,24 +20,27 @@ const GENERIC_RESEND_VERIFICATION_MESSAGE =
 export const registerUserService = async ({ name, email, password }) => {
   const existing = await findUserByEmail(email);
   if (existing) {
-    throw new AppError('User already exists with this email', 409);
+    await bcrypt.hash(password, 12);
+    return { accepted: true };
   }
 
-  const newUser = await createUser({ name, email, password });
+  let newUser;
+  try {
+    newUser = await createUser({ name, email, password });
+  } catch (error) {
+    if (error.code === 11000) return { accepted: true };
+    throw error;
+  }
 
   if (!isEmailServiceConfigured()) {
     newUser.isEmailVerified = true;
     await newUser.save();
-    const token = await signToken({
-      id: newUser._id,
-      tokenVersion: newUser.tokenVersion ?? 0
-    });
-    return { token, user: newUser };
+    return { accepted: true };
   }
 
   try {
     await dispatchVerificationForUser(newUser);
-    return { user: newUser, verificationRequired: true };
+    return { accepted: true };
   } catch (error) {
     await findUserByIdAndDelete(newUser._id);
     throw error;
@@ -111,7 +115,12 @@ export const loginUserService = async ({ email, password }) => {
 export const logoutUserService = async ({ token }) => {
   if (!token) return;
 
-  const decoded = await verifyToken(token).catch(() => null);
+  let decoded;
+  try {
+    decoded = verifyToken(token);
+  } catch {
+    return;
+  }
   if (!decoded?.id) return;
 
   await incrementTokenVersionById(decoded.id);

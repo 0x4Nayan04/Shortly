@@ -22,7 +22,7 @@ const getStrengthLabel = (password) => {
 };
 
 const PasswordStrengthMeter = ({ password }) => {
-  if (password.length < 6) return null;
+  if (password.length < 12) return null;
   const checks = STRENGTH_CHECKS(password);
   return (
     <div className="mt-2">

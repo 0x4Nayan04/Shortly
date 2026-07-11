@@ -1,7 +1,6 @@
 import {
   findExistingForCanonical,
   isSlugAvailable,
-  purgeReclaimableSlug,
   saveShortUrl
 } from '../../dao/shortUrl.dao.js';
 import { generateNanoId } from '../../utils/helper.js';
@@ -34,18 +33,24 @@ export const generateUniqueShortUrl = async () => {
  * Saves a short URL; on global slug collision, retries with a newly generated slug.
  */
 export const saveShortUrlOnDuplicateSlug = async (
-  { short_url, full_url, canonical_url, userId, manage_token = null },
+  {
+    short_url,
+    full_url,
+    canonical_url,
+    userId,
+    manage_token = null,
+    session = null
+  },
   attempt = 1
 ) => {
-  await purgeReclaimableSlug(short_url);
-
   try {
     const saved = await saveShortUrl({
       short_url,
       full_url,
       canonical_url,
       userId,
-      manage_token
+      manage_token,
+      session
     });
     return { ...saved, created: true, reused: false };
   } catch (err) {
@@ -73,7 +78,8 @@ export const saveShortUrlOnDuplicateSlug = async (
         full_url,
         canonical_url,
         userId,
-        manage_token
+        manage_token,
+        session
       },
       attempt + 1
     );

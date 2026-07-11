@@ -24,7 +24,8 @@ import {
   forgotPasswordSchema,
   resetPasswordSchema,
   verifyEmailSchema,
-  updateProfileSchema
+  updateProfileSchema,
+  deleteAccountSchema
 } from '../validation/schemas.js';
 import {
   rateLimiter,
@@ -33,10 +34,17 @@ import {
 
 const router = express.Router();
 
-const loginLimiter = rateLimiter({
+const loginAccountLimiter = rateLimiter({
   windowMs: 15 * 60 * 1000,
   max: 5,
-  keyGenerator: keyGenerators.emailIp,
+  keyGenerator: keyGenerators.loginAccount,
+  failClosed: true
+});
+
+const loginIpLimiter = rateLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  keyGenerator: keyGenerators.loginIp,
   failClosed: true
 });
 
@@ -46,10 +54,16 @@ const registerLimiter = rateLimiter({
   keyGenerator: keyGenerators.ip
 });
 
-const forgotPasswordLimiter = rateLimiter({
+const recoveryAccountLimiter = rateLimiter({
   windowMs: 15 * 60 * 1000,
   max: 3,
-  keyGenerator: keyGenerators.forgotPasswordEmailIp
+  keyGenerator: keyGenerators.recoveryAccount
+});
+
+const recoveryIpLimiter = rateLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 15,
+  keyGenerator: keyGenerators.recoveryIp
 });
 
 const resetPasswordLimiter = rateLimiter({
@@ -77,7 +91,13 @@ router.post(
   validateBody(registerSchema),
   registerUser
 );
-router.post('/login', loginLimiter, validateBody(loginSchema), loginUser);
+router.post(
+  '/login',
+  loginIpLimiter,
+  loginAccountLimiter,
+  validateBody(loginSchema),
+  loginUser
+);
 router.post(
   '/verify-email',
   verifyEmailLimiter,
@@ -86,7 +106,8 @@ router.post(
 );
 router.post(
   '/resend-verification',
-  forgotPasswordLimiter,
+  recoveryIpLimiter,
+  recoveryAccountLimiter,
   validateBody(forgotPasswordSchema),
   resendVerificationEmail
 );
@@ -95,7 +116,8 @@ router.post('/logout', logoutUser);
 
 router.post(
   '/forgot-password',
-  forgotPasswordLimiter,
+  recoveryIpLimiter,
+  recoveryAccountLimiter,
   validateBody(forgotPasswordSchema),
   requestPasswordReset
 );
@@ -113,7 +135,12 @@ router.patch(
   validateBody(updateProfileSchema),
   updateUserProfile
 );
-router.delete('/me', isAuthenticated, deleteAccount);
+router.delete(
+  '/me',
+  isAuthenticated,
+  validateBody(deleteAccountSchema),
+  deleteAccount
+);
 router.post(
   '/change-password',
   isAuthenticated,

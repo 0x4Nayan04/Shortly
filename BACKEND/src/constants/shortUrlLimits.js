@@ -1,13 +1,13 @@
 /** Detailed click events are retained this many days (MongoDB TTL on Click.timestamp). */
 export const CLICK_RETENTION_DAYS = 30;
 
-/** Soft-deleted slugs cannot be reclaimed until this many days have passed. */
-export const SLUG_RECLAIM_DAYS = parseInt(
-  process.env.SLUG_RECLAIM_DAYS || '30',
-  10
-);
-
-export const MAX_LINKS_PER_USER = parseInt(
-  process.env.MAX_LINKS_PER_USER || '1000',
-  10
-);
+const rawMaxLinks = process.env.MAX_LINKS_PER_USER || '1000';
+const parsedMaxLinks = Number(rawMaxLinks);
+if (
+  !Number.isInteger(parsedMaxLinks) ||
+  parsedMaxLinks < 1 ||
+  parsedMaxLinks > 100000
+) {
+  throw new Error('MAX_LINKS_PER_USER must be an integer between 1 and 100000');
+}
+export const MAX_LINKS_PER_USER = parsedMaxLinks;

@@ -21,7 +21,7 @@ import {
   registerReducer
 } from './auth/registerFormState';
 
-const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
+const RegisterForm = ({ switchToLogin }) => {
   const [state, dispatch] = useReducer(registerReducer, registerInitialState);
   const {
     name,
@@ -90,18 +90,13 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
   };
 
   const handleRegisterSuccess = (response) => {
-    if (response.user?.isEmailVerified === false) {
-      dispatch({ type: 'SET_VERIFICATION_PENDING', value: true, email });
-      showToast.success(
-        response.message ||
-          'Account created. Please verify your email before signing in.'
-      );
-      return;
-    }
-    showToast.success(response.message || 'Account created successfully!');
-    if (onRegisterSuccess) onRegisterSuccess(response);
+    showToast.success(
+      response.message ||
+        'If registration can be completed, sign in or check your email.'
+    );
     dispatch({ type: 'REGISTER_SUCCESS' });
     resetValidation();
+    if (switchToLogin) switchToLogin();
   };
 
   const handleRegisterFailure = (response) => {
@@ -123,7 +118,7 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
 
     try {
       const response = await registerUser(name, email, password);
-      if (response.success !== false && response.user) {
+      if (response.success !== false && response.data?.accepted) {
         handleRegisterSuccess(response);
       } else {
         handleRegisterFailure(response);

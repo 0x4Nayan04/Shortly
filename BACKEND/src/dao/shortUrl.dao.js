@@ -1,27 +1,30 @@
 import short_urlModel from '../schema/shortUrl.model.js';
-import { SLUG_RECLAIM_DAYS } from '../constants/shortUrlLimits.js';
 import { normalizeSlug } from '../utils/normalizeSlug.js';
 import { escapeRegExp } from '../utils/escapeRegExp.js';
 
-const ACTIVE_LINK_FILTER = { deletedAt: null };
-
-const ACTIVE_AND_ENABLED_FILTER = {
-  ...ACTIVE_LINK_FILTER,
-  disabled: { $ne: true }
-};
+const ACTIVE_LINK_FILTER = { retiredAt: null };
 
 const projectionShortUrlFull =
   '_id short_url full_url canonical_url click disabled createdAt manage_token';
-const projectionForRedirect = '_id full_url';
+const projectionForRedirect = '_id full_url retiredAt disabled';
 
-const reclaimMs = () => SLUG_RECLAIM_DAYS * 24 * 60 * 60 * 1000;
+const tombstoneUpdate = (retiredAt = new Date()) => ({
+  $set: { retiredAt, disabled: true, click: 0 },
+  $unset: {
+    full_url: 1,
+    canonical_url: 1,
+    user: 1,
+    manage_token: 1
+  }
+});
 
 export const saveShortUrl = async ({
   short_url,
   full_url,
   canonical_url,
   userId,
-  manage_token = null
+  manage_token = null,
+  session = null
 }) => {
   const slug = normalizeSlug(short_url);
   const doc = {
@@ -30,7 +33,7 @@ export const saveShortUrl = async ({
     short_url: slug,
     click: 0,
     disabled: false,
-    deletedAt: null
+    retiredAt: null
   };
 
   if (userId) {
@@ -41,46 +44,24 @@ export const saveShortUrl = async ({
     doc.manage_token = manage_token;
   }
 
-  const created = await short_urlModel.create(doc);
+  const created = session
+    ? (await short_urlModel.create([doc], { session }))[0]
+    : await short_urlModel.create(doc);
   return { short_url: slug, id: created._id.toString() };
 };
 
 export const isSlugAvailable = async (short_url) => {
   const slug = normalizeSlug(short_url);
-  const existing = await short_urlModel
-    .findOne({ short_url: slug })
-    .select('deletedAt')
-    .lean();
-
-  if (!existing) return true;
-  if (!existing.deletedAt) return false;
-
-  return Date.now() - new Date(existing.deletedAt).getTime() >= reclaimMs();
-};
-
-export const purgeReclaimableSlug = async (short_url) => {
-  const slug = normalizeSlug(short_url);
-  const existing = await short_urlModel
-    .findOne({ short_url: slug })
-    .select('deletedAt')
-    .lean();
-
-  if (!existing?.deletedAt) return;
-
-  if (Date.now() - new Date(existing.deletedAt).getTime() < reclaimMs()) {
-    return;
-  }
-
-  await short_urlModel.deleteOne({ _id: existing._id });
+  return !(await short_urlModel.exists({ short_url: slug }));
 };
 
 export const countActiveLinksForUser = async (userId) =>
   short_urlModel.countDocuments({ user: userId, ...ACTIVE_LINK_FILTER });
 
-export const findActiveLinkBySlug = async (short_url) => {
+export const findLinkBySlug = async (short_url) => {
   const slug = normalizeSlug(short_url);
   return short_urlModel
-    .findOne({ short_url: slug, ...ACTIVE_AND_ENABLED_FILTER })
+    .findOne({ short_url: slug })
     .select(projectionForRedirect)
     .lean();
 };
@@ -112,13 +93,6 @@ export const findAnonymousByIdAndToken = async (id, manage_token) =>
     })
     .select('_id short_url canonical_url')
     .lean();
-
-export const findOwnedDuplicateByCanonical = async (userId, canonical_url) =>
-  short_urlModel.exists({
-    user: userId,
-    canonical_url,
-    ...ACTIVE_LINK_FILTER
-  });
 
 export const listForUser = async ({
   userId,
@@ -189,17 +163,21 @@ export const aggregateRecentActivityForUser = async (userId, since) =>
   ]);
 
 export const updateByIdAndUser = async (id, userId, patch) => {
-  await short_urlModel.updateOne({ _id: id, user: userId }, { $set: patch });
+  await short_urlModel.updateOne(
+    { _id: id, user: userId, ...ACTIVE_LINK_FILTER },
+    { $set: patch }
+  );
   return short_urlModel
-    .findOne({ _id: id, user: userId })
+    .findOne({ _id: id, user: userId, ...ACTIVE_LINK_FILTER })
     .select(projectionShortUrlFull)
     .lean();
 };
 
-export const softDeleteByIdAndUser = async (id, userId) => {
+export const retireByIdAndUser = async (id, userId, session = null) => {
   const result = await short_urlModel.updateOne(
     { _id: id, user: userId, ...ACTIVE_LINK_FILTER },
-    { $set: { deletedAt: new Date() } }
+    tombstoneUpdate(),
+    session ? { session } : undefined
   );
   return result.modifiedCount > 0;
 };
@@ -210,10 +188,11 @@ export const findOwnedActiveByIds = async (ids, userId) =>
     .select('_id short_url')
     .lean();
 
-export const softDeleteManyByIdsAndUser = async (ids, userId) => {
+export const retireManyByIdsAndUser = async (ids, userId, session = null) => {
   const result = await short_urlModel.updateMany(
     { _id: { $in: ids }, user: userId, ...ACTIVE_LINK_FILTER },
-    { $set: { deletedAt: new Date() } }
+    tombstoneUpdate(),
+    session ? { session } : undefined
   );
   return result.modifiedCount;
 };
@@ -221,17 +200,35 @@ export const softDeleteManyByIdsAndUser = async (ids, userId) => {
 export const incrementClick = async (id, session) =>
   short_urlModel.updateOne({ _id: id }, { $inc: { click: 1 } }, { session });
 
-export const claimAnonymousLink = async (id, userId) =>
+export const claimAnonymousLink = async (id, manage_token, userId, session) =>
+  short_urlModel
+    .findOneAndUpdate(
+      { _id: id, user: null, manage_token, ...ACTIVE_LINK_FILTER },
+      { $set: { user: userId }, $unset: { manage_token: 1 } },
+      {
+        session,
+        new: true,
+        projection: { _id: 1, short_url: 1, canonical_url: 1 }
+      }
+    )
+    .lean();
+
+export const retireAnonymousByToken = async (id, manage_token) =>
   short_urlModel.updateOne(
-    { _id: id },
-    { $set: { user: userId }, $unset: { manage_token: 1 } }
+    { _id: id, user: null, manage_token, ...ACTIVE_LINK_FILTER },
+    tombstoneUpdate()
   );
 
-export const softDeleteById = async (id) =>
-  short_urlModel.updateOne({ _id: id }, { $set: { deletedAt: new Date() } });
+export const retireById = async (id, session = null) =>
+  short_urlModel.updateOne(
+    { _id: id, ...ACTIVE_LINK_FILTER },
+    tombstoneUpdate(),
+    session ? { session } : undefined
+  );
 
-export const deleteAllForUser = async (userId, session = null) =>
-  short_urlModel.deleteMany(
-    { user: userId },
+export const retireAllForUser = async (userId, session = null) =>
+  short_urlModel.updateMany(
+    { user: userId, ...ACTIVE_LINK_FILTER },
+    tombstoneUpdate(),
     session ? { session } : undefined
   );

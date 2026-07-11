@@ -16,7 +16,11 @@ const isTransactionNotSupportedError = (error) => {
 export async function runWithTransaction(work) {
   const session = await mongoose.startSession();
   try {
-    await session.withTransaction(() => work(session));
+    let result;
+    await session.withTransaction(async () => {
+      result = await work(session);
+    });
+    return result;
   } catch (error) {
     if (isTransactionNotSupportedError(error)) {
       throw new AppError(TRANSACTION_REQUIRED_MESSAGE, 503);

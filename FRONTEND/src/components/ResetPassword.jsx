@@ -169,7 +169,7 @@ const ResetPassword = () => {
           onBlur={() => handleBlur('password', formValues)}
           error={fieldErrors.password}
           touched={touched.password}
-          placeholder="At least 6 characters"
+          placeholder="At least 12 characters"
           autoComplete="new-password"
           showPassword={showPassword}
           onToggleVisibility={() => dispatch({ type: 'TOGGLE_PASSWORD' })}

@@ -55,7 +55,9 @@ export const createShortUrl = asyncHandler(async (req, res, _next) => {
     payload.manage_token = result.manage_token;
   }
 
-  res.json(successResponse(SUCCESS_MESSAGES.URL.CREATED, payload));
+  res
+    .status(result.created ? 201 : 200)
+    .json(successResponse(SUCCESS_MESSAGES.URL.CREATED, payload));
 });
 
 export const redirectFromShortUrl = asyncHandler(async (req, res, next) => {
@@ -118,7 +120,7 @@ export const createCustomShortUrl = asyncHandler(async (req, res, _next) => {
     userId
   });
 
-  res.json(
+  res.status(201).json(
     successResponse(SUCCESS_MESSAGES.URL.CUSTOM_CREATED, {
       ...result,
       custom_url: normalizeSlug(custom_url)

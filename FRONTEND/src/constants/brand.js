@@ -14,7 +14,7 @@ export const SHORTLY_OG_IMAGE_WIDTH = 1200;
 export const SHORTLY_OG_IMAGE_HEIGHT = 630;
 
 /** Production canonical origin; dev falls back to window.location.origin in useDocumentMeta */
-export const SHORTLY_SITE_URL = 'https://shortly.nayan04.me';
+export const SHORTLY_SITE_URL = 'https://shortly.nayanswarnkar.com';
 
 export const SHORTLY_LOGO_SRC = '/assets/Shortly_Logo_nav.png';
 export const SHORTLY_LOGO_HOVER_SRC = '/assets/Shortly_Logo_nav_hover.png';

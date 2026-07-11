@@ -3,7 +3,7 @@
 > Privacy-first URL shortener with click analytics, custom aliases, and a dashboard.
 > Built to learn end-to-end full-stack development with React, Express, and MongoDB.
 
-**Live demo:** [shortly.nayan04.me](https://shortly.nayan04.me/)
+**Live demo:** [shortly.nayanswarnkar.com](https://shortly.nayanswarnkar.com/)
 
 <p align="left">
   <img src="https://img.shields.io/badge/status-live-brightgreen" alt="Status" />
@@ -114,7 +114,7 @@ BACKEND/       Express 5 API
     schema/        Mongoose models (User, ShortUrl, Click, RateLimit)
     middleware/    auth, csrf, rate limit, validation, latency
     validation/    Joi schemas
-    utils/         authToken, slug/url helpers, error handler, redirect cache,
+    utils/         authToken, slug/url helpers, error handling, validation
                    mongoTransaction
 ```
 
@@ -189,27 +189,23 @@ still works.
 - **In-memory `memoryRateLimiter`** for the redirect hot path — zero DB cost
   per redirect, at the cost of not being shared across instances.
 
-The redirect cache (`redirectSlugCache`, 60s TTL, 5000-entry LRU) follows the
-same logic: redirect latency is more valuable than the freshness of an edit.
+Redirects read MongoDB directly so edits, disables, and retirements are
+consistent across every backend instance.
 
-### 5. Soft delete on links, not hard delete
+### 5. Permanent slug retirement
 
-`deletedAt` is set on links, not `remove()`d. This preserves click-event
-joins (the analytics aggregation only counts `deletedAt: null` links) and
-leaves the door open for a future "trash / restore" flow.
+Deleted links become permanent, non-identifying tombstones. The destination,
+owner, management token, and lifetime counter are scrubbed, while the slug and
+retirement time remain so an old public URL can never be taken over. Retired
+links return HTTP 410 and are excluded from dashboards and analytics.
 
-**Tradeoff:** Storage grows with churn; mitigated by the 30-day click TTL
-and a `purgeReclaimableSlug` helper that hard-deletes older soft-deleted
-slugs before reusing them. Deleting a link hides it from the dashboard;
-raw events expire on the TTL schedule (see [PRIVACY.md](./PRIVACY.md)).
+### 6. Redirect destination validation
 
-### 6. SSRF protection at both create and redirect
-
-`isSafeRedirectUrl` rejects non-http(s) schemes and any destination whose
-hostname resolves to a private/loopback/link-local range (using
-`net.BlockList` for IPv4 + IPv6, including IPv4-mapped IPv6). It's checked
-on create/update **and** again at redirect time, so a tampered DB record
-can't redirect visitors to `127.0.0.1` or `169.254.169.254` (cloud metadata).
+`isSafeRedirectUrl` accepts only HTTP(S) destinations and rejects `localhost`
+plus literal loopback, private, unspecified, and link-local IPv4/IPv6 addresses,
+including IPv4-mapped IPv6 forms. Hostnames are checked syntactically; the
+backend does not resolve DNS and never fetches destination content. Validation
+runs both when a destination is saved and before a redirect is returned.
 
 ## Security
 
@@ -218,7 +214,8 @@ can't redirect visitors to `127.0.0.1` or `169.254.169.254` (cloud metadata).
 - Email verification gate when Resend is configured
 - Joi validation on every input, CSRF checks on cookie-backed writes
 - CORS with explicit origin allowlist (`FRONT_END_URL` + `ALLOWED_ORIGINS`)
-- Per-endpoint rate limits, reserved-slug protection, SSRF-safe redirects
+- Per-endpoint rate limits, reserved-slug protection, and protocol/literal
+  private-address redirect validation
 - Helmet, gzip, request IDs, latency tracking, graceful shutdown
 - User profile API responses are not cached (`no-store` on `/api/auth/me`)
 

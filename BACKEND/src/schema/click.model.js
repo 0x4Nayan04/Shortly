@@ -10,7 +10,8 @@ const clickSchema = mongoose.Schema(
     },
     referrer: {
       type: String,
-      default: ''
+      default: '',
+      maxlength: 253
     },
     country: {
       type: String,

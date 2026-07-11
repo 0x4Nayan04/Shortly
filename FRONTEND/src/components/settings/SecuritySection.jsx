@@ -21,7 +21,7 @@ const initialPasswordForm = {
 const getPasswordRules = (newPassword) => ({
   oldPassword: validators.loginPassword,
   newPassword: (value) =>
-    validators.password(value, { minLength: 6, required: true }),
+    validators.password(value, { minLength: 12, required: true }),
   confirmPassword: [validators.confirmPassword, newPassword]
 });
 

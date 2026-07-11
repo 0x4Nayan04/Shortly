@@ -2,18 +2,22 @@ import { logger } from './logger.js';
 import { classifyError } from './classifyError.js';
 import { duplicateKeyMessageForField } from './duplicateKeyMessages.js';
 
-const buildLogContext = (err, req, category, type) => ({
+const buildLogContext = (err, req, category, type, statusCode) => ({
   requestId: req?.requestId,
   method: req?.method,
   path: req?.originalUrl || req?.url,
-  statusCode: err.statusCode || 500,
+  statusCode,
   category,
   type,
   ...(process.env.NODE_ENV !== 'production' && { stack: err.stack })
 });
 
-const logError = (err, req, category, type) => {
-  logger.error(err.message, buildLogContext(err, req, category, type));
+const logError = (err, req, category, type, status) => {
+  const effectiveCategory = status >= 500 ? category : 'client';
+  const context = buildLogContext(err, req, effectiveCategory, type, status);
+  if (status >= 500) logger.error(err.message, context);
+  else if (status === 409 || status === 429) logger.warn(err.message, context);
+  else logger.info(err.message, context);
 };
 
 const handleValidationError = (err) => ({
@@ -76,16 +80,17 @@ const errorResponders = [
 
 export const errorHandler = (err, req, res, _next) => {
   const { category, type } = classifyError(err);
-  logError(err, req, category, type);
 
   for (const [matches, respond] of errorResponders) {
     if (matches(err)) {
       const { status, body } = respond(err);
+      logError(err, req, category, type, status);
       return res.status(status).json(body);
     }
   }
 
   const fallback = handleGenericError(err);
+  logError(err, req, category, type, fallback.status);
   return res.status(fallback.status).json(fallback.body);
 };
 

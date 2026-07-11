@@ -5,9 +5,9 @@ import {
 } from '../constants/reservedSlugs.js';
 import { validateCustomSlug } from '../utils/validateCustomSlug.js';
 
-const passwordSchema = Joi.string().min(6).max(128).required().messages({
+const passwordSchema = Joi.string().min(12).max(128).required().messages({
   'string.empty': 'Password is required',
-  'string.min': 'Password must be at least 6 characters',
+  'string.min': 'Password must be at least 12 characters',
   'string.max': 'Password cannot exceed 128 characters',
   'any.required': 'Password is required'
 });
@@ -82,6 +82,13 @@ export const updateProfileSchema = Joi.object({
     'string.min': 'Name must be at least 2 characters',
     'string.max': 'Name cannot exceed 50 characters',
     'any.required': 'Name is required'
+  })
+});
+
+export const deleteAccountSchema = Joi.object({
+  password: Joi.string().required().messages({
+    'string.empty': 'Current password is required',
+    'any.required': 'Current password is required'
   })
 });
 

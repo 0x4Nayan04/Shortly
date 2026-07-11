@@ -1,39 +1,54 @@
 {
   "name": "backend",
   "version": "1.0.0",
-  "description": "",
+  "description": "Privacy-focused URL shortener API with authentication and analytics",
   "main": "index.js",
   "type": "module",
   "scripts": {
     "dev": "nodemon index.js",
     "start": "node index.js",
     "lint": "eslint .",
-    "ci": "npm run lint"
+    "test": "node --test --test-concurrency=1",
+    "test:watch": "node --test --test-concurrency=1 --watch",
+    "migrate:resume-readiness": "bun scripts/migrateResumeReadiness.js",
+    "audit": "bun audit --audit-level high",
+    "ci": "bun run lint && bun run test"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "url-shortener",
+    "express",
+    "mongodb",
+    "analytics"
+  ],
+  "author": "Nayan Swarnkar",
+  "license": "MIT",
+  "overrides": {
+    "path-to-regexp": "^8.4.0",
+    "picomatch": "^2.3.2"
+  },
   "dependencies": {
     "bcrypt": "^6.0.0",
     "compression": "^1.8.1",
     "cookie-parser": "^1.4.7",
-    "cors": "^2.8.5",
-    "dotenv": "^16.5.0",
-    "express": "^5.1.0",
+    "cors": "^2.8.6",
+    "dotenv": "^16.6.1",
+    "express": "^5.2.1",
     "geoip-lite": "^1.4.10",
-    "helmet": "^8.1.0",
-    "joi": "^18.0.2",
-    "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.15.0",
-    "nanoid": "^5.1.5",
+    "helmet": "^8.2.0",
+    "joi": "^18.2.3",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^8.24.1",
+    "nanoid": "^5.1.16",
     "qrcode": "^1.5.4",
-    "resend": "^6.12.4",
-    "ua-parser-js": "^1.0.39"
+    "resend": "^6.17.2",
+    "ua-parser-js": "^1.0.41"
   },
   "devDependencies": {
-    "@eslint/js": "^9.25.0",
-    "eslint": "^9.25.0",
-    "globals": "^16.0.0",
-    "nodemon": "^3.1.10"
+    "@eslint/js": "^9.39.5",
+    "eslint": "^9.39.5",
+    "globals": "^16.5.0",
+    "mongodb-memory-server": "^11.2.0",
+    "nodemon": "^3.1.14",
+    "supertest": "^7.2.2"
   }
 }

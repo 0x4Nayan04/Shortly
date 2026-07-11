@@ -31,6 +31,11 @@ const userSchema = new mongoose.Schema(
       type: Number,
       default: 0
     },
+    activeLinkCount: {
+      type: Number,
+      default: 0,
+      min: 0
+    },
     resetPasswordToken: {
       type: String,
       default: null

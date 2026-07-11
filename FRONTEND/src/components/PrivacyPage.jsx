@@ -20,7 +20,7 @@ import AppCatalogShell, {
 import AppNavbar from './app/AppNavbar';
 import { ROUTES } from '../constants/routes';
 
-const PRIVACY_LAST_UPDATED = 'June 2026';
+const PRIVACY_LAST_UPDATED = 'July 2026';
 
 const redirectFields = [
   { title: 'Timestamp', detail: 'When the redirect occurred.' },
@@ -29,8 +29,8 @@ const redirectFields = [
     detail: 'Derived from IP address via GeoIP lookup.'
   },
   {
-    title: 'Referrer domain',
-    detail: 'Captured when the browser sends it.'
+    title: 'Normalized referrer hostname',
+    detail: 'Stored only for valid HTTP(S) referrers sent by the browser.'
   },
   {
     title: 'User agent details',
@@ -92,7 +92,7 @@ const privacyPolicySections = [
       {
         id: 'deleted-link-events',
         icon: Database,
-        text: 'If you delete a short URL, its click events remain until their 30-day expiry but are no longer linked to any active account.'
+        text: 'If you delete a short URL, its click events remain until their 30-day expiry but are no longer linked to an active account or destination.'
       }
     ]
   },
@@ -104,12 +104,12 @@ const privacyPolicySections = [
       {
         id: 'delete-link',
         icon: Trash2,
-        text: 'Deleting a short URL hides it from your dashboard immediately. The link record, lifetime click counter, and raw events remain until the 30-day TTL expires. Delete your account to remove data sooner.'
+        text: 'Deleting a short URL immediately clears its destination, owner, management token, and lifetime click counter. A non-identifying slug tombstone remains permanently to prevent reuse; raw events expire after 30 days.'
       },
       {
         id: 'account-deletion',
         icon: Trash2,
-        text: 'You can delete your account and associated data at any time. Account deletion removes your user record, short URLs, and click data in a single transactional flow on the server.'
+        text: 'You can delete your account and associated data at any time. Account deletion removes your user record and click data, and retires owned slugs as non-identifying tombstones, in one server transaction.'
       }
     ]
   },

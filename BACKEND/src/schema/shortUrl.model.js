@@ -4,7 +4,6 @@ const shortUrlSchema = mongoose.Schema(
   {
     full_url: {
       type: String,
-      required: true,
       maxlength: 2048,
       validate: {
         validator: (v) => /^https?:\/\//.test(v),
@@ -13,7 +12,6 @@ const shortUrlSchema = mongoose.Schema(
     },
     canonical_url: {
       type: String,
-      required: true,
       maxlength: 2048,
       index: true
     },
@@ -32,7 +30,7 @@ const shortUrlSchema = mongoose.Schema(
       type: Boolean,
       default: false
     },
-    deletedAt: {
+    retiredAt: {
       type: Date,
       default: null
     },
@@ -52,16 +50,19 @@ const shortUrlSchema = mongoose.Schema(
 );
 
 shortUrlSchema.index({ user: 1, createdAt: -1 });
-shortUrlSchema.index({ user: 1, canonical_url: 1 });
+shortUrlSchema.index(
+  { user: 1, canonical_url: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      user: { $type: 'objectId' },
+      canonical_url: { $type: 'string' },
+      retiredAt: null
+    }
+  }
+);
 shortUrlSchema.index({ user: 1, click: -1 });
-shortUrlSchema.index(
-  { short_url: 1 },
-  { unique: true, partialFilterExpression: { deletedAt: null } }
-);
-shortUrlSchema.index(
-  { deletedAt: 1 },
-  { expireAfterSeconds: 60 * 60 * 24 * 90 }
-);
+shortUrlSchema.index({ short_url: 1 }, { unique: true });
 
 const short_urlModel = mongoose.model('ShortUrl', shortUrlSchema);
 

@@ -24,21 +24,15 @@ import { findById as findUserById } from '../dao/user.dao.js';
 
 export const registerUser = asyncHandler(async (req, res, _next) => {
   const { name, email, password } = req.validatedBody;
-  const result = await registerUserService({ name, email, password });
-
-  if (result.token) {
-    res.cookie('token', result.token, cookieOptions);
-  }
-
-  const message = result.verificationRequired
-    ? 'Account created. Please verify your email before signing in.'
-    : SUCCESS_MESSAGES.AUTH.REGISTER_SUCCESS;
-
-  res.status(201).json(
-    successResponse(message, {
-      user: serializeUser(result.user)
-    })
-  );
+  await registerUserService({ name, email, password });
+  res
+    .status(202)
+    .json(
+      successResponse(
+        'If registration can be completed, you can now sign in or check your email.',
+        { accepted: true }
+      )
+    );
 });
 
 export const verifyEmail = asyncHandler(async (req, res, _next) => {
@@ -103,7 +97,10 @@ export const updateUserProfile = asyncHandler(async (req, res, _next) => {
 });
 
 export const deleteAccount = asyncHandler(async (req, res, _next) => {
-  await deleteAccountService({ userId: req.user._id });
+  await deleteAccountService({
+    userId: req.user._id,
+    password: req.validatedBody.password
+  });
   res.clearCookie('token', { ...cookieOptions });
   res.status(200).json(successResponse('Account deleted successfully'));
 });

@@ -8,6 +8,7 @@ import { showToast } from '../../utils/showToast';
 
 const DeleteAccountSection = ({ userEmail, onDeleted }) => {
   const [confirmEmail, setConfirmEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
   const confirmed =
@@ -21,7 +22,7 @@ const DeleteAccountSection = ({ userEmail, onDeleted }) => {
     }
     setLoading(true);
     try {
-      await deleteAccount();
+      await deleteAccount(password);
       showToast.success('Your account has been deleted.');
       onDeleted();
     } catch (err) {
@@ -48,8 +49,9 @@ const DeleteAccountSection = ({ userEmail, onDeleted }) => {
       </h2>
       <div className="settings-workspace__panel-body">
         <p className="settings-danger__lead">
-          Permanently remove your account and all short links you created. This
-          cannot be undone.
+          Permanently remove your account, destinations, and analytics. Public
+          slugs remain retired so they can never be reused. This cannot be
+          undone.
         </p>
         <form
           className="settings-danger__form"
@@ -72,12 +74,26 @@ const DeleteAccountSection = ({ userEmail, onDeleted }) => {
               })}
             />
           </div>
+          <div>
+            <label htmlFor="settings-delete-password" className="sm-label">
+              Current password
+            </label>
+            <input
+              id="settings-delete-password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
+              className={getDesignInputClass({ className: 'w-full' })}
+              required
+            />
+          </div>
           <LoadingButton
             type="submit"
             loading={loading}
             loadingText="Deleting..."
             className="settings-danger__submit sm-btn w-full md:w-auto"
-            disabled={!confirmed || loading}
+            disabled={!confirmed || !password || loading}
           >
             Delete my account
           </LoadingButton>

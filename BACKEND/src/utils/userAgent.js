@@ -1,7 +1,7 @@
 import { UAParser } from 'ua-parser-js';
 
 export const parseUserAgent = (req) => {
-  const uaString = req.headers['user-agent'] || '';
+  const uaString = String(req.headers['user-agent'] || '').slice(0, 512);
   if (!uaString) {
     return {
       user_agent: '',
@@ -16,8 +16,8 @@ export const parseUserAgent = (req) => {
 
   return {
     user_agent: uaString,
-    device_type: result.device?.type || 'Desktop',
-    browser: result.browser?.name || '',
-    os: result.os?.name || ''
+    device_type: (result.device?.type || 'Desktop').slice(0, 64),
+    browser: (result.browser?.name || '').slice(0, 128),
+    os: (result.os?.name || '').slice(0, 128)
   };
 };
