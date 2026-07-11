@@ -101,6 +101,7 @@ export function AuthProvider({ children }) {
 
       const claimResult = await claimStoredAnonymousLinks();
       if (claimResult.claimed.length > 0) {
+        await refetchStats();
         showToast.success(
           `Added ${claimResult.claimed.length} anonymous link${claimResult.claimed.length === 1 ? '' : 's'} to your dashboard`
         );
@@ -115,7 +116,7 @@ export function AuthProvider({ children }) {
       );
       navigate(destination);
     },
-    [navigate, announce]
+    [navigate, announce, refetchStats]
   );
 
   const updateUser = useCallback((updatedUser) => {
