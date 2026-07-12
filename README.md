@@ -3,13 +3,13 @@
 > Privacy-first URL shortener with click analytics, custom aliases, and a dashboard.
 > Built to learn end-to-end full-stack development with React, Express, and MongoDB.
 
-**Live demo:** [https://shortly.nayanswarnkar.com/](https://shortly.nayanswarnkar.com/)
+**Live demo:** [https://shortly.nayanswarnkar.com/](https://shortly.nayanswarnkar.com/) · short links on [https://s.nayanswarnkar.com/](https://s.nayanswarnkar.com/)
 
 <p align="left">
   <a href="https://shortly.nayanswarnkar.com/"><img src="https://img.shields.io/badge/demo-shortly.nayanswarnkar.com-6366f1?style=for-the-badge" alt="Live demo" /></a>
   <img src="https://img.shields.io/badge/status-live-brightgreen" alt="Status" />
   <img src="https://img.shields.io/badge/license-MIT-blue" alt="License" />
-  <img src="https://img.shields.io/badge/node-18%2B-339933" alt="Node" />
+  <img src="https://img.shields.io/badge/node-22-339933" alt="Node" />
   <img src="https://img.shields.io/badge/mongo-replica%20set-47A248" alt="MongoDB" />
 </p>
 
@@ -39,25 +39,26 @@
 - Shorten URLs as a guest — no account required
 - Custom aliases (3–20 chars)
 - Sign in to claim guest links into your dashboard automatically
+- Email a one-time claim link to recover guest links on another device
 
 **Analytics & dashboard**
 
-- Click analytics: clicks over time, top countries, device, browser, OS
-- Dashboard with search, sort, pagination, bulk delete, QR codes
+- Click analytics: clicks over time, top countries, device, browser, OS (loaded only on `/dashboard`)
+- Dashboard with prefix search, sort, pagination, bulk delete, QR codes
+- Client server-state via TanStack Query; bounded process-local caches on the API for stats and auth-user reads
 
 **Account & trust**
 
 - Account settings: profile name, password, account deletion
 - Email verification and password reset (Resend)
 - In-app privacy policy at `/privacy`
-- Abuse reporting API with operator email alerts and an admin review queue
 - Tiered per-endpoint rate limiting
 
 ## Tech stack
 
 | Layer    | Technologies |
 | -------- | ------------ |
-| Frontend | React 19, Vite 6, Tailwind CSS 4, React Router, Axios, react-hot-toast, lucide-react, qrcode |
+| Frontend | React 19, Vite 6, Tailwind CSS 4, React Router, TanStack Query, Axios, react-hot-toast, lucide-react, qrcode |
 | Backend  | Node.js, Express 5, MongoDB + Mongoose 8, JWT (HTTP-only cookies), bcrypt, Joi, Resend, Helmet, geoip-lite, ua-parser-js |
 | Testing  | Vitest, Testing Library, Playwright, Node test runner, mongodb-memory-server |
 
@@ -109,8 +110,6 @@ Optional — see [BACKEND/.env.example](./BACKEND/.env.example) for the full lis
 | `MAX_LINKS_PER_USER` | Per-user link cap (default 1000) |
 | `RESEND_API_KEY`, `RESEND_FROM_EMAIL` | Transactional email |
 | `EMAIL_ASSET_BASE_URL` | Frontend URL for email images |
-| `OPERATOR_EMAIL`, `ABUSE_INBOX_EMAIL` | Operator contact inboxes |
-| `ADMIN_EMAILS` | Emails allowed to access `/api/admin/abuse` |
 | `OPERATIONS_ALERT_WEBHOOK_URL` | Webhook for operational alerts |
 
 ### Frontend (`FRONTEND/.env`)
@@ -124,7 +123,7 @@ VITE_PUBLIC_SHORT_URL=http://127.0.0.1:5173
 VITE_BACKEND_DEV_URL=http://127.0.0.1:3001
 ```
 
-Production — set `VITE_APP_URL` to your API origin and `VITE_PUBLIC_SHORT_URL` to your public short-link host. If you use the abuse admin UI, set `VITE_ADMIN_EMAILS` to match backend `ADMIN_EMAILS`. See [FRONTEND/.env.example](./FRONTEND/.env.example).
+Production — set `VITE_APP_URL` to your API origin and `VITE_PUBLIC_SHORT_URL` to your public short-link host. See [FRONTEND/.env.example](./FRONTEND/.env.example).
 
 ## Production (Vercel)
 
@@ -132,7 +131,7 @@ Production — set `VITE_APP_URL` to your API origin and `VITE_PUBLIC_SHORT_URL`
 
 The frontend build generates `vercel.json` rewrites that proxy slug-shaped paths (`/^[a-zA-Z0-9_-]{3,20}$/`, excluding SPA routes) to `SHORT_LINK_PROXY_ORIGIN` (defaults to `VITE_APP_URL`). This mirrors the Vite dev proxy in `FRONTEND/vite.config.js`.
 
-Set both env vars in your Vercel frontend project, then smoke-test a live slug after deploy:
+Set both env vars in your Vercel frontend project (and point the public short host, e.g. `s.nayanswarnkar.com`, at the same proxy origin), then smoke-test a live slug after deploy:
 
 ```bash
 PUBLIC_SHORT_HOST=https://shortly.example.com \
@@ -165,22 +164,22 @@ Crawlers requesting `/` or `/privacy` receive route-specific Open Graph metadata
 ## Architecture
 
 ```
-FRONTEND/      React 19 + Vite SPA
+FRONTEND/      React 19 + Vite SPA (TanStack Query for dashboard server-state)
 BACKEND/       Express 5 API
   src/
     routes/        REST endpoints
     controllers/   request handling
     services/      business logic
-      shortUrl/    persist, redirect, claim, capacity
-      auth, account, analytics, email, click, abuse, …
-    dao/           Mongo access layer
-    schema/        User, ShortUrl, Click, RateLimit, AbuseReport
+      shortUrl/    persist, redirect, claim, capacity, stats cache
+      auth, account, analytics, email, click, …
+    dao/           Mongo access layer (active-link scoped click facets)
+    schema/        User, ShortUrl, Click, RateLimit
     middleware/    auth, csrf, rate limit, validation, latency
     validation/    Joi schemas
-    utils/         authToken, slug/url helpers, error handling, mongoTransaction
+    utils/         authToken (+ auth-user cache), slug/url helpers, mongoTransaction
 ```
 
-Profile reads use `GET /api/auth/me` with `Cache-Control: no-store` so clients never show a stale display name after edits.
+`GET /api/auth/me` returns `Cache-Control: no-store` (HTTP) and reuses the user already resolved by auth middleware when present — no duplicate Mongo profile read on that path. Process-local auth-user / stats caches are separate from HTTP caching (see [Design tradeoffs](#design-tradeoffs)).
 
 ### Routes
 
@@ -189,7 +188,7 @@ Profile reads use `GET /api/auth/me` with `Cache-Control: no-store` so clients n
 | `/` | Public | Landing |
 | `/login`, `/register`, `/verify-email/:token`, `/forgot-password`, `/reset-password/:token` | Guest | Auth |
 | `/dashboard`, `/settings` | Signed in | Dashboard, account settings |
-| `/admin/abuse` | Admin | Abuse report review queue |
+| `/claim-link/:token` | Signed in | Guest email claim recovery |
 | `/privacy` | Public | Privacy policy |
 | `/:short_url` | Public | Proxied redirect (dev: Vite → backend) |
 
@@ -198,10 +197,11 @@ Profile reads use `GET /api/auth/me` with `Cache-Control: no-store` so clients n
 | Area | Notes |
 | ---- | ----- |
 | `api/` | Axios clients |
-| `contexts/` | `authSessionStore`, `AuthContext` with shared stats |
-| `hooks/` | `useDashboard`, `useDashboardList`, `useDashboardMutations`, `useUrlStats` |
+| `contexts/` | `authSessionStore`, `AuthContext` (session bootstrap) |
+| `hooks/` | `useDashboardList`, `useUrlStats` (TanStack Query), mutations, form controllers |
 | `components/` | `app/`, `dashboard/`, `settings/`, `landing/`, `urlForm/`, `ux/`, … |
 | `styles/domains/` | Design tokens; run `npm run css:check` after CSS edits |
+| `public/assets/` | Brand mark/nav as committed WebP |
 
 **Session:** Bootstrap via `GET /api/auth/me`; profile saves call `PATCH /api/auth/me`, then `updateUser` + `refreshUser`.
 
@@ -228,11 +228,13 @@ Raw click events live in a `clicks` collection with a MongoDB TTL index (30 days
 </details>
 
 <details>
-<summary><strong>3. Anonymous links: device-local until claimed</strong></summary>
+<summary><strong>3. Anonymous links: device-local, with email recovery</strong></summary>
 
 Guests can shorten without an account. The backend returns a `manage_token`; the frontend stores `{ id, manage_token }` in `localStorage`. On sign-in, `/api/create/claim` transfers ownership.
 
-**Tradeoff:** No way to recover guest links across browsers/devices without signing in. Clearing browser data loses manage access — the short link itself still works.
+For cross-device recovery, guests can email themselves a one-time claim link (`POST /api/create/claim/email` → `/claim-link/:token` after sign-in).
+
+**Tradeoff:** Without signing in or using email recovery, clearing browser data loses manage access — the short link itself still works.
 
 </details>
 
@@ -242,7 +244,7 @@ Guests can shorten without an account. The backend returns a `manage_token`; the
 - **DB-backed `rateLimiter`** (auth, custom-create, etc.) — accurate across instances, one extra Mongo round-trip per request.
 - **In-memory `memoryRateLimiter`** for the redirect hot path — zero DB cost per redirect, not shared across instances.
 
-Redirects read MongoDB directly so edits, disables, and retirements stay consistent across every backend instance.
+Redirects read MongoDB directly so edits, disables, and retirements stay consistent across every backend instance. Process-local stats/auth caches share the same per-instance caveat (see tradeoff 8).
 
 </details>
 
@@ -260,22 +262,50 @@ Deleted links become permanent, non-identifying tombstones. The destination, own
 
 </details>
 
+<details>
+<summary><strong>7. Analytics scoped to the user’s links, not a collection-wide join</strong></summary>
+
+Dashboard click facets resolve the signed-in user’s **active** link IDs, then `$match` + `$facet` on the `clicks` collection (compound `{ short_url_id, timestamp }`). That avoids a collection-wide `$lookup` that would scale with *every* click in the database, including other users’.
+
+**Tradeoff:** Empty / cold paths pay a small active-ID lookup first; the win shows up as owned click volume grows and when unrelated click docs exist in the same DB.
+
+</details>
+
+<details>
+<summary><strong>8. Bounded process-local caches (not Redis)</strong></summary>
+
+Stats responses and authenticated-user resolution use process-local `Map`s (30s TTL, bounded size) with explicit invalidation on link/auth mutations. Concurrent stats requests for the same user share one in-flight build. Redirects stay uncached and always read Mongo for link state.
+
+**Tradeoff:** Click-driven dashboard totals may lag up to the TTL; caches are **per Node process** (same class of caveat as the in-memory redirect rate limiter). No Redis dependency for a solo portfolio deploy.
+
+Frontend TanStack Query uses a matching ~30s `staleTime` and only fetches stats on `/dashboard`.
+
+</details>
+
+<details>
+<summary><strong>9. Prefix dashboard search for index use</strong></summary>
+
+List search uses case-sensitive **prefix** matching on `short_url` / `full_url` so compound `{ user, retiredAt, … }` indexes can apply.
+
+**Tradeoff:** Mid-string and case-insensitive search are not supported — acceptable for a small personal link list.
+
+</details>
+
 ## Security
 
-- bcrypt password hashing; JWT in HTTP-only cookies with `tokenVersion` (invalidated on password change)
+- bcrypt password hashing; JWT in HTTP-only cookies with `tokenVersion` (invalidated on password change / logout)
 - Email verification gate when Resend is configured
 - Joi validation on every input; CSRF checks on cookie-backed writes
 - CORS with explicit origin allowlist (`FRONT_END_URL` + `ALLOWED_ORIGINS`)
 - Per-endpoint rate limits, reserved-slug protection, redirect URL validation
 - Helmet, gzip, request IDs, latency tracking, graceful shutdown
-- Profile API responses are not cached (`no-store` on `/api/auth/me`)
-- Abuse reports at `POST /api/abuse/report` (rate-limited); admin queue at `/api/admin/abuse` gated by `ADMIN_EMAILS`
+- Profile HTTP responses use `Cache-Control: no-store` on `/api/auth/me`; auth-user cache is invalidated on logout, profile, password, and account mutations
 
 ## Testing
 
 | Command | What it runs |
 | ------- | ------------ |
-| `npm run test:backend` | Node test runner + in-memory MongoDB replica set |
+| `npm run test:backend` | Node test runner + in-memory MongoDB replica set (incl. auth/stats cache characterization) |
 | `npm run test:frontend` | Vitest + Testing Library |
 | `npm run test:e2e` | Playwright — starts test backend (`BACKEND/scripts/e2e-server.mjs`) and Vite dev server |
 | `npm run test:all` | Backend + frontend unit tests |
