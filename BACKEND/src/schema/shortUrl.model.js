@@ -57,7 +57,10 @@ const shortUrlSchema = mongoose.Schema(
   }
 );
 
-shortUrlSchema.index({ user: 1, createdAt: -1 });
+shortUrlSchema.index({ user: 1, retiredAt: 1, createdAt: -1 });
+shortUrlSchema.index({ user: 1, retiredAt: 1, click: -1 });
+shortUrlSchema.index({ user: 1, retiredAt: 1, short_url: 1 });
+shortUrlSchema.index({ user: 1, retiredAt: 1, full_url: 1 });
 shortUrlSchema.index(
   { user: 1, canonical_url: 1 },
   {
@@ -69,7 +72,6 @@ shortUrlSchema.index(
     }
   }
 );
-shortUrlSchema.index({ user: 1, click: -1 });
 shortUrlSchema.index({ short_url: 1 }, { unique: true });
 shortUrlSchema.index({ claim_recovery_token: 1 }, { sparse: true });
 

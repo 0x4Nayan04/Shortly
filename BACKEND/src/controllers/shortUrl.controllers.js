@@ -19,7 +19,8 @@ import {
   listLinksForUserService,
   softDeleteLinkService,
   softDeleteLinksService,
-  getStatsForUserService
+  getStatsForUserService,
+  invalidateStatsForUser
 } from '../services/shortUrl.services.js';
 import { recordClickFromRequest } from '../services/click.service.js';
 
@@ -176,6 +177,7 @@ export const claimAnonymousShortUrls = asyncHandler(async (req, res, _next) => {
   const userId = req.user._id;
   const { links } = req.validatedBody;
   const result = await claimAnonymousLinksService({ userId, claims: links });
+  if (result.claimed.length > 0) invalidateStatsForUser(userId);
 
   res.json(
     successResponse('Anonymous links processed', {
@@ -202,6 +204,7 @@ export const redeemAnonymousClaimRecovery = asyncHandler(
       userId: req.user._id,
       recoveryToken: token
     });
+    invalidateStatsForUser(req.user._id);
     res.json(successResponse('Link claimed successfully', { link }));
   }
 );

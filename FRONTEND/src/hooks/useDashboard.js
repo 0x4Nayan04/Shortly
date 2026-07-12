@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useDashboardList } from './useDashboardList';
 import { useDashboardMutations } from './useDashboardMutations';
 
@@ -12,14 +12,7 @@ export const useDashboard = ({
   refetchStats
 }) => {
   const list = useDashboardList({ userId, announce, isOnline });
-  const { fetchMyUrls, loadList, myUrls, setMyUrls, setTotalCount } = list;
-  const loadListRef = useRef(loadList);
-  loadListRef.current = loadList;
-
-  useEffect(() => {
-    if (!userId) return;
-    loadListRef.current();
-  }, [userId]);
+  const { fetchMyUrls, myUrls, setMyUrls, setTotalCount } = list;
   const { selectedIds, editingLink } = ui;
 
   const visibleSelectedIds = useMemo(() => {

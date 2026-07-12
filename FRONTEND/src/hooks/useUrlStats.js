@@ -1,36 +1,30 @@
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getUrlStats } from '../api/shortUrl.api';
 import { getApiPayload } from '../utils/axiosInstance';
 
-export function useUrlStats() {
-  const [stats, setStats] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [hasFetched, setHasFetched] = useState(false);
+const STATS_QUERY_KEY = ['url-stats'];
 
-  const refetch = useCallback(async () => {
-    setLoading(true);
-    try {
-      const response = await getUrlStats();
-      const payload = getApiPayload(response);
-      if (payload) setStats(payload);
-    } catch {
-      setStats(null);
-    } finally {
-      setHasFetched(true);
-      setLoading(false);
-    }
-  }, []);
+export function useUrlStats(enabled = false) {
+  const queryClient = useQueryClient();
+  const query = useQuery({
+    queryKey: STATS_QUERY_KEY,
+    queryFn: async () => getApiPayload(await getUrlStats()) ?? null,
+    enabled,
+    staleTime: 30_000
+  });
+  const { refetch: refetchQuery } = query;
+
+  const refetch = useCallback(() => refetchQuery(), [refetchQuery]);
 
   const reset = useCallback(() => {
-    setStats(null);
-    setHasFetched(false);
-    setLoading(false);
-  }, []);
+    queryClient.removeQueries({ queryKey: STATS_QUERY_KEY });
+  }, [queryClient]);
 
   return {
-    stats,
-    loading,
-    hasFetched,
+    stats: query.data ?? null,
+    loading: query.isFetching,
+    hasFetched: query.isFetched,
     refetch,
     reset
   };

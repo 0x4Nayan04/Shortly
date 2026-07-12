@@ -1,7 +1,5 @@
 import { CLICK_RETENTION_DAYS } from '../constants/shortUrlLimits.js';
-import { countActiveLinksForUser } from '../dao/shortUrl.dao.js';
 import { aggregateClickFacetsForUser } from '../dao/click.dao.js';
-import { logger } from '../utils/logger.js';
 
 const EMPTY_CLICK_FACETS = {
   overviewTotal: [],
@@ -15,19 +13,9 @@ const EMPTY_CLICK_FACETS = {
 };
 
 export async function getClickAggregates(userId, days = CLICK_RETENTION_DAYS) {
-  const urlCount = await countActiveLinksForUser(userId);
-  if (urlCount === 0) return null;
-
   const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
   const rawFacets = await aggregateClickFacetsForUser(userId, since);
-  if (!rawFacets) {
-    logger.warn(
-      'Click facet aggregation returned no result; using empty facets',
-      {
-        userId: userId?.toString?.() ?? userId
-      }
-    );
-  }
+  if (!rawFacets) return null;
   const facetResult = rawFacets ?? EMPTY_CLICK_FACETS;
 
   const totalClicks = facetResult.overviewTotal[0]?.total || 0;

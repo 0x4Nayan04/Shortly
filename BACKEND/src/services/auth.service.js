@@ -14,6 +14,7 @@ import {
 import { alertEmailDeliveryFailure } from './opsAlert.service.js';
 import { logger } from '../utils/logger.js';
 import bcrypt from 'bcrypt';
+import { invalidateCachedAuthUser } from '../utils/authToken.js';
 
 const GENERIC_RESEND_VERIFICATION_MESSAGE =
   'If your account needs verification, a new link has been sent.';
@@ -134,4 +135,5 @@ export const logoutUserService = async ({ token }) => {
   if (!decoded?.id) return;
 
   await incrementTokenVersionById(decoded.id);
+  invalidateCachedAuthUser(decoded.id);
 };

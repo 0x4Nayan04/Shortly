@@ -46,6 +46,13 @@ export {
 
 const generateManageToken = () => crypto.randomBytes(24).toString('hex');
 const hashManageToken = (token) => hashEmailToken(token);
+const STATS_CACHE_TTL_MS = 30_000;
+const STATS_CACHE_MAX = 5_000;
+const statsCache = new Map();
+
+export const invalidateStatsForUser = (userId) => {
+  if (userId) statsCache.delete(userId.toString());
+};
 
 const reserveSlotOrThrow = async (userId, session) => {
   const reserved = await reserveActiveLinkSlot(userId, session);
@@ -94,6 +101,7 @@ export async function createShortUrlService({ full_url, userId = null }) {
     });
   }
 
+  invalidateStatsForUser(userId);
   return rawManageToken ? { ...saved, manage_token: rawManageToken } : saved;
 }
 
@@ -128,6 +136,7 @@ export async function createCustomShortUrlService({
       }),
     CUSTOM_SLUG_TAKEN_MESSAGE
   );
+  invalidateStatsForUser(userId);
 
   return {
     short_url: saved.short_url,
@@ -180,6 +189,7 @@ export async function updateOwnedShortUrlService({ userId, id, updates }) {
       updateByIdAndUser(id, userId, patch)
     );
   }
+  invalidateStatsForUser(userId);
 
   return updated;
 }
@@ -228,6 +238,7 @@ export async function softDeleteLinkService({ userId, id }) {
   if (!removed) {
     throw new AppError('You can only delete your own URLs', 403);
   }
+  invalidateStatsForUser(userId);
 }
 
 export async function softDeleteLinksService({ userId, ids }) {
@@ -252,6 +263,7 @@ export async function softDeleteLinksService({ userId, ids }) {
     .filter((id) => !ownedIds.includes(id))
     .map((id) => ({ id, reason: 'not_found' }));
 
+  invalidateStatsForUser(userId);
   return {
     deletedCount,
     deletedIds: ownedIds,
@@ -260,6 +272,25 @@ export async function softDeleteLinksService({ userId, ids }) {
 }
 
 export async function getStatsForUserService({ userId }) {
+  const cacheKey = userId.toString();
+  const cached = statsCache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) return cached.value;
+
+  const pending = buildStatsForUser(userId).catch((error) => {
+    statsCache.delete(cacheKey);
+    throw error;
+  });
+  if (statsCache.size >= STATS_CACHE_MAX) {
+    statsCache.delete(statsCache.keys().next().value);
+  }
+  statsCache.set(cacheKey, {
+    value: pending,
+    expiresAt: Date.now() + STATS_CACHE_TTL_MS
+  });
+  return pending;
+}
+
+async function buildStatsForUser(userId) {
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
   const [lifetime, recentActivity, topUrls, clickStats] = await Promise.all([

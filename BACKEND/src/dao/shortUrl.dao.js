@@ -57,9 +57,6 @@ export const isSlugAvailable = async (short_url) => {
   return !(await short_urlModel.exists({ short_url: slug }));
 };
 
-export const countActiveLinksForUser = async (userId) =>
-  short_urlModel.countDocuments({ user: userId, ...ACTIVE_LINK_FILTER });
-
 export const findLinkBySlug = async (short_url) => {
   const slug = normalizeSlug(short_url);
   return short_urlModel
@@ -139,9 +136,12 @@ export const listForUser = async ({
   sortOrder = -1
 }) => {
   const baseQuery = { user: userId, ...ACTIVE_LINK_FILTER };
+  const trimmedSearch = search?.trim();
 
-  if (search && search.trim()) {
-    const searchRegex = new RegExp(escapeRegExp(search.trim()), 'i');
+  if (trimmedSearch) {
+    // Prefix matching can use MongoDB indexes; an unanchored, case-insensitive
+    // regex forces a collection scan as the link collection grows.
+    const searchRegex = new RegExp(`^${escapeRegExp(trimmedSearch)}`);
     baseQuery.$or = [{ full_url: searchRegex }, { short_url: searchRegex }];
   }
 

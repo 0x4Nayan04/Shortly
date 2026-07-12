@@ -12,6 +12,6 @@ export {
   getDocumentMetaForPath
 } from '../../config/documentMeta.js';
 
-export const SHORTLY_LOGO_SRC = '/assets/Shortly_Logo_nav.png';
-export const SHORTLY_LOGO_HOVER_SRC = '/assets/Shortly_Logo_nav_hover.png';
-export const SHORTLY_LOGO_MARK_SRC = '/assets/Shortly_Logo_mark.png';
+export const SHORTLY_LOGO_SRC = '/assets/Shortly_Logo_nav.webp';
+export const SHORTLY_LOGO_HOVER_SRC = '/assets/Shortly_Logo_nav_hover.webp';
+export const SHORTLY_LOGO_MARK_SRC = '/assets/Shortly_Logo_mark.webp';

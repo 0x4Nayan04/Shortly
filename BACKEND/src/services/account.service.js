@@ -16,6 +16,7 @@ import {
 } from './email.service.js';
 import { alertEmailDeliveryFailure } from './opsAlert.service.js';
 import { logger } from '../utils/logger.js';
+import { invalidateCachedAuthUser } from '../utils/authToken.js';
 
 const GENERIC_RESET_MESSAGE =
   'If an account with that email exists, a reset link has been sent.';
@@ -43,6 +44,7 @@ export const changePasswordService = async ({
   user.password = newPassword;
   user.tokenVersion = (user.tokenVersion ?? 0) + 1;
   await user.save();
+  invalidateCachedAuthUser(userId);
 
   const token = await signToken({
     id: user._id,
@@ -57,6 +59,7 @@ export const updateProfileService = async ({ userId, name }) => {
   if (!user) {
     throw new AppError('User not found', 404);
   }
+  invalidateCachedAuthUser(userId);
   return { user };
 };
 
@@ -75,6 +78,7 @@ export const deleteAccountService = async ({ userId, password }) => {
     await retireAllForUser(userId, session);
     await findUserByIdAndDelete(userId, session);
   });
+  invalidateCachedAuthUser(userId);
 };
 
 export const requestPasswordResetService = async ({ email }) => {
@@ -119,6 +123,7 @@ export const resetPasswordService = async ({ token, newPassword }) => {
   user.resetPasswordExpires = null;
   user.tokenVersion = (user.tokenVersion ?? 0) + 1;
   await user.save();
+  invalidateCachedAuthUser(user._id);
 
   return { user };
 };

@@ -10,7 +10,7 @@ import {
   useState,
   useSyncExternalStore
 } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useUrlStats } from '../hooks/useUrlStats';
 import { getCurrentUser, logoutUser } from '../api/user.api';
 import { useAnnouncement } from '../components/Accessibility';
@@ -46,6 +46,7 @@ export function AuthProvider({ children }) {
   const [announcement, announce] = useAnnouncement();
   const confirmLogout = useConfirmDialog();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const {
     stats,
@@ -53,19 +54,15 @@ export function AuthProvider({ children }) {
     hasFetched: statsHasFetched,
     refetch: refetchStats,
     reset: resetStats
-  } = useUrlStats();
+  } = useUrlStats(Boolean(user?._id && location.pathname === ROUTES.DASHBOARD));
 
   const statsLoading = Boolean(
     user?._id && (statsFetchLoading || !statsHasFetched)
   );
 
   useEffect(() => {
-    if (user?._id) {
-      refetchStats();
-    } else {
-      resetStats();
-    }
-  }, [user?._id, refetchStats, resetStats]);
+    if (!user?._id) resetStats();
+  }, [user?._id, resetStats]);
 
   useEffect(() => {
     const handler = (event) => {

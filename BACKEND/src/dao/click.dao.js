@@ -18,20 +18,10 @@ export const deleteClicksForUser = async (userId, session = null) => {
   return result.deletedCount ?? 0;
 };
 
-const buildUserClickFacetsPipeline = (userId, since) => [
-  {
-    $lookup: {
-      from: short_urlModel.collection.name,
-      localField: 'short_url_id',
-      foreignField: '_id',
-      as: 'url'
-    }
-  },
-  { $unwind: '$url' },
+const buildUserClickFacetsPipeline = (urlIds, since) => [
   {
     $match: {
-      'url.user': userId,
-      'url.retiredAt': null,
+      short_url_id: { $in: urlIds },
       timestamp: { $gte: since }
     }
   },
@@ -81,8 +71,13 @@ const buildUserClickFacetsPipeline = (userId, since) => [
 ];
 
 export const aggregateClickFacetsForUser = async (userId, since) => {
+  const urlIds = await short_urlModel
+    .find({ user: userId, retiredAt: null })
+    .distinct('_id');
+  if (urlIds.length === 0) return null;
+
   const [facetResult] = await Click.aggregate(
-    buildUserClickFacetsPipeline(userId, since)
+    buildUserClickFacetsPipeline(urlIds, since)
   );
   return facetResult;
 };

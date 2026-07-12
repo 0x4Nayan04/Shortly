@@ -20,7 +20,6 @@ import {
   requestPasswordResetService,
   resetPasswordService
 } from '../services/account.service.js';
-import { findById as findUserById } from '../dao/user.dao.js';
 
 export const registerUser = asyncHandler(async (req, res, _next) => {
   const { name, email, password } = req.validatedBody;
@@ -74,12 +73,11 @@ export const logoutUser = asyncHandler(async (req, res, _next) => {
 });
 
 export const getUserProfile = asyncHandler(async (req, res, _next) => {
-  const dbUser = req.user?._id ? await findUserById(req.user._id) : null;
   res.set('Cache-Control', 'no-store');
   res.set('ETag', false);
   res.status(200).json(
     successResponse('User profile fetched', {
-      user: dbUser ? serializeUser(dbUser) : null
+      user: req.user ? serializeUser(req.user) : null
     })
   );
 });

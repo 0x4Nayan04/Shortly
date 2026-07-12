@@ -1,6 +1,24 @@
 import { verifyToken } from './helper.js';
 import User from '../schema/user.model.js';
 
+const AUTH_USER_CACHE_TTL_MS = 30_000;
+const AUTH_USER_CACHE_MAX = 5_000;
+const authUserCache = new Map();
+
+export const invalidateCachedAuthUser = (userId) => {
+  if (userId) authUserCache.delete(userId.toString());
+};
+
+const cacheAuthUser = (user) => {
+  if (authUserCache.size >= AUTH_USER_CACHE_MAX) {
+    authUserCache.delete(authUserCache.keys().next().value);
+  }
+  authUserCache.set(user._id.toString(), {
+    user,
+    expiresAt: Date.now() + AUTH_USER_CACHE_TTL_MS
+  });
+};
+
 export const getTokenFromRequest = (req) => {
   const cookieToken = req.cookies?.token;
   if (cookieToken) return cookieToken;
@@ -69,9 +87,17 @@ export const resolveUserFromToken = async (req, token) => {
     return { kind: 'ok', user: req.user };
   }
 
-  const user = await User.findById(decoded.id);
+  const cacheKey = decoded.id.toString();
+  const cached = authUserCache.get(cacheKey);
+  if (cached?.expiresAt > Date.now()) {
+    if (!isTokenVersionValid(cached.user, decoded)) return { kind: 'revoked' };
+    return { kind: 'ok', user: cached.user };
+  }
+  if (cached) authUserCache.delete(cacheKey);
+
+  const user = await User.findById(decoded.id).select('-password').lean();
   if (!user) return { kind: 'missing' };
   if (!isTokenVersionValid(user, decoded)) return { kind: 'revoked' };
-  user.password = undefined;
+  cacheAuthUser(user);
   return { kind: 'ok', user };
 };
