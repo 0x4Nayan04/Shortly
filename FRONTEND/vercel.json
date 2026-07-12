@@ -29,7 +29,7 @@
         },
         {
           "key": "Content-Security-Policy-Report-Only",
-          "value": "default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; img-src 'self' data: blob:; font-src 'self' https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; script-src 'self'; connect-src 'self' https://api.example.com"
+          "value": "default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; img-src 'self' data: blob:; font-src 'self' https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; script-src 'self'; connect-src 'self' https://s.nayanswarnkar.com"
         }
       ]
     }
@@ -73,7 +73,7 @@
     },
     {
       "source": "/:slug([a-zA-Z0-9_-]{3,20})",
-      "destination": "https://api.example.com/:slug"
+      "destination": "https://s.nayanswarnkar.com/:slug"
     },
     {
       "source": "/(.*)",

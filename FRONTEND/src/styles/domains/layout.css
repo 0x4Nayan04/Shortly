@@ -481,64 +481,6 @@
   }
 
   /* Privacy manifesto — control / retention / transparency panel */
-  .privacy-panel__grid {
-    display: grid;
-    gap: var(--space-s2);
-  }
-  @media (min-width: 768px) {
-    .privacy-panel__grid {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: var(--space-s5);
-    }
-  }
-  .privacy-section {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-s2);
-  }
-  .privacy-section__title {
-    margin: 0;
-    font-family: var(--font-display);
-    font-size: 1.125rem;
-    font-weight: 600;
-    line-height: 1.35;
-    color: var(--color-ink);
-  }
-  .privacy-section__tiles {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-  .privacy-tile {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.75rem;
-    padding: 1rem 1.25rem;
-    border: 1px solid var(--color-border);
-    background-color: var(--color-surface);
-    font-size: 0.875rem;
-    line-height: 1.5;
-    color: var(--color-muted-strong);
-  }
-  .privacy-tile__icon {
-    flex-shrink: 0;
-    width: 20px;
-    height: 20px;
-    margin-top: 0.125rem;
-    color: var(--color-primary);
-  }
-  .privacy-tile__text {
-    flex: 1;
-    min-width: 0;
-  }
-  .privacy-tile__text strong {
-    font-weight: 600;
-    color: var(--color-ink);
-  }
-
   .sm-input {
     display: block;
     width: 100%;
