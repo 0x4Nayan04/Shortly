@@ -13,6 +13,8 @@ import {
   createCustomShortUrlService,
   resolveRedirectTargetService,
   claimAnonymousLinksService,
+  emailAnonymousClaimRecoveryService,
+  redeemAnonymousClaimRecoveryService,
   updateOwnedShortUrlService,
   listLinksForUserService,
   softDeleteLinkService,
@@ -182,6 +184,27 @@ export const claimAnonymousShortUrls = asyncHandler(async (req, res, _next) => {
     })
   );
 });
+
+export const emailAnonymousClaimRecovery = asyncHandler(
+  async (req, res, _next) => {
+    const { id, manage_token: manageToken, email } = req.validatedBody;
+    await emailAnonymousClaimRecoveryService({ id, manageToken, email });
+    res.json(
+      successResponse('Recovery email sent. Check your inbox for the claim link.')
+    );
+  }
+);
+
+export const redeemAnonymousClaimRecovery = asyncHandler(
+  async (req, res, _next) => {
+    const { token } = req.validatedBody;
+    const link = await redeemAnonymousClaimRecoveryService({
+      userId: req.user._id,
+      recoveryToken: token
+    });
+    res.json(successResponse('Link claimed successfully', { link }));
+  }
+);
 
 export const bulkDeleteUrls = asyncHandler(async (req, res, _next) => {
   const { ids } = req.validatedBody;

@@ -10,14 +10,12 @@ process.env.FRONT_END_URL = 'http://frontend.test';
 process.env.PUBLIC_BASE_URL = 'http://short.test';
 process.env.PORT = '3001';
 process.env.ALLOWED_ORIGINS = 'http://frontend.test';
-process.env.ADMIN_EMAILS = 'admin@example.com';
 
 const { createApp } = await import('../src/app.js');
 const { default: ShortUrl } = await import('../src/schema/shortUrl.model.js');
 const { default: Click } = await import('../src/schema/click.model.js');
 const { default: User } = await import('../src/schema/user.model.js');
 const { default: RateLimit } = await import('../src/schema/rateLimit.model.js');
-const { default: AbuseReport } = await import('../src/schema/abuseReport.model.js');
 const { recordClickFromRequest } =
   await import('../src/services/click.service.js');
 const { hashEmailToken } = await import('../src/utils/hashToken.js');
@@ -50,8 +48,7 @@ test.before(async () => {
     ShortUrl.syncIndexes(),
     Click.syncIndexes(),
     User.syncIndexes(),
-    RateLimit.syncIndexes(),
-    AbuseReport.syncIndexes()
+    RateLimit.syncIndexes()
   ]);
   app = createApp();
 });
@@ -66,8 +63,7 @@ test.beforeEach(async () => {
     ShortUrl.deleteMany({}),
     Click.deleteMany({}),
     User.deleteMany({}),
-    RateLimit.deleteMany({}),
-    AbuseReport.deleteMany({})
+    RateLimit.deleteMany({})
   ]);
 });
 
@@ -162,6 +158,69 @@ test('a management token can be claimed successfully only once under concurrency
   assert.equal(owners, 1);
 });
 
+test('an emailed recovery token claims an anonymous link once and rejects reuse', async () => {
+  const guest = await request(app)
+    .post('/api/create')
+    .send({ full_url: 'https://example.com/email-recovery' });
+  const rawRecoveryToken = 'b'.repeat(64);
+  await ShortUrl.updateOne(
+    { _id: guest.body.data.id },
+    {
+      $set: {
+        claim_recovery_token: hashEmailToken(rawRecoveryToken),
+        claim_recovery_expires: new Date(Date.now() + 60_000)
+      }
+    }
+  );
+  const agent = await register('email-claim@example.com');
+
+  const claimed = await agent
+    .post('/api/create/claim/redeem')
+    .set(origin)
+    .send({ token: rawRecoveryToken });
+  assert.equal(claimed.status, 200, claimed.text);
+  assert.equal(claimed.body.data.link.id, guest.body.data.id);
+
+  const reused = await agent
+    .post('/api/create/claim/redeem')
+    .set(origin)
+    .send({ token: rawRecoveryToken });
+  assert.equal(reused.status, 410, reused.text);
+
+  const stored = await ShortUrl.findById(guest.body.data.id)
+    .select('+manage_token +claim_recovery_token +claim_recovery_expires')
+    .lean();
+  assert.ok(stored.user);
+  assert.equal(stored.manage_token, undefined);
+  assert.equal(stored.claim_recovery_token, undefined);
+  assert.equal(stored.claim_recovery_expires, undefined);
+});
+
+test('an expired emailed recovery token cannot claim a link', async () => {
+  const guest = await request(app)
+    .post('/api/create')
+    .send({ full_url: 'https://example.com/expired-recovery' });
+  const rawRecoveryToken = 'c'.repeat(64);
+  await ShortUrl.updateOne(
+    { _id: guest.body.data.id },
+    {
+      $set: {
+        claim_recovery_token: hashEmailToken(rawRecoveryToken),
+        claim_recovery_expires: new Date(Date.now() - 1_000)
+      }
+    }
+  );
+  const agent = await register('expired-claim@example.com');
+
+  const response = await agent
+    .post('/api/create/claim/redeem')
+    .set(origin)
+    .send({ token: rawRecoveryToken });
+  assert.equal(response.status, 410, response.text);
+  const stored = await ShortUrl.findById(guest.body.data.id).lean();
+  assert.equal(stored.user, undefined);
+});
+
 test('registration is generic for new and existing emails and weak passwords fail', async () => {
   const payload = {
     name: 'Privacy Test',
@@ -245,7 +304,7 @@ test('login has an IP-wide limit and logout revokes the old token', async () => 
   );
 });
 
-test('active, retired, unknown redirects and QR responses are distinct', async () => {
+test('active, retired, and unknown redirects are distinct', async () => {
   const agent = await register('redirects@example.com');
   const created = await agent
     .post('/api/create/custom')
@@ -256,7 +315,6 @@ test('active, retired, unknown redirects and QR responses are distinct', async (
   const activeRedirect = await request(app).get('/kept-slug');
   assert.equal(activeRedirect.status, 302);
   assert.equal(activeRedirect.headers.location, 'https://example.com/target');
-  assert.equal((await request(app).get('/api/qr/kept-slug')).status, 200);
 
   const removed = await agent
     .delete(`/api/create/${created.body.data.id}`)
@@ -280,11 +338,7 @@ test('active, retired, unknown redirects and QR responses are distinct', async (
     retiredRedirect.body.message,
     'This short link has been retired'
   );
-  const retiredQr = await request(app).get('/api/qr/kept-slug');
-  assert.equal(retiredQr.status, 410);
-  assert.equal(retiredQr.body.message, 'This short link has been retired');
   assert.equal((await request(app).get('/missing-slug')).status, 404);
-  assert.equal((await request(app).get('/api/qr/missing-slug')).status, 404);
 
   const reuse = await agent
     .post('/api/create/custom')
@@ -389,70 +443,6 @@ test('account deletion removes personal data and clicks but preserves tombstones
     custom_url: 'account-slug'
   });
   assert.equal(reuse.status, 409);
-});
-
-test('abuse reports are accepted and stored', async () => {
-  const created = await request(app)
-    .post('/api/create')
-    .send({ full_url: 'https://example.com/abuse-target' });
-  assert.equal(created.status, 201, created.text);
-  const slug = created.body.data.short_url;
-
-  const report = await request(app).post('/api/abuse/report').send({
-    slug,
-    reason: 'This link redirects to a phishing page impersonating a bank.',
-    reporterEmail: 'reporter@example.com'
-  });
-  assert.equal(report.status, 202, report.text);
-  assert.equal(report.body.data.accepted, true);
-
-  const stored = await AbuseReport.findOne({ slug });
-  assert.ok(stored);
-  assert.equal(stored.linkFound, true);
-  assert.equal(stored.reporterEmail, 'reporter@example.com');
-});
-
-test('admin abuse queue supports list, update, and retire actions', async () => {
-  const created = await request(app)
-    .post('/api/create')
-    .send({ full_url: 'https://example.com/admin-abuse-target' });
-  assert.equal(created.status, 201, created.text);
-  const slug = created.body.data.short_url;
-
-  const reportRes = await request(app).post('/api/abuse/report').send({
-    slug,
-    reason: 'Operator test report for phishing content on destination page.'
-  });
-  assert.equal(reportRes.status, 202, reportRes.text);
-
-  const stored = await AbuseReport.findOne({ slug });
-  assert.ok(stored);
-  assert.equal(stored.status, 'pending');
-
-  const admin = await register('admin@example.com');
-  const list = await admin.get('/api/admin/abuse/reports?status=pending');
-  assert.equal(list.status, 200, list.text);
-  assert.ok(list.body.data.reports.some((row) => row.slug === slug));
-
-  const updated = await admin
-    .patch(`/api/admin/abuse/reports/${stored._id}`)
-    .set(origin)
-    .send({ status: 'reviewed', reviewNotes: 'Confirmed phishing destination.' });
-  assert.equal(updated.status, 200, updated.text);
-  assert.equal(updated.body.data.report.status, 'reviewed');
-
-  const retired = await admin
-    .post(`/api/admin/abuse/reports/${stored._id}/retire`)
-    .set(origin);
-  assert.equal(retired.status, 200, retired.text);
-  assert.equal(retired.body.data.slug, slug);
-
-  const redirect = await request(app).get(`/${slug}`);
-  assert.equal(redirect.status, 410);
-
-  const nonAdmin = await register('not-admin@example.com');
-  const forbidden = await nonAdmin.get('/api/admin/abuse/reports');
-  assert.equal(forbidden.status, 403);
 });
 
 test('health, validation, auth, CORS, and public URL safety have smoke coverage', async () => {

@@ -5,9 +5,7 @@ export const SPA_SLUGS = new Set([
   'dashboard',
   'settings',
   'privacy',
-  'terms',
-  'contact',
-  'report',
+  'claim-link',
   'forgot-password',
   'reset-password',
   'verify-email'

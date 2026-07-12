@@ -6,7 +6,8 @@ import { renderWithProviders } from '../test/renderWithProviders';
 
 vi.mock('../api/shortUrl.api', () => ({
   createShortUrl: vi.fn(),
-  createCustomShortUrl: vi.fn()
+  createCustomShortUrl: vi.fn(),
+  emailAnonymousClaimRecovery: vi.fn()
 }));
 
 vi.mock('../utils/showToast', () => ({
@@ -22,7 +23,10 @@ vi.mock('../utils/anonymousLinks', () => ({
   rememberAnonymousLink: vi.fn()
 }));
 
-import { createShortUrl } from '../api/shortUrl.api';
+import {
+  createShortUrl,
+  emailAnonymousClaimRecovery
+} from '../api/shortUrl.api';
 
 describe('UrlForm', () => {
   beforeEach(() => {
@@ -51,6 +55,40 @@ describe('UrlForm', () => {
     await waitFor(() => {
       expect(createShortUrl).toHaveBeenCalledWith('https://example.com/article');
       expect(screen.getByDisplayValue(/abc123/i)).toBeInTheDocument();
+    });
+  });
+
+  it('emails an anonymous claim link after creation', async () => {
+    createShortUrl.mockResolvedValue({
+      success: true,
+      data: {
+        short_url: 'recover1',
+        id: '64f1c2ab3f1c2ab3f1c2ab3f',
+        manage_token: 'a'.repeat(48)
+      }
+    });
+    emailAnonymousClaimRecovery.mockResolvedValue({ success: true });
+
+    const user = userEvent.setup();
+    renderWithProviders(<UrlForm />);
+    await user.type(
+      screen.getByLabelText(/enter your long url/i),
+      'https://example.com/recover'
+    );
+    await user.click(screen.getByRole('button', { name: /shorten/i }));
+    await user.type(
+      await screen.findByLabelText(/email for link recovery/i),
+      'owner@example.com'
+    );
+    await user.click(screen.getByRole('button', { name: /email claim link/i }));
+
+    await waitFor(() => {
+      expect(emailAnonymousClaimRecovery).toHaveBeenCalledWith({
+        id: '64f1c2ab3f1c2ab3f1c2ab3f',
+        manageToken: 'a'.repeat(48),
+        email: 'owner@example.com'
+      });
+      expect(screen.getByText(/recovery email sent/i)).toBeInTheDocument();
     });
   });
 });

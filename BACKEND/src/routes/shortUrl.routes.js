@@ -7,7 +7,9 @@ import {
   bulkDeleteUrls,
   getUrlStats,
   updateShortUrl,
-  claimAnonymousShortUrls
+  claimAnonymousShortUrls,
+  emailAnonymousClaimRecovery,
+  redeemAnonymousClaimRecovery
 } from '../controllers/shortUrl.controllers.js';
 import { isAuthenticated } from '../middleware/auth.middleware.js';
 import {
@@ -22,7 +24,9 @@ import {
   getUserUrlsQuerySchema,
   bulkDeleteUrlsSchema,
   updateUrlSchema,
-  claimAnonymousLinksSchema
+  claimAnonymousLinksSchema,
+  emailAnonymousClaimRecoverySchema,
+  redeemAnonymousClaimRecoverySchema
 } from '../validation/schemas.js';
 import {
   rateLimiter,
@@ -62,6 +66,12 @@ const claimLimiter = rateLimiter({
   keyGenerator: keyGenerators.userId
 });
 
+const emailClaimLimiter = rateLimiter({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  keyGenerator: keyGenerators.ipPerEndpoint('email-claim')
+});
+
 router.post(
   '/',
   loadUserIfAuthenticated,
@@ -90,6 +100,19 @@ router.post(
   claimLimiter,
   validateBody(claimAnonymousLinksSchema),
   claimAnonymousShortUrls
+);
+router.post(
+  '/claim/email',
+  emailClaimLimiter,
+  validateBody(emailAnonymousClaimRecoverySchema),
+  emailAnonymousClaimRecovery
+);
+router.post(
+  '/claim/redeem',
+  isAuthenticated,
+  claimLimiter,
+  validateBody(redeemAnonymousClaimRecoverySchema),
+  redeemAnonymousClaimRecovery
 );
 router.patch(
   '/:id',

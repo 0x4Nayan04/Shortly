@@ -7,10 +7,10 @@ export const ROUTES = {
   DASHBOARD: '/dashboard',
   SETTINGS: '/settings',
   PRIVACY: '/privacy',
-  ADMIN_ABUSE: '/admin/abuse',
   FORGOT_PASSWORD: '/forgot-password',
   RESET_PASSWORD: '/reset-password',
-  VERIFY_EMAIL: '/verify-email'
+  VERIFY_EMAIL: '/verify-email',
+  CLAIM_LINK: '/claim-link'
 };
 
 /** Auth flows only available to signed-out users (redirect to dashboard when signed in). */

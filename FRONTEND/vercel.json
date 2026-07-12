@@ -56,15 +56,7 @@
       "destination": "/index.html"
     },
     {
-      "source": "/terms",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/contact",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/report",
+      "source": "/claim-link",
       "destination": "/index.html"
     },
     {

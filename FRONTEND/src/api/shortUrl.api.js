@@ -69,3 +69,23 @@ export const claimAnonymousLinks = async (links) => {
   const { data } = await axiosinstance.post(`/api/create/claim`, { links });
   return data;
 };
+
+export const emailAnonymousClaimRecovery = async ({
+  id,
+  manageToken,
+  email
+}) => {
+  const { data } = await axiosinstance.post('/api/create/claim/email', {
+    id,
+    manage_token: manageToken,
+    email
+  });
+  return data;
+};
+
+export const redeemAnonymousClaimRecovery = async (token) => {
+  const { data } = await axiosinstance.post('/api/create/claim/redeem', {
+    token
+  });
+  return data;
+};

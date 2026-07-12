@@ -14,6 +14,9 @@ export function LoginRoute() {
   const [searchParams] = useSearchParams();
   const { login } = useAuth();
   const returnTo = getSafeReturnPath(searchParams.get('returnTo'));
+  const returnQuery = returnTo
+    ? `?returnTo=${encodeURIComponent(returnTo)}`
+    : '';
 
   const handleLoginSuccess = useCallback(
     (response) => login(response, { returnTo }),
@@ -23,7 +26,7 @@ export function LoginRoute() {
   return (
     <LoginForm
       onLoginSuccess={handleLoginSuccess}
-      switchToRegister={() => navigate(ROUTES.REGISTER)}
+      switchToRegister={() => navigate(`${ROUTES.REGISTER}${returnQuery}`)}
       switchToForgotPassword={() => navigate(ROUTES.FORGOT_PASSWORD)}
     />
   );
@@ -31,12 +34,15 @@ export function LoginRoute() {
 
 export function RegisterRoute() {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const [searchParams] = useSearchParams();
+  const returnTo = getSafeReturnPath(searchParams.get('returnTo'));
+  const returnQuery = returnTo
+    ? `?returnTo=${encodeURIComponent(returnTo)}`
+    : '';
 
   return (
     <RegisterForm
-      onRegisterSuccess={login}
-      switchToLogin={() => navigate(ROUTES.LOGIN)}
+      switchToLogin={() => navigate(`${ROUTES.LOGIN}${returnQuery}`)}
     />
   );
 }

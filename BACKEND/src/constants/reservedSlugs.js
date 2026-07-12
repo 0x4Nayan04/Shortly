@@ -14,6 +14,7 @@ const RESERVED_SLUGS = new Set([
   'privacy',
   'terms',
   'contact',
+  'claim-link',
   'report',
   'admin',
   'static',

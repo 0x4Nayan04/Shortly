@@ -140,6 +140,34 @@ const sendPasswordResetEmail = async (email, resetToken) => {
   });
 };
 
+export const sendAnonymousLinkRecoveryEmail = async (
+  email,
+  recoveryToken,
+  shortUrl
+) => {
+  const ctaUrl = buildFrontEndUrl(
+    frontEndBase(),
+    `/claim-link/${recoveryToken}`
+  );
+  await sendTemplateEmail({
+    email,
+    subject: 'Recover your Shortly link',
+    errorLabel: 'Link recovery email',
+    ctaUrl,
+    templateInput: {
+      preheader: 'Save your anonymous Shortly link to an account.',
+      headline: 'Recover your short link',
+      intro: `Sign in or create an account to claim ${shortUrl} and manage it from any device.`,
+      ctaLabel: 'Claim this link',
+      ctaUrl,
+      safetyNote:
+        "If you didn't request this email, you can safely ignore it. The short link will continue to work.",
+      expiryNote: 'This one-time recovery link expires in 24 hours.',
+      frontEndUrl: frontEndBase()
+    }
+  });
+};
+
 export async function dispatchVerificationForUser(user) {
   if (!isEmailServiceConfigured()) {
     return { sent: false, reason: 'email_not_configured' };
@@ -178,67 +206,3 @@ export async function dispatchPasswordResetForUser(user) {
   }
 }
 
-function getAbuseInboxEmail() {
-  return (
-    process.env.ABUSE_INBOX_EMAIL?.trim() ||
-    process.env.OPERATOR_EMAIL?.trim() ||
-    null
-  );
-}
-
-export async function notifyOperatorOfAbuseReport({ report, link }) {
-  const inbox = getAbuseInboxEmail();
-  if (!inbox) {
-    logger.warn('Abuse report stored but no ABUSE_INBOX_EMAIL/OPERATOR_EMAIL set', {
-      reportId: report._id.toString(),
-      slug: report.slug
-    });
-    return { sent: false, reason: 'inbox_not_configured' };
-  }
-
-  const linkStatus = !link
-    ? 'not found'
-    : link.retiredAt
-      ? 'already retired'
-      : 'active';
-  const reporterLine = report.reporterEmail
-    ? `Reporter email: ${report.reporterEmail}`
-    : 'Reporter email: not provided';
-
-  const text = [
-    'Shortly abuse report',
-    '',
-    `Slug: ${report.slug}`,
-    `Link status at submit: ${linkStatus}`,
-    reporterLine,
-    '',
-    'Reason:',
-    report.reason,
-    '',
-    `Report ID: ${report._id.toString()}`,
-    `Submitted: ${report.createdAt.toISOString()}`
-  ].join('\n');
-
-  const html = `<pre style="font-family:ui-monospace,monospace;white-space:pre-wrap">${text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')}</pre>`;
-
-  if (!isEmailServiceConfigured()) {
-    logger.warn('Abuse report stored but email service is not configured', {
-      reportId: report._id.toString(),
-      slug: report.slug,
-      inbox
-    });
-    return { sent: false, reason: 'email_not_configured' };
-  }
-
-  await sendTransactionalEmail({
-    to: inbox,
-    subject: `[Shortly abuse] ${report.slug}`,
-    html,
-    text
-  });
-
-  return { sent: true };
-}

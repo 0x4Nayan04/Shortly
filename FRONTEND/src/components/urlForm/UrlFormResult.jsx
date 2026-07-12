@@ -1,4 +1,8 @@
-import { Check, Copy, Share2 } from 'lucide-react';
+import { useState } from 'react';
+import { Check, Copy, Mail, Share2 } from 'lucide-react';
+import { emailAnonymousClaimRecovery } from '../../api/shortUrl.api';
+import { getApiErrorMessage } from '../../utils/axiosInstance';
+import { showToast } from '../../utils/showToast';
 
 const UrlFormResult = ({
   shortUrl,
@@ -8,8 +12,32 @@ const UrlFormResult = ({
   isCopied,
   onCopy,
   onShare,
+  createdLink,
   ref
 }) => {
+  const [email, setEmail] = useState('');
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+
+  const handleEmailRecovery = async (event) => {
+    event.preventDefault();
+    if (!email.trim() || !createdLink?.id || !createdLink?.manageToken) return;
+    setSending(true);
+    try {
+      await emailAnonymousClaimRecovery({
+        id: createdLink.id,
+        manageToken: createdLink.manageToken,
+        email: email.trim()
+      });
+      setSent(true);
+      showToast.success('Recovery email sent');
+    } catch (error) {
+      showToast.error(getApiErrorMessage(error, 'Could not send recovery email.'));
+    } finally {
+      setSending(false);
+    }
+  };
+
   return (
     <output
       ref={ref}
@@ -84,6 +112,44 @@ const UrlFormResult = ({
             </button>{' '}
             to track clicks and manage your links.
           </p>
+          {createdLink?.manageToken && (
+            <form onSubmit={handleEmailRecovery} className="mt-3 space-y-2">
+              <p className="text-sm text-muted-strong">
+                Save access for another device by emailing yourself a one-time
+                claim link.
+              </p>
+              {sent ? (
+                <p className="flex items-center gap-2 text-sm text-success" role="status">
+                  <Check className="size-4" aria-hidden="true" />
+                  Recovery email sent. The link expires in 24 hours.
+                </p>
+              ) : (
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <label htmlFor="recovery-email" className="sr-only">
+                    Email for link recovery
+                  </label>
+                  <input
+                    id="recovery-email"
+                    type="email"
+                    required
+                    autoComplete="email"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    placeholder="you@example.com"
+                    className="form-input min-w-0 flex-1"
+                  />
+                  <button
+                    type="submit"
+                    disabled={sending}
+                    className="sm-btn sm-btn-secondary shrink-0"
+                  >
+                    <Mail className="size-4" aria-hidden="true" />
+                    {sending ? 'Sending…' : 'Email claim link'}
+                  </button>
+                </div>
+              )}
+            </form>
+          )}
         </div>
       )}
     </output>

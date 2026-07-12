@@ -6,19 +6,14 @@ import helmet from 'helmet';
 import { errorHandler, AppError, NotFoundError } from './utils/errorHandler.js';
 import { isReservedSlug } from './constants/reservedSlugs.js';
 import { redirectFromShortUrl } from './controllers/shortUrl.controllers.js';
-import { getQrCode } from './controllers/qr.controller.js';
 import authRoutes from './routes/auth.routes.js';
-import abuseRoutes from './routes/abuse.routes.js';
-import adminAbuseRoutes from './routes/admin.abuse.routes.js';
 import shortUrlCreate from './routes/shortUrl.routes.js';
 import healthRoutes from './routes/health.routes.js';
-import { attachUser } from './utils/attachUser.js';
 import {
   validateEnvFormats,
   validateEnvironment
 } from './utils/validateEnv.js';
 import {
-  rateLimiter,
   memoryRateLimiter,
   keyGenerators
 } from './middleware/rateLimit.middleware.js';
@@ -26,22 +21,15 @@ import { requestIdMiddleware } from './middleware/requestId.middleware.js';
 import { latencyMiddleware } from './middleware/latency.middleware.js';
 import { csrfProtection } from './middleware/csrf.middleware.js';
 import {
-  validateParams,
-  validateQuery
+  validateParams
 } from './middleware/validation.middleware.js';
-import { shortUrlParamsSchema, qrQuerySchema } from './validation/schemas.js';
+import { shortUrlParamsSchema } from './validation/schemas.js';
 import { logger } from './utils/logger.js';
 
 const redirectLimiter = memoryRateLimiter({
   windowMs: 60 * 1000,
   max: 60,
   keyGenerator: keyGenerators.ipPerEndpoint('redirect')
-});
-
-const qrLimiter = rateLimiter({
-  windowMs: 60 * 1000,
-  max: 30,
-  keyGenerator: keyGenerators.ipPerEndpoint('qr')
 });
 
 export function createApp() {
@@ -162,25 +150,12 @@ export function createApp() {
   app.use(express.json({ limit: '16kb' }));
   app.use(cookieParser());
   app.use(csrfProtection);
-  app.use(attachUser);
 
   app.use('/api/health', healthRoutes);
 
   app.use('/api/create', shortUrlCreate);
 
   app.use('/api/auth', authRoutes);
-
-  app.use('/api/abuse', abuseRoutes);
-
-  app.use('/api/admin/abuse', adminAbuseRoutes);
-
-  const qrHandler = [
-    qrLimiter,
-    validateParams(shortUrlParamsSchema),
-    validateQuery(qrQuerySchema),
-    getQrCode
-  ];
-  app.get('/api/qr/:short_url', ...qrHandler);
 
   app.use('/api', (req, res) => {
     res.status(404).json({ success: false, message: 'API endpoint not found' });

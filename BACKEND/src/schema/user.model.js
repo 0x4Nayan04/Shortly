@@ -62,14 +62,6 @@ const userSchema = new mongoose.Schema(
       default: function () {
         return getGravatarUrl(this.email);
       }
-    },
-    acceptedTermsAt: {
-      type: Date,
-      default: null
-    },
-    termsVersion: {
-      type: String,
-      default: null
     }
   },
   {

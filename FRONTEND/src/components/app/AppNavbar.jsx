@@ -5,8 +5,6 @@ import { useFocusTrap } from '../Accessibility';
 import ShortlyLogo from '../ShortlyLogo';
 import { LandingFrameInner } from '../landing/LandingFrameInner';
 import UserDropdown from './UserDropdown';
-import { ROUTES } from '../../constants/routes';
-import { isAdminUser } from '../../utils/isAdmin';
 
 const GuestNav = ({ pathname, onRegister, onLogin }) => {
   if (pathname === '/login') {
@@ -103,11 +101,6 @@ const AppNavbar = memo(() => {
     closeDropdown();
   }, [navigate, closeDropdown]);
 
-  const handleNavigateAbuseQueue = useCallback(() => {
-    navigate(ROUTES.ADMIN_ABUSE);
-    closeDropdown();
-  }, [navigate, closeDropdown]);
-
   const handleLogoutClick = useCallback(() => {
     logout();
     closeDropdown();
@@ -143,7 +136,6 @@ const AppNavbar = memo(() => {
               <div ref={dropdownRef}>
                 <UserDropdown
                   user={user}
-                  isAdmin={isAdminUser(user.email)}
                   isDropdownOpen={isDropdownOpen}
                   setIsDropdownOpen={setIsDropdownOpen}
                   dropdownButtonRef={dropdownButtonRef}
@@ -153,7 +145,6 @@ const AppNavbar = memo(() => {
                   handleNavigateDashboard={handleNavigateDashboard}
                   handleShowProfileClick={handleShowProfileClick}
                   handleNavigateSettings={handleNavigateSettings}
-                  handleNavigateAbuseQueue={handleNavigateAbuseQueue}
                   handleLogoutClick={handleLogoutClick}
                 />
               </div>

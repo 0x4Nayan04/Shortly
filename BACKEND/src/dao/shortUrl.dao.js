@@ -14,7 +14,9 @@ const tombstoneUpdate = (retiredAt = new Date()) => ({
     full_url: 1,
     canonical_url: 1,
     user: 1,
-    manage_token: 1
+    manage_token: 1,
+    claim_recovery_token: 1,
+    claim_recovery_expires: 1
   }
 });
 
@@ -90,6 +92,40 @@ export const findAnonymousByIdAndToken = async (id, manage_token) =>
       user: null,
       ...ACTIVE_LINK_FILTER,
       manage_token
+    })
+    .select('_id short_url canonical_url')
+    .lean();
+
+export const setAnonymousClaimRecoveryToken = async (
+  id,
+  manage_token,
+  claim_recovery_token,
+  claim_recovery_expires
+) =>
+  short_urlModel.updateOne(
+    { _id: id, user: null, manage_token, ...ACTIVE_LINK_FILTER },
+    { $set: { claim_recovery_token, claim_recovery_expires } }
+  );
+
+export const clearAnonymousClaimRecoveryToken = async (
+  id,
+  claim_recovery_token
+) =>
+  short_urlModel.updateOne(
+    { _id: id, user: null, claim_recovery_token, ...ACTIVE_LINK_FILTER },
+    { $unset: { claim_recovery_token: 1, claim_recovery_expires: 1 } }
+  );
+
+export const findAnonymousByRecoveryToken = async (
+  claim_recovery_token,
+  now = new Date()
+) =>
+  short_urlModel
+    .findOne({
+      user: null,
+      claim_recovery_token,
+      claim_recovery_expires: { $gt: now },
+      ...ACTIVE_LINK_FILTER
     })
     .select('_id short_url canonical_url')
     .lean();
@@ -209,6 +245,38 @@ export const claimAnonymousLink = async (id, manage_token, userId, session) =>
     .findOneAndUpdate(
       { _id: id, user: null, manage_token, ...ACTIVE_LINK_FILTER },
       { $set: { user: userId }, $unset: { manage_token: 1 } },
+      {
+        session,
+        new: true,
+        projection: { _id: 1, short_url: 1, canonical_url: 1 }
+      }
+    )
+    .lean();
+
+export const claimAnonymousLinkByRecoveryToken = async (
+  id,
+  claim_recovery_token,
+  userId,
+  session,
+  now = new Date()
+) =>
+  short_urlModel
+    .findOneAndUpdate(
+      {
+        _id: id,
+        user: null,
+        claim_recovery_token,
+        claim_recovery_expires: { $gt: now },
+        ...ACTIVE_LINK_FILTER
+      },
+      {
+        $set: { user: userId },
+        $unset: {
+          manage_token: 1,
+          claim_recovery_token: 1,
+          claim_recovery_expires: 1
+        }
+      },
       {
         session,
         new: true,

@@ -12,7 +12,6 @@ process.env.PUBLIC_BASE_URL = 'http://127.0.0.1:3001';
 process.env.PORT = '3011';
 process.env.ALLOWED_ORIGINS = 'http://localhost:5173';
 process.env.TRUST_PROXY = '0';
-process.env.ADMIN_EMAILS = 'e2e-admin@example.com';
 
 const replSet = await MongoMemoryReplSet.create({
   replSet: { count: 1, storageEngine: 'wiredTiger' }
@@ -24,15 +23,13 @@ const { default: ShortUrl } = await import('../src/schema/shortUrl.model.js');
 const { default: Click } = await import('../src/schema/click.model.js');
 const { default: User } = await import('../src/schema/user.model.js');
 const { default: RateLimit } = await import('../src/schema/rateLimit.model.js');
-const { default: AbuseReport } = await import('../src/schema/abuseReport.model.js');
 
 await mongoose.connect(process.env.MONGODB_URI);
 await Promise.all([
   ShortUrl.syncIndexes(),
   Click.syncIndexes(),
   User.syncIndexes(),
-  RateLimit.syncIndexes(),
-  AbuseReport.syncIndexes()
+  RateLimit.syncIndexes()
 ]);
 
 const app = createApp();

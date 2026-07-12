@@ -1,2 +1,0 @@
-/** Version string stored on user records when terms are accepted at registration. */
-export const CURRENT_TERMS_VERSION = '2026-07';

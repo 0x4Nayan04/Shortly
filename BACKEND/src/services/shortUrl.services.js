@@ -36,6 +36,10 @@ import {
 } from './shortUrl/persistShortUrl.js';
 export { claimAnonymousLinksService } from './shortUrl/claimAnonymousLinks.js';
 export {
+  emailAnonymousClaimRecoveryService,
+  redeemAnonymousClaimRecoveryService
+} from './shortUrl/claimRecovery.js';
+export {
   getShortUrlService,
   resolveRedirectTargetService
 } from './shortUrl/redirect.js';

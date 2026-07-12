@@ -38,6 +38,14 @@ const shortUrlSchema = mongoose.Schema(
       type: String,
       select: false
     },
+    claim_recovery_token: {
+      type: String,
+      select: false
+    },
+    claim_recovery_expires: {
+      type: Date,
+      select: false
+    },
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
@@ -63,6 +71,7 @@ shortUrlSchema.index(
 );
 shortUrlSchema.index({ user: 1, click: -1 });
 shortUrlSchema.index({ short_url: 1 }, { unique: true });
+shortUrlSchema.index({ claim_recovery_token: 1 }, { sparse: true });
 
 const short_urlModel = mongoose.model('ShortUrl', shortUrlSchema);
 

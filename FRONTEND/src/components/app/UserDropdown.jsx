@@ -1,6 +1,5 @@
 import {
   ChevronDown,
-  Flag,
   LayoutDashboard,
   LogOut,
   Settings,
@@ -21,7 +20,6 @@ const NavUserAvatar = ({ user }) => (
 
 const UserDropdown = ({
   user,
-  isAdmin = false,
   isDropdownOpen,
   setIsDropdownOpen,
   dropdownButtonRef,
@@ -31,7 +29,6 @@ const UserDropdown = ({
   handleNavigateDashboard,
   handleShowProfileClick,
   handleNavigateSettings,
-  handleNavigateAbuseQueue,
   handleLogoutClick
 }) => {
   const accountLabel = user?.name || user?.email || 'Account';
@@ -121,18 +118,6 @@ const UserDropdown = ({
               <Settings className="nav-user-menu-row-icon" aria-hidden="true" />
               <span className="nav-user-menu-row-label">Settings</span>
             </button>
-            {isAdmin ? (
-              <button
-                type="button"
-                onClick={handleNavigateAbuseQueue}
-                role="menuitem"
-                tabIndex={0}
-                className="nav-user-menu-row"
-              >
-                <Flag className="nav-user-menu-row-icon" aria-hidden="true" />
-                <span className="nav-user-menu-row-label">Abuse queue</span>
-              </button>
-            ) : null}
           </div>
 
           <div className="nav-user-menu-footer" aria-label="Session">

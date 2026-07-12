@@ -177,9 +177,9 @@ const privacyPolicySections = [
         text: 'This page is updated when collection, retention, or sharing practices change. The last-updated date at the top reflects the latest revision.'
       },
       {
-        id: 'abuse',
+        id: 'link-safety',
         icon: Shield,
-        text: 'Abuse reports stored by operators may include an optional reporter email, reported slug, and description to investigate malicious links.'
+        text: 'Shortly blocks private and loopback redirect destinations when links are saved. Visitor IP addresses are used only at request time to derive country and are not stored.'
       },
       {
         id: 'children',

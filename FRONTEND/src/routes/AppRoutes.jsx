@@ -3,7 +3,6 @@ import { Route, Routes } from 'react-router-dom';
 import { ROUTES } from '../constants/routes';
 import GuestOnlyLayout from '../layouts/GuestOnlyLayout';
 import ProtectedLayout from '../layouts/ProtectedLayout';
-import AdminLayout from '../layouts/AdminLayout';
 import AuthPageLayout from '../layouts/AuthPageLayout';
 import CatalogPageLoader from '../layouts/CatalogPageLoader';
 import { AUTH_PAGE_HANDLES } from './authPageHandles';
@@ -19,8 +18,8 @@ const LandingPage = lazy(() => import('../components/LandingPage'));
 const Dashboard = lazy(() => import('../components/Dashboard'));
 const AccountSettings = lazy(() => import('../components/AccountSettings'));
 const PrivacyPage = lazy(() => import('../components/PrivacyPage'));
-const AbuseAdminPage = lazy(() => import('../components/admin/AbuseAdminPage'));
 const NotFound = lazy(() => import('../components/NotFound'));
+const ClaimLinkPage = lazy(() => import('../components/ClaimLinkPage'));
 
 const AppRoutes = () => (
   <Suspense fallback={<CatalogPageLoader message="Loading page…" />}>
@@ -60,10 +59,7 @@ const AppRoutes = () => (
       <Route element={<ProtectedLayout />}>
         <Route path={ROUTES.DASHBOARD} element={<Dashboard />} />
         <Route path={ROUTES.SETTINGS} element={<AccountSettings />} />
-      </Route>
-
-      <Route element={<AdminLayout />}>
-        <Route path={ROUTES.ADMIN_ABUSE} element={<AbuseAdminPage />} />
+        <Route path={`${ROUTES.CLAIM_LINK}/:token`} element={<ClaimLinkPage />} />
       </Route>
 
       <Route path={ROUTES.PRIVACY} element={<PrivacyPage />} />
