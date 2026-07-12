@@ -129,9 +129,7 @@ const UserDropdown = ({
               className="nav-user-menu-row nav-user-menu-row--danger"
             >
               <LogOut className="nav-user-menu-row-icon" aria-hidden="true" />
-              <span className="nav-user-menu-row-label">
-                Sign out everywhere
-              </span>
+              <span className="nav-user-menu-row-label">Sign out</span>
             </button>
           </div>
         </div>

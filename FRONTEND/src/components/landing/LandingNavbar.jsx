@@ -107,7 +107,7 @@ const LandingNavbarContent = memo(() => {
                   className="sm-btn sm-btn-secondary hidden sm:inline-flex items-center gap-1.5"
                 >
                   <LogOut className="size-3.5" aria-hidden="true" />
-                  <span>Sign out everywhere</span>
+                  <span>Sign out</span>
                 </button>
               </>
             ) : (
@@ -202,7 +202,7 @@ const LandingNavbarContent = memo(() => {
                     className="sm-btn sm-btn-secondary w-full inline-flex items-center justify-center gap-1.5"
                   >
                     <LogOut className="size-3.5" aria-hidden="true" />
-                    <span>Sign out everywhere</span>
+                    <span>Sign out</span>
                   </button>
                 </>
               ) : (

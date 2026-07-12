@@ -124,7 +124,7 @@ const UrlFormResult = ({
                   Recovery email sent. The link expires in 24 hours.
                 </p>
               ) : (
-                <div className="flex flex-col gap-2 sm:flex-row">
+                <div className="short-link-result__recovery">
                   <label htmlFor="recovery-email" className="sr-only">
                     Email for link recovery
                   </label>
@@ -136,12 +136,12 @@ const UrlFormResult = ({
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
                     placeholder="you@example.com"
-                    className="form-input min-w-0 flex-1"
+                    className="sm-input short-link-result__recovery-input"
                   />
                   <button
                     type="submit"
                     disabled={sending}
-                    className="sm-btn sm-btn-secondary shrink-0"
+                    className="sm-btn sm-btn-secondary short-link-result__recovery-submit"
                   >
                     <Mail className="size-4" aria-hidden="true" />
                     {sending ? 'Sending…' : 'Email claim link'}

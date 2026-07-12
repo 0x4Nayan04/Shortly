@@ -137,10 +137,9 @@ export function AuthProvider({ children }) {
 
   const logout = useCallback(async () => {
     const confirmed = await confirmLogout.confirm({
-      title: 'Sign out everywhere',
-      message:
-        'This signs you out on this device and any other devices using your account. You will need to sign in again to manage your links.',
-      confirmLabel: 'Sign out everywhere',
+      title: 'Sign out',
+      message: 'You will need to sign in again to manage your links.',
+      confirmLabel: 'Sign out',
       cancelLabel: 'Cancel',
       variant: 'danger'
     });
@@ -151,10 +150,10 @@ export function AuthProvider({ children }) {
       .then(() => true)
       .catch(() => false);
     if (loggedOut) {
-      showToast.success('You have been signed out everywhere.');
+      showToast.success('You have been signed out.');
     }
     clearAuthSessionUser();
-    announce('You have been signed out everywhere.');
+    announce('You have been signed out.');
     navigate(ROUTES.HOME);
   }, [navigate, announce, confirmLogout]);
 
