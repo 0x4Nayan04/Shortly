@@ -1,5 +1,11 @@
 /* eslint-disable react-refresh/only-export-components */
-import { useEffect, useRef, useCallback, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState
+} from 'react';
 
 export const SkipLink = ({
   targetId = 'main-content',
@@ -53,7 +59,10 @@ export const useFocusTrap = (isActive, options = {}) => {
   const onEscapeRef = useRef(null);
 
   const { onEscape, restoreFocus = true } = options;
-  onEscapeRef.current = onEscape;
+
+  useLayoutEffect(() => {
+    onEscapeRef.current = onEscape;
+  }, [onEscape]);
 
   useEffect(() => {
     if (!isActive || !containerRef.current) return;

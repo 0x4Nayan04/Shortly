@@ -46,7 +46,6 @@ const AbuseAdminPage = () => {
   const [error, setError] = useState('');
   const [statusFilter, setStatusFilter] = useState('pending');
   const [selectedId, setSelectedId] = useState(null);
-  const [detail, setDetail] = useState(null);
   const [reviewNotes, setReviewNotes] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
 
@@ -70,11 +69,8 @@ const AbuseAdminPage = () => {
     loadReports();
   }, [loadReports]);
 
-  useEffect(() => {
-    const selected = reports.find((report) => report._id === selectedId);
-    setDetail(selected ?? null);
-    setReviewNotes(selected?.reviewNotes ?? '');
-  }, [reports, selectedId]);
+  const detail =
+    reports.find((report) => report._id === selectedId) ?? null;
 
   const handleStatusChange = async (status) => {
     if (!selectedId) return;
@@ -174,7 +170,10 @@ const AbuseAdminPage = () => {
                     <li key={report._id}>
                       <button
                         type="button"
-                        onClick={() => setSelectedId(report._id)}
+                        onClick={() => {
+                          setSelectedId(report._id);
+                          setReviewNotes(report.reviewNotes ?? '');
+                        }}
                         className={`w-full px-4 py-4 text-left transition-colors hover:bg-[var(--color-surface-muted)] ${
                           selectedId === report._id
                             ? 'bg-[var(--color-surface-muted)]'

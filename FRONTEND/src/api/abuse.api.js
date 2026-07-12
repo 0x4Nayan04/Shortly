@@ -1,14 +1,5 @@
 import axiosinstance from '../utils/axiosInstance';
 
-export const submitAbuseReport = async ({ slug, reason, reporterEmail }) => {
-  const { data } = await axiosinstance.post('/api/abuse/report', {
-    slug,
-    reason,
-    reporterEmail: reporterEmail || undefined
-  });
-  return data;
-};
-
 export const fetchAbuseReports = async ({
   status,
   limit = 20,
@@ -22,11 +13,6 @@ export const fetchAbuseReports = async ({
   const { data } = await axiosinstance.get(
     `/api/admin/abuse/reports?${params.toString()}`
   );
-  return data;
-};
-
-export const fetchAbuseReport = async (id) => {
-  const { data } = await axiosinstance.get(`/api/admin/abuse/reports/${id}`);
   return data;
 };
 

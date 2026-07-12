@@ -1,4 +1,11 @@
-import { memo, useCallback, useEffect, useRef, useState } from 'react';
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState
+} from 'react';
 import { createPortal } from 'react-dom';
 import { Check, Copy, Loader2, QrCode, Share2, X } from 'lucide-react';
 import { FaWhatsapp, FaXTwitter } from 'react-icons/fa6';
@@ -45,7 +52,10 @@ const ShareModal = memo(({ isOpen, onClose, shortUrl, fullUrl }) => {
   useBodyScrollLock(isOpen);
 
   const onCloseRef = useRef(onClose);
-  onCloseRef.current = onClose;
+
+  useLayoutEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   useEffect(() => {
     const handleEscape = (e) => {

@@ -1,5 +1,12 @@
 /* eslint-disable react-refresh/only-export-components */
-import { memo, useCallback, useEffect, useRef, useState } from 'react';
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState
+} from 'react';
 import { createPortal } from 'react-dom';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 
@@ -57,8 +64,11 @@ export const ConfirmDialog = memo(
     const dialogRef = useRef(null);
     const onCancelRef = useRef(onCancel);
     const onConfirmRef = useRef(onConfirm);
-    onCancelRef.current = onCancel;
-    onConfirmRef.current = onConfirm;
+
+    useLayoutEffect(() => {
+      onCancelRef.current = onCancel;
+      onConfirmRef.current = onConfirm;
+    }, [onCancel, onConfirm]);
 
     useBodyScrollLock(isOpen);
 

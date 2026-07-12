@@ -6,7 +6,9 @@ export const isAdminUser = (email) => {
   const normalized = String(email).trim().toLowerCase();
   return raw
     .split(',')
-    .map((entry) => entry.trim().toLowerCase())
-    .filter(Boolean)
+    .flatMap((entry) => {
+      const adminEmail = entry.trim().toLowerCase();
+      return adminEmail ? [adminEmail] : [];
+    })
     .includes(normalized);
 };

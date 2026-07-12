@@ -92,12 +92,14 @@ const SortSelect = memo(({ value, onChange, options, disabled, id, label }) => {
 
   const onTriggerClick = useCallback(() => {
     if (disabled) return;
-    setOpen((prev) => {
-      const nextOpen = !prev;
-      setFocusIdx(nextOpen ? (selectedIdx >= 0 ? selectedIdx : 0) : -1);
-      return nextOpen;
-    });
-  }, [disabled, selectedIdx]);
+    if (open) {
+      setOpen(false);
+      setFocusIdx(-1);
+    } else {
+      setOpen(true);
+      setFocusIdx(selectedIdx >= 0 ? selectedIdx : 0);
+    }
+  }, [disabled, open, selectedIdx]);
 
   return (
     <section ref={containerRef} className="sort-select">
