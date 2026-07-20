@@ -36,23 +36,26 @@
 
 **Short links**
 
-- Shorten URLs as a guest — no account required
-- Custom aliases (3–20 chars)
+- Shorten URLs as a guest — no account required (random 7-char slug)
+- Custom aliases (3–20 chars, `[a-z0-9_-]`) when signed in
+- Edit destination or alias; disable / enable without deleting
 - Sign in to claim guest links into your dashboard automatically
 - Email a one-time claim link to recover guest links on another device
+- Authenticated same-destination reuse (returns the existing link instead of creating a duplicate)
 
 **Analytics & dashboard**
 
-- Click analytics: clicks over time, top countries, device, browser, OS (loaded only on `/dashboard`)
+- Click analytics: lifetime totals, range charts, top countries / devices / browsers / OS / referrers, top URLs (loaded only on `/dashboard`)
 - Dashboard with prefix search, sort, pagination, bulk delete, QR codes
 - Client server-state via TanStack Query; bounded process-local caches on the API for stats and auth-user reads
 
 **Account & trust**
 
-- Account settings: profile name, password, account deletion
-- Email verification and password reset (Resend)
+- Account settings: profile name, password (min 12 chars), account deletion
+- Email verification and password reset (Resend — required in production)
 - In-app privacy policy at `/privacy`
 - Tiered per-endpoint rate limiting
+- Health checks at `/api/health`, `/api/ready`, `/api/live`
 
 ## Tech stack
 
@@ -84,7 +87,7 @@ Open [http://127.0.0.1:5173](http://127.0.0.1:5173).
 
 > **MongoDB:** Click analytics use transactions, so the database must be a replica set (Atlas works). A standalone local MongoDB will still redirect, but click recording may fail.
 >
-> **Email:** `RESEND_API_KEY` is optional in dev. Without it, registration auto-verifies and logs the user in immediately.
+> **Email:** `RESEND_API_KEY` is optional in development. Without it, registration auto-verifies the account; the user still signs in on the login form (no session cookie is set at register).
 
 ## Environment variables
 
@@ -100,15 +103,16 @@ PORT=3001
 NODE_ENV=development
 ```
 
-Optional — see [BACKEND/.env.example](./BACKEND/.env.example) for the full list:
+Optional / production — see [BACKEND/.env.example](./BACKEND/.env.example) for the full list:
 
 | Variable | Purpose |
 | -------- | ------- |
-| `PUBLIC_BASE_URL` | Public URL for short links / QR codes |
+| `PUBLIC_BASE_URL` | Public URL for short links / QR codes (**required in production**) |
 | `ALLOWED_ORIGINS` | Extra CORS origins (production) |
-| `TRUST_PROXY` | Express proxy hop count (required in production) |
+| `TRUST_PROXY` | Express proxy hop count (**required in production**) |
+| `COOKIE_SAME_SITE` | `lax` (default), `strict`, or `none` for intentional cross-site cookies |
 | `MAX_LINKS_PER_USER` | Per-user link cap (default 1000) |
-| `RESEND_API_KEY`, `RESEND_FROM_EMAIL` | Transactional email |
+| `RESEND_API_KEY`, `RESEND_FROM_EMAIL` | Transactional email (**required in production**) |
 | `EMAIL_ASSET_BASE_URL` | Frontend URL for email images |
 | `OPERATIONS_ALERT_WEBHOOK_URL` | Webhook for operational alerts |
 
@@ -121,9 +125,10 @@ Development:
 VITE_APP_URL=
 VITE_PUBLIC_SHORT_URL=http://127.0.0.1:5173
 VITE_BACKEND_DEV_URL=http://127.0.0.1:3001
+SHORT_LINK_PROXY_ORIGIN=
 ```
 
-Production — set `VITE_APP_URL` to your API origin and `VITE_PUBLIC_SHORT_URL` to your public short-link host. See [FRONTEND/.env.example](./FRONTEND/.env.example).
+Production — set `VITE_APP_URL` to your API origin (required for `vite build`), `VITE_PUBLIC_SHORT_URL` to your public short-link host, and optionally `SHORT_LINK_PROXY_ORIGIN` when the rewrite target differs from `VITE_APP_URL`. See [FRONTEND/.env.example](./FRONTEND/.env.example).
 
 ## Production (Vercel)
 
@@ -149,7 +154,7 @@ npm run smoke:routing --prefix FRONTEND your-slug
 
 ### SEO & security headers
 
-The generated `vercel.json` includes `Strict-Transport-Security`, `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`, and a report-only CSP.
+The generated `vercel.json` includes `Strict-Transport-Security`, `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`, `X-DNS-Prefetch-Control`, and a report-only CSP.
 
 Crawlers requesting `/` or `/privacy` receive route-specific Open Graph metadata via Vercel Edge Middleware ([`FRONTEND/middleware.js`](./FRONTEND/middleware.js)) and the build-time SEO shells.
 
@@ -167,10 +172,10 @@ Crawlers requesting `/` or `/privacy` receive route-specific Open Graph metadata
 FRONTEND/      React 19 + Vite SPA (TanStack Query for dashboard server-state)
 BACKEND/       Express 5 API
   src/
-    routes/        REST endpoints
+    routes/        REST endpoints (auth, shortUrl, health)
     controllers/   request handling
     services/      business logic
-      shortUrl/    persist, redirect, claim, capacity, stats cache
+      shortUrl/    persist, redirect, claim, claim recovery
       auth, account, analytics, email, click, …
     dao/           Mongo access layer (active-link scoped click facets)
     schema/        User, ShortUrl, Click, RateLimit
@@ -179,7 +184,7 @@ BACKEND/       Express 5 API
     utils/         authToken (+ auth-user cache), slug/url helpers, mongoTransaction
 ```
 
-`GET /api/auth/me` returns `Cache-Control: no-store` (HTTP) and reuses the user already resolved by auth middleware when present — no duplicate Mongo profile read on that path. Process-local auth-user / stats caches are separate from HTTP caching (see [Design tradeoffs](#design-tradeoffs)).
+`GET /api/auth/me` returns `Cache-Control: no-store` (HTTP) and reuses the user already resolved by auth middleware when present — no duplicate Mongo profile read on that path. Process-local auth-user / stats caches live in the auth-token util and `shortUrl.services.js` (separate from HTTP caching; see [Design tradeoffs](#design-tradeoffs)).
 
 ### Routes
 
@@ -188,7 +193,7 @@ BACKEND/       Express 5 API
 | `/` | Public | Landing |
 | `/login`, `/register`, `/verify-email/:token`, `/forgot-password`, `/reset-password/:token` | Guest | Auth |
 | `/dashboard`, `/settings` | Signed in | Dashboard, account settings |
-| `/claim-link/:token` | Signed in | Guest email claim recovery |
+| `/claim-link/:token` | Signed in | Guest email claim recovery (`POST /api/create/claim/redeem`) |
 | `/privacy` | Public | Privacy policy |
 | `/:short_url` | Public | Proxied redirect (dev: Vite → backend) |
 
@@ -198,14 +203,15 @@ BACKEND/       Express 5 API
 | ---- | ----- |
 | `api/` | Axios clients |
 | `contexts/` | `authSessionStore`, `AuthContext` (session bootstrap) |
-| `hooks/` | `useDashboardList`, `useUrlStats` (TanStack Query), mutations, form controllers |
+| `hooks/` | `useDashboardList` (15s stale), `useUrlStats` (30s stale), `useDashboardMutations`, form controllers |
+| `layouts/` | `GuestOnlyLayout`, `ProtectedLayout`, `AuthPageLayout`, … |
 | `components/` | `app/`, `dashboard/`, `settings/`, `landing/`, `urlForm/`, `ux/`, … |
 | `styles/domains/` | Design tokens; run `npm run css:check` after CSS edits |
 | `public/assets/` | Brand mark/nav as committed WebP |
 
-**Session:** Bootstrap via `GET /api/auth/me`; profile saves call `PATCH /api/auth/me`, then `updateUser` + `refreshUser`.
+**Session:** Bootstrap via `GET /api/auth/me`; profile saves call `PATCH /api/auth/me`, then `updateUser` + `refreshUser`. Stats queries run only on `/dashboard`.
 
-**API responses:** Axios flattens `{ success, message, data: { … } }`. Use `getApiPayload`, `getApiUser`, `getApiMessage`, `getApiErrorMessage` from `FRONTEND/src/utils/axiosInstance.js`.
+**API responses:** Axios flattens `{ success, message, data: { … } }` via `mergeApiEnvelope`. Use `getApiPayload` and `getApiErrorMessage` from `FRONTEND/src/utils/axiosInstance.js`.
 
 ## Design tradeoffs
 
@@ -278,7 +284,7 @@ Stats responses and authenticated-user resolution use process-local `Map`s (30s 
 
 **Tradeoff:** Click-driven dashboard totals may lag up to the TTL; caches are **per Node process** (same class of caveat as the in-memory redirect rate limiter). No Redis dependency for a solo portfolio deploy.
 
-Frontend TanStack Query uses a matching ~30s `staleTime` and only fetches stats on `/dashboard`.
+Frontend TanStack Query uses ~30s `staleTime` by default and for stats; the dashboard list uses **15s**. Stats fetch only on `/dashboard`.
 
 </details>
 
@@ -293,11 +299,12 @@ List search uses case-sensitive **prefix** matching on `short_url` / `full_url` 
 
 ## Security
 
-- bcrypt password hashing; JWT in HTTP-only cookies with `tokenVersion` (invalidated on password change / logout)
-- Email verification gate when Resend is configured
+- bcrypt password hashing; JWT in HTTP-only cookies (~24h) with `tokenVersion` (invalidated on password change / logout)
+- Email verification gate when Resend is configured (required in production)
 - Joi validation on every input; CSRF checks on cookie-backed writes
 - CORS with explicit origin allowlist (`FRONT_END_URL` + `ALLOWED_ORIGINS`)
 - Per-endpoint rate limits, reserved-slug protection, redirect URL validation
+- Guest manage tokens stored hashed; raw token returned only at create time
 - Helmet, gzip, request IDs, latency tracking, graceful shutdown
 - Profile HTTP responses use `Cache-Control: no-store` on `/api/auth/me`; auth-user cache is invalidated on logout, profile, password, and account mutations
 
@@ -324,6 +331,7 @@ npm run test:all && npm run test:e2e
 | ------- | ----------- |
 | `npm run install:all` | Install backend + frontend dependencies |
 | `npm run dev:backend` | Start API with nodemon |
+| `npm run start:backend` | Start API (production entry) |
 | `npm run dev:frontend` | Start Vite dev server |
 | `npm run build:frontend` | Production frontend build (`VITE_APP_URL` required) |
 | `npm run lint:frontend` | ESLint (frontend) |
@@ -335,6 +343,8 @@ npm run test:all && npm run test:e2e
 | `npm run test:all` | Backend + frontend unit tests |
 | `npm run format` | Prettier — format tracked source/docs |
 | `npm run format:check` | Prettier — verify formatting (CI-friendly) |
+
+From `FRONTEND/`: `npm run generate:vercel`, `npm run smoke:routing`, `npm run doctor`, `npm run check`.
 
 ## License
 
