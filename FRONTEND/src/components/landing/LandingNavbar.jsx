@@ -1,7 +1,7 @@
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowRight, LogOut, Menu, X } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuthSession } from '../../contexts/AuthContext';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 import { useFocusTrap } from '../Accessibility';
 import ShortlyLogo from '../ShortlyLogo';
@@ -11,7 +11,7 @@ import { LandingFrameInner } from './LandingFrameInner';
 const NAV_LINKS = [...LANDING_SECTION_LINKS, ...LANDING_INFO_LINKS];
 
 const LandingNavbarContent = memo(() => {
-  const { user, logout } = useAuth();
+  const { user, logout } = useAuthSession();
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const menuButtonRef = useRef(null);

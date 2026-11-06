@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { LANDING_SECTION_LINKS, LANDING_INFO_LINKS } from '../../constants/landingNav';
 import { ROUTES } from '../../constants/routes';
 import { SOCIAL_LINKS } from '../../constants/social';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuthSession } from '../../contexts/AuthContext';
 import ShortlyLogo from '../ShortlyLogo';
 import { XBrandIcon } from '../ShareBrandIcons';
 import { LandingFrameInner } from './LandingFrameInner';
@@ -68,7 +68,7 @@ function GitHubBrandIcon({ className, ...props }) {
 }
 
 const LandingFooter = () => {
-  const { user } = useAuth();
+  const { user } = useAuthSession();
   const footerLinks = getFooterLinks(user);
 
   return (

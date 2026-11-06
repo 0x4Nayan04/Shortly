@@ -1,5 +1,5 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuthSession } from '../contexts/AuthContext';
 import { ROUTES } from '../constants/routes';
 import {
   LandingFrameInner,
@@ -29,7 +29,7 @@ const AuthUnavailableState = ({ message, onRetry }) => (
 );
 
 const ProtectedLayout = () => {
-  const { user, authChecked, authError, retryAuthCheck } = useAuth();
+  const { user, authChecked, authError, retryAuthCheck } = useAuthSession();
   const location = useLocation();
 
   if (!authChecked) {

@@ -1,6 +1,6 @@
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuthSession } from '../../contexts/AuthContext';
 import { useFocusTrap } from '../Accessibility';
 import ShortlyLogo from '../ShortlyLogo';
 import { LandingFrameInner } from '../landing/LandingFrameInner';
@@ -48,7 +48,7 @@ const GuestNav = ({ pathname, onRegister, onLogin }) => {
 };
 
 const AppNavbar = memo(() => {
-  const { user, logout, openRegister, openProfile } = useAuth();
+  const { user, logout, openRegister, openProfile } = useAuthSession();
   const navigate = useNavigate();
   const { pathname } = useLocation();
 

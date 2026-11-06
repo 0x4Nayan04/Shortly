@@ -1,6 +1,6 @@
 import { lazy, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuthSession } from '../contexts/AuthContext';
 import { getSafeReturnPath, ROUTES } from '../constants/routes';
 
 const LoginForm = lazy(() => import('../components/LoginForm'));
@@ -12,7 +12,7 @@ const VerifyEmail = lazy(() => import('../components/VerifyEmail'));
 export function LoginRoute() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { login } = useAuth();
+  const { login } = useAuthSession();
   const returnTo = getSafeReturnPath(searchParams.get('returnTo'));
   const returnQuery = returnTo
     ? `?returnTo=${encodeURIComponent(returnTo)}`

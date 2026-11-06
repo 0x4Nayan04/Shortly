@@ -13,7 +13,7 @@ import {
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useUrlStats } from '../hooks/useUrlStats';
 import { getCurrentUser, logoutUser } from '../api/user.api';
-import { useAnnouncement } from '../components/Accessibility';
+import { LiveRegion, useAnnouncement } from '../components/Accessibility';
 import { ConfirmDialog, useConfirmDialog } from '../components/UxEnhancements';
 import { showToast } from '../utils/showToast';
 import { ROUTES } from '../constants/routes';
@@ -34,7 +34,8 @@ const UserProfileModal = lazy(() => import('../components/UserProfileModal'));
 const PROFILE_LOAD_ERROR =
   'Signed in but could not load your profile. Please try again.';
 
-const AuthContext = createContext(null);
+const AuthSessionContext = createContext(null);
+const AuthStatsContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const { user, authChecked, authError } = useSyncExternalStore(
@@ -165,14 +166,11 @@ export function AuthProvider({ children }) {
 
   const closeProfile = useCallback(() => setShowProfileModal(false), []);
 
-  const value = useMemo(
+  const sessionValue = useMemo(
     () => ({
       user,
       authChecked,
       authError,
-      stats,
-      statsLoading,
-      refetchStats,
       login,
       logout,
       updateUser,
@@ -182,16 +180,12 @@ export function AuthProvider({ children }) {
       openLogin,
       openRegister,
       openProfile,
-      closeProfile,
-      announcement
+      closeProfile
     }),
     [
       user,
       authChecked,
       authError,
-      stats,
-      statsLoading,
-      refetchStats,
       login,
       logout,
       updateUser,
@@ -201,33 +195,56 @@ export function AuthProvider({ children }) {
       openLogin,
       openRegister,
       openProfile,
-      closeProfile,
-      announcement
+      closeProfile
     ]
   );
 
+  const statsValue = useMemo(
+    () => ({
+      stats,
+      statsLoading,
+      refetchStats
+    }),
+    [stats, statsLoading, refetchStats]
+  );
+
   return (
-    <AuthContext.Provider value={value}>
-      {children}
-      <ConfirmDialog {...confirmLogout} />
-      {user && showProfileModal && (
-        <Suspense fallback={null}>
-          <UserProfileModal
-            isOpen={showProfileModal}
-            onClose={closeProfile}
-            user={user}
-            userStats={stats?.stats}
-          />
-        </Suspense>
-      )}
-    </AuthContext.Provider>
+    <AuthSessionContext.Provider value={sessionValue}>
+      <AuthStatsContext.Provider value={statsValue}>
+        {children}
+        <LiveRegion message={announcement} politeness="polite" />
+        <ConfirmDialog {...confirmLogout} />
+        {user && showProfileModal && (
+          <Suspense fallback={null}>
+            <UserProfileModal
+              isOpen={showProfileModal}
+              onClose={closeProfile}
+              user={user}
+              userStats={stats?.stats}
+            />
+          </Suspense>
+        )}
+      </AuthStatsContext.Provider>
+    </AuthSessionContext.Provider>
   );
 }
 
-export function useAuth() {
-  const context = use(AuthContext);
+export function useAuthSession() {
+  const context = use(AuthSessionContext);
   if (!context) {
-    throw new Error('useAuth must be used within AuthProvider');
+    throw new Error('useAuthSession must be used within AuthProvider');
   }
   return context;
+}
+
+export function useAuthStats() {
+  const context = use(AuthStatsContext);
+  if (!context) {
+    throw new Error('useAuthStats must be used within AuthProvider');
+  }
+  return context;
+}
+
+export function useAuth() {
+  return { ...useAuthSession(), ...useAuthStats() };
 }

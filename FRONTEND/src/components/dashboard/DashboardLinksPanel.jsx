@@ -48,7 +48,6 @@ const DashboardLinksPanel = ({
       {onLinksTab ? (
         <>
           <DashboardLinksToolbar
-            search={toolbar.search}
             onSearchChange={toolbar.onSearchChange}
             sortBy={toolbar.sortBy}
             onSortByChange={toolbar.onSortByChange}

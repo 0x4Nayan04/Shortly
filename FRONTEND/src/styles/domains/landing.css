@@ -640,7 +640,7 @@
     background-color: transparent;
   }
   .catalog-list .catalog-row-num {
-    color: var(--color-muted);
+    color: #66707c;
     transition: color var(--duration-interaction) var(--ease-default);
   }
   .catalog-list .catalog-row--active .catalog-row-num {
@@ -649,7 +649,7 @@
   .catalog-list .catalog-row-label {
     flex: 0 1 auto;
     font-weight: 400;
-    color: var(--color-muted);
+    color: #66707c;
     text-decoration: none;
     border: 0;
     box-shadow: none;

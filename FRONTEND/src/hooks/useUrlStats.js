@@ -1,24 +1,25 @@
 import { useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { getUrlStats } from '../api/shortUrl.api';
-import { getApiPayload } from '../utils/axiosInstance';
-
-const STATS_QUERY_KEY = ['url-stats'];
+import {
+  fetchUrlStatsQuery,
+  URL_STATS_QUERY_KEY,
+  URL_STATS_STALE_TIME
+} from './dashboardQueries';
 
 export function useUrlStats(enabled = false) {
   const queryClient = useQueryClient();
   const query = useQuery({
-    queryKey: STATS_QUERY_KEY,
-    queryFn: async () => getApiPayload(await getUrlStats()) ?? null,
+    queryKey: URL_STATS_QUERY_KEY,
+    queryFn: fetchUrlStatsQuery,
     enabled,
-    staleTime: 30_000
+    staleTime: URL_STATS_STALE_TIME
   });
   const { refetch: refetchQuery } = query;
 
   const refetch = useCallback(() => refetchQuery(), [refetchQuery]);
 
   const reset = useCallback(() => {
-    queryClient.removeQueries({ queryKey: STATS_QUERY_KEY });
+    queryClient.removeQueries({ queryKey: URL_STATS_QUERY_KEY });
   }, [queryClient]);
 
   return {

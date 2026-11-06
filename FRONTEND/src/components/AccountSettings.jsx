@@ -1,4 +1,4 @@
-import { useAuth } from '../contexts/AuthContext';
+import { useAuthSession } from '../contexts/AuthContext';
 import AppCatalogShell, {
   LandingFrameInner,
   LandingSectionBlock
@@ -9,7 +9,8 @@ import SecuritySection from './settings/SecuritySection';
 import DeleteAccountSection from './settings/DeleteAccountSection';
 
 const AccountSettings = () => {
-  const { user, updateUser, refreshUser, handleAccountDeleted } = useAuth();
+  const { user, updateUser, refreshUser, handleAccountDeleted } =
+    useAuthSession();
 
   return (
     <AppCatalogShell>

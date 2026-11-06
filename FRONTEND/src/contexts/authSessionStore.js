@@ -1,4 +1,5 @@
 import { getCurrentUser } from '../api/user.api';
+import { prefetchDashboardQueries } from '../hooks/dashboardQueries';
 import { getApiPayload } from '../utils/axiosInstance';
 import { claimStoredAnonymousLinks } from '../utils/claimAnonymousLinks';
 
@@ -36,11 +37,12 @@ const startBootstrap = () => {
       authError = toAuthError(error);
     }
     const userData = response ? getApiPayload(response)?.user : null;
-    if (userData) {
-      await claimStoredAnonymousLinks();
-    }
     snapshot = { user: userData, authChecked: true, authError };
     publish();
+    if (userData) {
+      prefetchDashboardQueries(userData._id);
+      void claimStoredAnonymousLinks();
+    }
   })();
 };
 
@@ -68,6 +70,7 @@ export const getAuthSessionServerSnapshot = () => ({
 export const setAuthSessionUser = (user) => {
   snapshot = { ...snapshot, user, authError: null, authChecked: true };
   publish();
+  if (user?._id) prefetchDashboardQueries(user._id);
 };
 
 export const refreshAuthSessionUser = async () => {
@@ -92,6 +95,7 @@ export const refreshAuthSessionUser = async () => {
     snapshot = { ...snapshot, user: null, authChecked: true, authError: null };
   }
   publish();
+  if (userData?._id) prefetchDashboardQueries(userData._id);
   return userData;
 };
 

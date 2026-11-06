@@ -2855,27 +2855,26 @@
   }
   .sm-skeleton--shimmer,
   .auth-form-skeleton__line--shimmer {
-    background: linear-gradient(
-      90deg,
-      var(--color-surface-muted) 25%,
-      var(--color-border) 50%,
-      var(--color-surface-muted) 75%
-    );
-    background-size: 200% 100%;
+    background: var(--color-surface-muted);
     animation: sm-skeleton-shimmer 1.5s ease-in-out infinite;
   }
   @keyframes sm-skeleton-shimmer {
-    0% {
-      background-position: 200% 0;
-    }
+    0%,
     100% {
-      background-position: -200% 0;
+      opacity: 0.55;
+      transform: translateY(0);
+    }
+    50% {
+      opacity: 1;
+      transform: translateY(-0.5px);
     }
   }
   @media (prefers-reduced-motion: reduce) {
     .sm-skeleton--shimmer,
     .auth-form-skeleton__line--shimmer {
       animation: none;
+      opacity: 0.75;
+      transform: none;
       background: var(--color-surface-muted);
     }
   }

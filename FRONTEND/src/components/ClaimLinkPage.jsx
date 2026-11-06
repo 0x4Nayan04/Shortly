@@ -4,7 +4,7 @@ import { Link, useParams } from 'react-router-dom';
 import { redeemAnonymousClaimRecovery } from '../api/shortUrl.api';
 import { getApiErrorMessage, getApiPayload } from '../utils/axiosInstance';
 import { clearAnonymousLinksByIds } from '../utils/anonymousLinks';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuthStats } from '../contexts/AuthContext';
 import { ROUTES } from '../constants/routes';
 import CatalogPageShell from '../layouts/CatalogPageShell';
 import {
@@ -14,7 +14,7 @@ import {
 
 const ClaimLinkPage = () => {
   const { token } = useParams();
-  const { refetchStats } = useAuth();
+  const { refetchStats } = useAuthStats();
   const started = useRef(false);
   const [state, setState] = useState({ status: 'loading', link: null, error: '' });
 

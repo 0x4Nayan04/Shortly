@@ -1,48 +1,34 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { getMyUrls } from '../api/shortUrl.api';
 import { showToast } from '../utils/showToast';
-import { getApiPayload } from '../utils/axiosInstance';
-
-const PAGE_SIZE = 10;
-const SEARCH_DEBOUNCE_MS = 300;
-
-const fetchDashboardLinks = async ({ page, search, sortBy, sortOrder }) => {
-  const response = await getMyUrls({
-    limit: PAGE_SIZE,
-    skip: (page - 1) * PAGE_SIZE,
-    search,
-    sortBy,
-    sortOrder
-  });
-  return getApiPayload(response) ?? {};
-};
+import {
+  DASHBOARD_LINKS_STALE_TIME,
+  fetchDashboardLinksQuery,
+  getDashboardLinksQueryKey
+} from './dashboardQueries';
 
 export const useDashboardList = ({ userId, announce, isOnline }) => {
   const queryClient = useQueryClient();
   const [currentPage, setCurrentPage] = useState(1);
-  const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [sortBy, setSortBy] = useState('createdAt');
   const [sortOrder, setSortOrder] = useState('desc');
-  const searchDebounceRef = useRef(null);
 
   const queryKey = useMemo(
-    () => [
-      'dashboard-links',
-      userId,
-      currentPage,
-      debouncedSearch,
-      sortBy,
-      sortOrder
-    ],
+    () =>
+      getDashboardLinksQueryKey(userId, {
+        page: currentPage,
+        search: debouncedSearch,
+        sortBy,
+        sortOrder
+      }),
     [userId, currentPage, debouncedSearch, sortBy, sortOrder]
   );
 
   const query = useQuery({
     queryKey,
     queryFn: () =>
-      fetchDashboardLinks({
+      fetchDashboardLinksQuery({
         page: currentPage,
         search: debouncedSearch,
         sortBy,
@@ -50,14 +36,9 @@ export const useDashboardList = ({ userId, announce, isOnline }) => {
       }),
     enabled: Boolean(userId && isOnline),
     placeholderData: (previous) => previous,
-    staleTime: 15_000
+    staleTime: DASHBOARD_LINKS_STALE_TIME
   });
   const { refetch: refetchQuery } = query;
-
-  useEffect(
-    () => () => clearTimeout(searchDebounceRef.current),
-    []
-  );
 
   useEffect(() => {
     if (query.error) showToast.error('Failed to fetch your links');
@@ -106,13 +87,8 @@ export const useDashboardList = ({ userId, announce, isOnline }) => {
   }, [announce, isOnline, refetchQuery]);
 
   const handleSearchChange = useCallback((value) => {
-    setSearch(value);
+    setDebouncedSearch(value);
     setCurrentPage(1);
-    clearTimeout(searchDebounceRef.current);
-    searchDebounceRef.current = setTimeout(
-      () => setDebouncedSearch(value),
-      SEARCH_DEBOUNCE_MS
-    );
   }, []);
 
   const handleSortByChange = useCallback((value) => {
@@ -136,7 +112,6 @@ export const useDashboardList = ({ userId, announce, isOnline }) => {
     totalPages: data.totalPages || 1,
     totalCount: data.totalCount || 0,
     setTotalCount,
-    search,
     debouncedSearch,
     sortBy,
     sortOrder,

@@ -159,9 +159,10 @@ const SortSelect = memo(({ value, onChange, options, disabled, id, label }) => {
 
 SortSelect.displayName = 'SortSelect';
 
+const SEARCH_DEBOUNCE_MS = 300;
+
 const DashboardLinksToolbar = memo(
   ({
-    search,
     onSearchChange,
     sortBy,
     onSortByChange,
@@ -174,9 +175,23 @@ const DashboardLinksToolbar = memo(
     isBulkDeleting
   }) => {
     const showBulk = selectedCount > 0;
+    const [searchInput, setSearchInput] = useState('');
+    const searchDebounceRef = useRef(null);
+
+    useEffect(
+      () => () => clearTimeout(searchDebounceRef.current),
+      []
+    );
 
     const handleSearchChange = useCallback(
-      (event) => onSearchChange(event.target.value),
+      (event) => {
+        const value = event.target.value;
+        setSearchInput(value);
+        clearTimeout(searchDebounceRef.current);
+        searchDebounceRef.current = setTimeout(() => {
+          onSearchChange(value);
+        }, SEARCH_DEBOUNCE_MS);
+      },
       [onSearchChange]
     );
 
@@ -191,7 +206,7 @@ const DashboardLinksToolbar = memo(
               type="text"
               inputMode="search"
               enterKeyHint="search"
-              value={search}
+              value={searchInput}
               onChange={handleSearchChange}
               onKeyDown={preventEmptyBackspaceNav}
               placeholder="Search links…"
