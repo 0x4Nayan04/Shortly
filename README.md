@@ -64,7 +64,7 @@ Open [http://127.0.0.1:5173](http://127.0.0.1:5173).
 
 **Links**
 
-- Guest shorten (random 7-char slug) or signed-in custom aliases (`3–20`, `[a-z0-9_-]`)
+- Guest shorten (random 7-char slug) or signed-in custom aliases (3–20 characters, starting with a letter or number; hyphens and underscores allowed)
 - Edit destination/alias; disable without deleting; permanent slug retirement on delete (HTTP 410)
 - Claim guest links on sign-in; email a one-time claim for another device
 - Same-destination reuse for authenticated users (returns the existing link)

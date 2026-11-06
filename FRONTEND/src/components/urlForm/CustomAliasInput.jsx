@@ -44,7 +44,7 @@ const CustomAliasInput = ({
         </p>
       ) : (
         <p id="customAlias-hint" className="hero-form-hint hero-alias-footnote">
-          3–20 chars · letters, numbers, hyphens, underscores
+          3–20 chars · starts with a letter or number; hyphens and underscores allowed
         </p>
       )}
     </div>

@@ -7,6 +7,7 @@ const RESERVED_SLUGS = new Set([
   'qr',
   'login',
   'register',
+  'signup',
   'logout',
   'me',
   'settings',

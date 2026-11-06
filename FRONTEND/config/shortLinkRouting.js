@@ -2,6 +2,7 @@
 export const SPA_SLUGS = new Set([
   'login',
   'register',
+  'signup',
   'dashboard',
   'settings',
   'privacy',

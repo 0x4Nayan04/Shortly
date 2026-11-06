@@ -2,6 +2,12 @@
  * Security headers applied to frontend HTML and static assets on Vercel.
  * CSP is report-only so violations can be monitored before enforcement.
  */
+import { createHash } from 'node:crypto';
+
+// The two deferred stylesheets use these exact, fixed onload handlers.
+const stylesheetHandlerHashes = ["this.media = 'all'", "this.media='all'"]
+  .map((handler) => `'sha256-${createHash('sha256').update(handler).digest('base64')}'`)
+  .join(' ');
 
 function buildContentSecurityPolicyReportOnly(apiOrigin) {
   const connectSources = ["'self'"];
@@ -18,7 +24,7 @@ function buildContentSecurityPolicyReportOnly(apiOrigin) {
     "img-src 'self' data: blob:",
     "font-src 'self' https://fonts.gstatic.com",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-    "script-src 'self'",
+    `script-src 'self' 'unsafe-hashes' ${stylesheetHandlerHashes}`,
     `connect-src ${connectSources.join(' ')}`
   ].join('; ');
 }

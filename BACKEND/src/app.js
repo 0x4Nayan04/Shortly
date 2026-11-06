@@ -20,11 +20,10 @@ import {
 import { requestIdMiddleware } from './middleware/requestId.middleware.js';
 import { latencyMiddleware } from './middleware/latency.middleware.js';
 import { csrfProtection } from './middleware/csrf.middleware.js';
-import {
-  validateParams
-} from './middleware/validation.middleware.js';
+import { validateParams } from './middleware/validation.middleware.js';
 import { shortUrlParamsSchema } from './validation/schemas.js';
 import { logger } from './utils/logger.js';
+import { shortLinkErrorPage } from './utils/shortLinkErrorPage.js';
 
 const redirectLimiter = memoryRateLimiter({
   windowMs: 60 * 1000,
@@ -174,7 +173,8 @@ export function createApp() {
     redirectLimiter,
     validateParams(shortUrlParamsSchema),
     rejectReservedRedirectSlug,
-    redirectFromShortUrl
+    redirectFromShortUrl,
+    shortLinkErrorPage
   );
 
   app.use((req, res) => {

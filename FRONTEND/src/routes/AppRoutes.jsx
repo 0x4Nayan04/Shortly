@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import LandingPage from '../components/LandingPage';
 import { ROUTES } from '../constants/routes';
 import GuestOnlyLayout from '../layouts/GuestOnlyLayout';
@@ -21,11 +21,17 @@ const PrivacyPage = lazy(() => import('../components/PrivacyPage'));
 const NotFound = lazy(() => import('../components/NotFound'));
 const ClaimLinkPage = lazy(() => import('../components/ClaimLinkPage'));
 
+const SignupRedirect = () => {
+  const { search, hash } = useLocation();
+  return <Navigate to={`${ROUTES.REGISTER}${search}${hash}`} replace />;
+};
+
 const AppRoutes = () => (
   <Suspense fallback={<CatalogPageLoader message="Loading…" />}>
     <Routes>
       <Route element={<GuestOnlyLayout />}>
         <Route path={ROUTES.HOME} element={<LandingPage />} />
+        <Route path={ROUTES.SIGNUP} element={<SignupRedirect />} />
 
         <Route element={<AuthPageLayout />}>
           <Route
@@ -42,6 +48,11 @@ const AppRoutes = () => (
             path={ROUTES.FORGOT_PASSWORD}
             handle={{ authPage: AUTH_PAGE_HANDLES.forgotPassword }}
             element={<ForgotPasswordRoute />}
+          />
+          <Route
+            path={ROUTES.RESET_PASSWORD}
+            handle={{ authPage: AUTH_PAGE_HANDLES.resetPassword }}
+            element={<ResetPasswordRoute />}
           />
           <Route
             path={`${ROUTES.RESET_PASSWORD}/:token`}

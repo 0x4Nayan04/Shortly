@@ -13,6 +13,8 @@ describe('getSafeReturnPath', () => {
     '//attacker.example/path',
     '/login',
     '/register',
+    '/signup',
+    '/reset-password?token=secret',
     '%E0%A4%A'
   ])('rejects unsafe or recursive destination %s', (destination) => {
     expect(getSafeReturnPath(destination)).toBeNull();

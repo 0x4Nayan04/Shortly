@@ -19,7 +19,7 @@ const FAQ_ITEMS = [
   {
     id: 'custom-alias',
     q: 'Can I use my own short path?',
-    a: 'Yes — after you sign in, turn on custom alias and choose a slug between 3 and 20 characters (letters, numbers, hyphens, underscores).',
+    a: 'Yes — after you sign in, choose an alias of 3 to 20 characters. Start with a letter or number; hyphens and underscores are also allowed.',
     category: 'links'
   },
   {

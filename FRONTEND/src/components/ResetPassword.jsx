@@ -1,6 +1,6 @@
 import { useCallback, useReducer } from 'react';
 import { Check, Loader2 } from 'lucide-react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { resetPassword } from '../api/user.api';
 import { getApiErrorMessage } from '../utils/axiosInstance';
 import {
@@ -50,7 +50,9 @@ function resetReducer(state, action) {
 }
 
 const ResetPassword = () => {
-  const { token } = useParams();
+  const { token: pathToken } = useParams();
+  const [searchParams] = useSearchParams();
+  const token = pathToken || searchParams.get('token');
   const navigate = useNavigate();
   const [state, dispatch] = useReducer(resetReducer, initialState);
   const {
@@ -122,6 +124,16 @@ const ResetPassword = () => {
       showToast.error(msg);
     }
   };
+
+  if (!token?.trim()) {
+    return (
+      <div className="app-panel text-center">
+        <h2 className="font-display text-xl font-medium text-ink sm:text-2xl">Reset link missing</h2>
+        <p className="mt-2 text-muted-strong">This link is missing a reset token. Request a new link to reset your password.</p>
+        <Link to="/forgot-password" className="sm-btn sm-btn-primary mt-6">Request a new reset link</Link>
+      </div>
+    );
+  }
 
   if (done) {
     return (

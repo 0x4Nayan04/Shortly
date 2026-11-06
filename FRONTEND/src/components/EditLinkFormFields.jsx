@@ -17,9 +17,11 @@ const EditLinkFormFields = ({ link, onClose, onSave, isOnline, announce }) => {
   const getRules = useCallback(
     () => ({
       fullUrl: validators.url,
-      shortUrl: (value) => validators.customAlias(value, { required: true })
+      shortUrl: (value) => value.trim().toLowerCase() === link.short_url?.toLowerCase()
+        ? null
+        : validators.customAlias(value, { required: true })
     }),
-    []
+    [link.short_url]
   );
 
   const {

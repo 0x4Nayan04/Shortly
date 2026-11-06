@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { buildVercelSecurityHeaders } from './vercelSecurityHeaders.js';
+import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 
 function findRule(rules, source) {
   return rules.find((rule) => rule.source === source);
@@ -49,5 +51,19 @@ describe('buildVercelSecurityHeaders', () => {
     );
     expect(csp?.value).toContain("connect-src 'self' https://api.example.com");
     expect(csp?.value).toContain("style-src 'self' 'unsafe-inline' https://fonts.googleapis.com");
+  });
+
+  it('allows only the exact deferred stylesheet event handlers', () => {
+    const headers = findRule(buildVercelSecurityHeaders('https://api.example.com'), '/(.*)').headers;
+    const csp = headers.find((header) => header.key === 'Content-Security-Policy-Report-Only').value;
+    const handlers = [
+      readFileSync('index.html', 'utf8').match(/onload="([^"]+)"/)[1],
+      readFileSync('vite.config.js', 'utf8').match(/onload="([^"]+)"/)[1]
+    ];
+    expect(csp).toContain("'unsafe-hashes'");
+    for (const handler of handlers) {
+      expect(csp).toContain(`'sha256-${createHash('sha256').update(handler).digest('base64')}'`);
+    }
+    expect(csp.match(/script-src ([^;]+)/)[1]).not.toContain("'unsafe-inline'");
   });
 });

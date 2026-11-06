@@ -85,6 +85,9 @@ export const validators = {
       if (!CUSTOM_ALIAS_REGEX.test(value.trim())) {
         return 'Custom alias can only contain letters, numbers, hyphens, and underscores';
       }
+      if (!/^[a-zA-Z0-9]/.test(value.trim())) {
+        return 'Custom alias must start with a letter or number';
+      }
     }
     return null;
   }

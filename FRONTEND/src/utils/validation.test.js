@@ -10,6 +10,9 @@ describe('validators', () => {
 
   it('enforces the backend alias contract', () => {
     expect(validators.customAlias('my-link', { required: true })).toBeNull();
+    expect(validators.customAlias('-alias', { required: true })).toMatch(/start with a letter or number/);
+    expect(validators.customAlias('_alias', { required: true })).toMatch(/start with a letter or number/);
+    expect(validators.customAlias('a_b-c', { required: true })).toBeNull();
     expect(validators.customAlias('ab', { required: true })).toMatch(/3/);
     expect(validators.customAlias('has spaces', { required: true })).toMatch(
       /letters, numbers/

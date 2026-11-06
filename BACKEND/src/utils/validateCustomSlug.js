@@ -26,6 +26,10 @@ export function validateCustomSlug(slug) {
     );
   }
 
+  if (!/^[a-z0-9]/.test(normalized)) {
+    throw new Error('Custom URL must start with a letter or number.');
+  }
+
   if (isReservedSlug(normalized)) {
     throw new Error(RESERVED_SLUG_MESSAGE);
   }

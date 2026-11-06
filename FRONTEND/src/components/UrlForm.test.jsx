@@ -27,6 +27,7 @@ import {
   createShortUrl,
   emailAnonymousClaimRecovery
 } from '../api/shortUrl.api';
+import { showToast } from '../utils/showToast';
 
 describe('UrlForm', () => {
   beforeEach(() => {
@@ -50,12 +51,29 @@ describe('UrlForm', () => {
       screen.getByLabelText(/enter your long url/i),
       'https://example.com/article'
     );
-    await user.click(screen.getByRole('button', { name: /shorten/i }));
+    await user.click(screen.getByRole('button', { name: /^shorten$/i }));
 
     await waitFor(() => {
       expect(createShortUrl).toHaveBeenCalledWith('https://example.com/article');
       expect(screen.getByDisplayValue(/abc123/i)).toBeInTheDocument();
     });
+  });
+
+  it('removes the previous result and success toast when the next submission fails', async () => {
+    showToast.success.mockReturnValue('success-toast');
+    createShortUrl.mockResolvedValueOnce({ success: true, data: { short_url: 'abc123' } });
+    createShortUrl.mockRejectedValueOnce({ response: { data: { message: 'Could not create link' } } });
+    const user = userEvent.setup();
+    renderWithProviders(<UrlForm />);
+    const input = screen.getByLabelText(/enter your long url/i);
+    await user.type(input, 'https://example.com/first');
+    await user.click(screen.getByRole('button', { name: /^shorten$/i }));
+    expect(await screen.findByDisplayValue(/abc123/i)).toBeInTheDocument();
+    await user.type(input, 'https://example.com/second');
+    await user.click(screen.getByRole('button', { name: /^shorten$/i }));
+    await waitFor(() => expect(screen.getByText('Could not create link')).toBeInTheDocument());
+    expect(screen.queryByDisplayValue(/abc123/i)).not.toBeInTheDocument();
+    expect(showToast.dismiss).toHaveBeenCalledWith('success-toast');
   });
 
   it('emails an anonymous claim link after creation', async () => {

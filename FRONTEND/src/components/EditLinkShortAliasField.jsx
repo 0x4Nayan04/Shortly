@@ -27,7 +27,7 @@ const EditLinkShortAliasField = ({
       </p>
     ) : (
       <p id="edit-short-url-hint" className="hero-form-hint">
-        3–20 chars · letters, numbers, hyphens, underscores
+        3–20 chars · starts with a letter or number; hyphens and underscores allowed
       </p>
     )}
   </div>

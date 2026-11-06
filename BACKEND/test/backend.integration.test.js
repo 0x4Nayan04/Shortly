@@ -316,6 +316,13 @@ test('active, retired, and unknown redirects are distinct', async () => {
   assert.equal(activeRedirect.status, 302);
   assert.equal(activeRedirect.headers.location, 'https://example.com/target');
 
+  const disabled = await agent.patch(`/api/create/${created.body.data.id}`)
+    .set(origin).send({ disabled: true });
+  assert.equal(disabled.status, 200, disabled.text);
+  const disabledPage = await request(app).get('/kept-slug').set('Accept', 'text/html');
+  assert.equal(disabledPage.status, 410);
+  assert.match(disabledPage.text, /This link is unavailable/);
+
   const removed = await agent
     .delete(`/api/create/${created.body.data.id}`)
     .set(origin);
@@ -339,12 +346,34 @@ test('active, retired, and unknown redirects are distinct', async () => {
     'This short link has been retired'
   );
   assert.equal((await request(app).get('/missing-slug')).status, 404);
+  const missingPage = await request(app).get('/missing-slug').set('Accept', 'text/html');
+  assert.equal(missingPage.status, 404);
+  assert.match(missingPage.text, /This link is unavailable/);
+  const retiredPage = await request(app).get('/kept-slug').set('Accept', 'text/html');
+  assert.equal(retiredPage.status, 410);
+  assert.match(retiredPage.text, /This link is unavailable/);
 
   const reuse = await agent
     .post('/api/create/custom')
     .set(origin)
     .send({ full_url: 'https://example.com/new', custom_url: 'kept-slug' });
   assert.equal(reuse.status, 409);
+});
+
+test('new aliases require an alphanumeric first character while legacy links remain usable', async () => {
+  const agent = await register('alias-validation@example.com');
+  for (const alias of ['-leading', '_leading']) {
+    const response = await agent.post('/api/create/custom').set(origin)
+      .send({ full_url: 'https://example.com/test', custom_url: alias });
+    assert.equal(response.status, 400);
+  }
+  const user = await User.findOne({ email: 'alias-validation@example.com' }).lean();
+  const legacy = await ShortUrl.create({ short_url: '-legacy', full_url: 'https://example.com/old', canonical_url: 'https://example.com/old', user: user._id });
+  assert.equal((await request(app).get('/-legacy')).status, 302);
+  const edited = await agent.patch(`/api/create/${legacy._id}`).set(origin).send({ full_url: 'https://example.com/new' });
+  assert.equal(edited.status, 200, edited.text);
+  const invalidRename = await agent.patch(`/api/create/${legacy._id}`).set(origin).send({ short_url: '-new' });
+  assert.equal(invalidRename.status, 400);
 });
 
 test('late click after link deletion does not restore counter or insert click docs', async () => {

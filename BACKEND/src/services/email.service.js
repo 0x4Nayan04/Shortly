@@ -42,13 +42,14 @@ async function sendTransactionalEmail({ to, subject, html, text }) {
     );
   }
 
-  await resend.emails.send({
+  const { error } = await resend.emails.send({
     from: getFromEmail(),
     to,
     subject,
     html,
     text
   });
+  if (error) throw new Error(error.message || 'Email provider rejected the request');
 }
 
 async function sendTemplateEmail({

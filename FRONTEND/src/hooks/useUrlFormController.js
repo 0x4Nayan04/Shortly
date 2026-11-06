@@ -42,6 +42,8 @@ function urlFormReducer(state, action) {
         createdLink: null,
         shareOpen: false
       };
+    case 'CLEAR_RESULT':
+      return { ...state, shortUrl: '', createdLink: null, shareOpen: false };
     case 'SUBMIT_SUCCESS':
       return {
         ...initialState,
@@ -69,6 +71,7 @@ function rememberLinkIfAnonymous(payload) {
 export function useUrlFormController({ user, onShowAuth, onUrlCreated }) {
   const [state, dispatch] = useReducer(urlFormReducer, initialState);
   const resultRef = useRef(null);
+  const successToastRef = useRef(null);
   const [announcement, announce] = useAnnouncement();
   const { isOnline } = useOnlineStatus();
   const { copy, isCopied } = useCopyToClipboard();
@@ -148,11 +151,11 @@ export function useUrlFormController({ user, onShowAuth, onUrlCreated }) {
 
   const announceSuccess = (reused) => {
     if (reused) {
-      showToast.success('Existing short link reused for this URL');
+      successToastRef.current = showToast.success('Existing short link reused for this URL');
       announce('Existing short link reused for this URL');
       return;
     }
-    showToast.success('URL shortened successfully!');
+    successToastRef.current = showToast.success('URL shortened successfully!');
     announce('URL shortened successfully! Your new short URL is ready.');
   };
 
@@ -195,6 +198,10 @@ export function useUrlFormController({ user, onShowAuth, onUrlCreated }) {
 
   const submit = async (event) => {
     event?.preventDefault();
+    dispatch({ type: 'CLEAR_RESULT' });
+    if (successToastRef.current) showToast.dismiss(successToastRef.current);
+    successToastRef.current = null;
+    announce('');
     if (!isOnline) {
       showToast.error("You're offline. Cannot create URL.");
       return;

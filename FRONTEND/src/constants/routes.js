@@ -4,6 +4,7 @@ export const ROUTES = {
   HOME: '/',
   LOGIN: '/login',
   REGISTER: '/register',
+  SIGNUP: '/signup',
   DASHBOARD: '/dashboard',
   SETTINGS: '/settings',
   PRIVACY: '/privacy',
@@ -17,6 +18,8 @@ export const ROUTES = {
 const GUEST_ONLY_PATHS = [
   ROUTES.LOGIN,
   ROUTES.REGISTER,
+  ROUTES.SIGNUP,
+  ROUTES.RESET_PASSWORD,
   ROUTES.FORGOT_PASSWORD
 ];
 
