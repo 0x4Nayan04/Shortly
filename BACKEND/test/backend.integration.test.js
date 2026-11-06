@@ -500,3 +500,156 @@ test('health, validation, auth, CORS, and public URL safety have smoke coverage'
     .set('Access-Control-Request-Method', 'POST');
   assert.equal(cors.status, 403);
 });
+
+test('create, stats, and claim use independent counters and windows', async () => {
+  const agent = await register('policy-isolation@example.com');
+  const user = await User.findOne({ email: 'policy-isolation@example.com' });
+  const first = await agent.post('/api/create').set(origin)
+    .send({ full_url: 'https://example.com/policy-one' });
+  assert.equal(first.status, 201);
+  const stats = await agent.get('/api/create/stats');
+  const analytics = await agent.get('/api/create/stats/analytics');
+  assert.equal(stats.status, 200);
+  assert.equal(analytics.status, 200);
+  const claimed = await agent.post('/api/create/claim').set(origin).send({
+    links: [{ id: new mongoose.Types.ObjectId().toString(), manage_token: 'a'.repeat(48) }]
+  });
+  assert.equal(claimed.status, 200);
+  const createKey = `create-authenticated:user:${user._id}`;
+  const statsKey = `stats:user:${user._id}`;
+  const claimKey = `claim:user:${user._id}`;
+  const createBucket = await RateLimit.findOne({ key: createKey });
+  const statsBucket = await RateLimit.findOne({ key: statsKey });
+  const claimBucket = await RateLimit.findOne({ key: claimKey });
+  assert.equal(createBucket.count, 1);
+  assert.equal(statsBucket.count, 2); // Overview + analytics keep their shared budget.
+  assert.equal(claimBucket.count, 1);
+  assert.ok(createBucket.expires_at - statsBucket.expires_at > 230_000);
+  await RateLimit.updateOne({ key: statsKey }, { $set: { count: 30 } });
+  const limited = await agent.get('/api/create/stats');
+  assert.equal(limited.status, 429);
+  assert.ok(Number(limited.headers['retry-after']) > 0);
+  const second = await agent.post('/api/create').set(origin)
+    .send({ full_url: 'https://example.com/policy-two' });
+  assert.equal(second.status, 201);
+  const updatedCreateBucket = await RateLimit.findOne({ key: createKey });
+  assert.equal(updatedCreateBucket.count, 2);
+  assert.equal(+updatedCreateBucket.expires_at, +createBucket.expires_at);
+});
+
+test('concurrent requests cannot exceed one rate-limit policy budget', async () => {
+  const agent = await register('policy-concurrency@example.com');
+  const user = await User.findOne({ email: 'policy-concurrency@example.com' });
+  await RateLimit.create({ key: `stats:user:${user._id}`, count: 29,
+    expires_at: new Date(Date.now() + 60_000) });
+  const responses = await Promise.all([
+    agent.get('/api/create/stats'), agent.get('/api/create/stats/analytics')
+  ]);
+  assert.deepEqual(responses.map((res) => res.status).sort(), [200, 429]);
+});
+
+test('updated links return saved values and ownership, conflicts, and redirect invalidation hold', async () => {
+  const owner = await register('edit-owner@example.com');
+  const other = await register('edit-other@example.com');
+  const created = await owner.post('/api/create/custom').set(origin).send({
+    full_url: 'https://example.com/edit-before', custom_url: 'edit-before'
+  });
+  const id = created.body.data.id;
+  const resolveRedirect = (await import('../src/services/shortUrl/redirect.js')).resolveRedirectTargetService;
+  await resolveRedirect('edit-before'); // Prime redirect cache without background click writes.
+  const denied = await other.patch(`/api/create/${id}`).set(origin).send({ disabled: true });
+  assert.equal(denied.status, 404);
+  const edited = await owner.patch(`/api/create/${id}`).set(origin).send({
+    full_url: 'https://example.com/edit-after', short_url: 'edit-after'
+  });
+  assert.equal(edited.status, 200);
+  assert.equal(edited.body.data.url.full_url, 'https://example.com/edit-after');
+  assert.equal(edited.body.data.url.short_url, 'edit-after');
+  await assert.rejects(resolveRedirect('edit-before'));
+  assert.equal((await resolveRedirect('edit-after')).data.full_url, 'https://example.com/edit-after');
+  const disabled = await owner.patch(`/api/create/${id}`).set(origin).send({ disabled: true });
+  assert.equal(disabled.body.data.url.disabled, true);
+  await assert.rejects(resolveRedirect('edit-after'), /disabled/);
+  const enabled = await owner.patch(`/api/create/${id}`).set(origin).send({ disabled: false });
+  assert.equal(enabled.body.data.url.disabled, false);
+  assert.equal((await resolveRedirect('edit-after')).data.disabled, false);
+  await owner.post('/api/create/custom').set(origin).send({
+    full_url: 'https://example.com/occupied', custom_url: 'edit-occupied'
+  });
+  const conflict = await owner.patch(`/api/create/${id}`).set(origin)
+    .send({ short_url: 'edit-occupied' });
+  assert.equal(conflict.status, 409);
+  assert.equal((await ShortUrl.findById(id)).short_url, 'edit-after');
+  await owner.delete(`/api/create/${id}`).set(origin);
+  const retired = await owner.patch(`/api/create/${id}`).set(origin)
+    .send({ disabled: false });
+  assert.equal(retired.status, 404);
+});
+
+test('concurrent creation preserves the active-link cap and canonical reuse', async () => {
+  const { MAX_LINKS_PER_USER } = await import('../src/constants/shortUrlLimits.js');
+  const agent = await register('capacity-performance@example.com');
+  const user = await User.findOne({ email: 'capacity-performance@example.com' });
+  await User.updateOne({ _id: user._id }, { $set: { activeLinkCount: MAX_LINKS_PER_USER - 1 } });
+  const responses = await Promise.all([1, 2].map((i) => agent.post('/api/create').set(origin)
+    .send({ full_url: `https://example.com/capacity-${i}` })));
+  assert.deepEqual(responses.map((r) => r.status).sort(), [201, 403]);
+  assert.equal((await User.findById(user._id)).activeLinkCount, MAX_LINKS_PER_USER);
+  const created = responses.find((r) => r.status === 201);
+  const reused = await agent.post('/api/create').set(origin)
+    .send({ full_url: created.body.data.full_url });
+  assert.equal(reused.status, 200);
+  assert.equal(reused.body.data.reused, true);
+  assert.equal((await User.findById(user._id)).activeLinkCount, MAX_LINKS_PER_USER);
+});
+
+test('index repair preserves legacy indexes and enforces global slugs and active destinations', async () => {
+  const { repairShortUrlIndexes } = await import('../scripts/repairShortUrlIndexes.js');
+  const collection = mongoose.connection.db.collection('legacy_index_fixture');
+  const user = new mongoose.Types.ObjectId();
+  await collection.insertMany(Array.from({ length: 59 }, (_, i) => ({
+    short_url: `fixture-${i}`, canonical_url: `https://example.com/fixture-${i}`, user, retiredAt: null
+  })));
+  await collection.insertOne({ short_url: 'legacy-one', canonical_url: 'https://example.com/one', user, retiredAt: null });
+  await collection.createIndex({ short_url: 1 }, { unique: true, partialFilterExpression: { deletedAt: null } });
+  await collection.createIndex({ user: 1, canonical_url: 1 });
+  const before = await collection.find({ short_url: 'legacy-one' }).limit(1).explain('executionStats');
+  assert.ok(JSON.stringify(before.queryPlanner.winningPlan).includes('COLLSCAN'));
+  assert.equal(before.executionStats.totalDocsExamined, 60);
+  const inspected = await repairShortUrlIndexes(collection);
+  assert.equal(inspected.blocked, false);
+  assert.equal(inspected.planned.length, 2);
+  assert.equal(inspected.built.length, 0);
+  assert.equal((await collection.indexes()).length, 3);
+  const applied = await repairShortUrlIndexes(collection, { apply: true });
+  assert.equal(applied.built.length, 2);
+  assert.equal((await collection.indexes()).length, 5);
+  const after = await collection.find({ short_url: 'legacy-one' }).limit(1).explain('executionStats');
+  assert.ok(JSON.stringify(after.queryPlanner.winningPlan).includes('IXSCAN'));
+  assert.equal(after.executionStats.totalDocsExamined, 1);
+  const repeated = await repairShortUrlIndexes(collection, { apply: true });
+  assert.equal(repeated.blocked, false);
+  assert.equal(repeated.built.length, 0);
+  await assert.rejects(collection.insertOne({ short_url: 'legacy-one', deletedAt: new Date() }), { code: 11000 });
+  await assert.rejects(collection.insertOne({ short_url: 'another', canonical_url: 'https://example.com/one', user, retiredAt: null }), { code: 11000 });
+  await collection.insertOne({ short_url: 'retired', canonical_url: 'https://example.com/one', user, retiredAt: new Date() });
+});
+
+test('index repair refuses duplicates and same-name conflicts without modifying data', async () => {
+  const { repairShortUrlIndexes } = await import('../scripts/repairShortUrlIndexes.js');
+  const collection = mongoose.connection.db.collection('duplicate_index_fixture');
+  const user = new mongoose.Types.ObjectId();
+  await collection.insertMany([1, 2].map(() => ({ short_url: 'duplicate', canonical_url: 'https://example.com/same', user, retiredAt: null })));
+  const report = await repairShortUrlIndexes(collection, { apply: true });
+  assert.equal(report.blocked, true);
+  assert.deepEqual(report.duplicates, { slugs: 1, activeDestinations: 1 });
+  assert.equal(report.built.length, 0);
+  assert.equal(await collection.countDocuments(), 2);
+  assert.equal((await collection.indexes()).length, 1);
+  await collection.deleteMany({});
+  await collection.createIndex({ short_url: 1 }, { name: 'short_url_global_unique', unique: true, partialFilterExpression: { deletedAt: null } });
+  const conflicting = await repairShortUrlIndexes(collection, { apply: true });
+  assert.equal(conflicting.blocked, true);
+  assert.deepEqual(conflicting.conflicts, ['short_url_global_unique']);
+  assert.equal(conflicting.built.length, 0);
+});

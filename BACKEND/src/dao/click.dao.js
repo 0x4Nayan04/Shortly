@@ -1,3 +1,4 @@
+import { measureRequestStep } from '../utils/requestTiming.js';
 import Click from '../schema/click.model.js';
 import short_urlModel from '../schema/shortUrl.model.js';
 
@@ -71,13 +72,13 @@ const buildUserClickFacetsPipeline = (urlIds, since) => [
 ];
 
 export const aggregateClickFacetsForUser = async (userId, since) => {
-  const urlIds = await short_urlModel
+  const urlIds = await measureRequestStep('analytics.linkIds', () => short_urlModel
     .find({ user: userId, retiredAt: null })
-    .distinct('_id');
+    .distinct('_id'));
   if (urlIds.length === 0) return null;
 
-  const [facetResult] = await Click.aggregate(
+  const [facetResult] = await measureRequestStep('analytics.facets', () => Click.aggregate(
     buildUserClickFacetsPipeline(urlIds, since)
-  );
+  ));
   return facetResult;
 };

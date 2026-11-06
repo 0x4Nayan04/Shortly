@@ -64,6 +64,7 @@ shortUrlSchema.index({ user: 1, retiredAt: 1, full_url: 1 });
 shortUrlSchema.index(
   { user: 1, canonical_url: 1 },
   {
+    name: 'user_active_canonical_unique',
     unique: true,
     partialFilterExpression: {
       user: { $type: 'objectId' },
@@ -72,7 +73,10 @@ shortUrlSchema.index(
     }
   }
 );
-shortUrlSchema.index({ short_url: 1 }, { unique: true });
+shortUrlSchema.index(
+  { short_url: 1 },
+  { unique: true, name: 'short_url_global_unique' }
+);
 shortUrlSchema.index({ claim_recovery_token: 1 }, { sparse: true });
 
 const short_urlModel = mongoose.model('ShortUrl', shortUrlSchema);

@@ -1,3 +1,4 @@
+import { measureRequestStep } from './requestTiming.js';
 import mongoose from 'mongoose';
 import { AppError } from './errorHandler.js';
 
@@ -17,9 +18,12 @@ export async function runWithTransaction(work) {
   const session = await mongoose.startSession();
   try {
     let result;
-    await session.withTransaction(async () => {
-      result = await work(session);
-    });
+    // total includes work, commit, and driver retries; work.count exposes retries.
+    await measureRequestStep('transaction.total', () =>
+      session.withTransaction(async () => {
+        result = await measureRequestStep('transaction.work', () => work(session));
+      })
+    );
     return result;
   } catch (error) {
     if (isTransactionNotSupportedError(error)) {

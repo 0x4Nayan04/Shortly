@@ -38,12 +38,14 @@ import { loadUserIfAuthenticated } from '../utils/attachUser.js';
 const router = express.Router();
 
 const createLimiterAnon = rateLimiter({
+  policy: 'create-anonymous',
   windowMs: 5 * 60 * 1000,
   max: 10,
   keyGenerator: keyGenerators.ipPerEndpoint('create')
 });
 
 const createLimiterAuth = rateLimiter({
+  policy: 'create-authenticated',
   windowMs: 5 * 60 * 1000,
   max: 100,
   keyGenerator: keyGenerators.userId
@@ -55,6 +57,7 @@ const createLimiter = (req, res, next) => {
 };
 
 const statsLimiter = rateLimiter({
+  policy: 'stats',
   windowMs: 60 * 1000,
   max: 30,
   keyGenerator: keyGenerators.userId,
@@ -62,12 +65,14 @@ const statsLimiter = rateLimiter({
 });
 
 const claimLimiter = rateLimiter({
+  policy: 'claim',
   windowMs: 5 * 60 * 1000,
   max: 30,
   keyGenerator: keyGenerators.userId
 });
 
 const emailClaimLimiter = rateLimiter({
+  policy: 'email-claim',
   windowMs: 60 * 60 * 1000,
   max: 5,
   keyGenerator: keyGenerators.ipPerEndpoint('email-claim')

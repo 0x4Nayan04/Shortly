@@ -1,21 +1,26 @@
+import { measureRequestStep } from '../utils/requestTiming.js';
 import RateLimit from '../schema/rateLimit.model.js';
 import { AppError } from '../utils/errorHandler.js';
 import { logger } from '../utils/logger.js';
 import crypto from 'node:crypto';
 
 export const rateLimiter = ({
+  policy,
   windowMs,
   max,
   keyGenerator,
   failClosed = true
 }) => {
+  if (!policy || typeof policy !== 'string') {
+    throw new Error('A rate-limit policy name is required');
+  }
   return async (req, res, next) => {
     try {
-      const key = keyGenerator(req);
+      const key = `${policy}:${keyGenerator(req)}`;
       const now = new Date();
       const windowEnd = new Date(now.getTime() + windowMs);
 
-      const record = await RateLimit.findOneAndUpdate(
+      const record = await measureRequestStep(`rateLimit.${policy}`, () => RateLimit.findOneAndUpdate(
         { key },
         [
           {
@@ -46,7 +51,7 @@ export const rateLimiter = ({
           returnDocument: 'after',
           projection: { count: 1, expires_at: 1, _id: 0 }
         }
-      ).lean();
+      ).lean());
 
       if (!record) {
         throw new Error('Rate limit update returned no document');

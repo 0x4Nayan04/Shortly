@@ -1,3 +1,4 @@
+import { measureRequestStep, recordTimingState } from '../utils/requestTiming.js';
 import crypto from 'crypto';
 import { CLICK_RETENTION_DAYS } from '../constants/shortUrlLimits.js';
 import {
@@ -87,7 +88,9 @@ export const invalidateStatsForUser = (userId) => {
 };
 
 const reserveSlotOrThrow = async (userId, session) => {
-  const reserved = await reserveActiveLinkSlot(userId, session);
+  const reserved = await measureRequestStep('create.reserveSlot', () =>
+    reserveActiveLinkSlot(userId, session)
+  );
   if (reserved) return;
   throw new AppError('Link limit reached. Delete unused links first.', 403);
 };
@@ -95,7 +98,9 @@ const reserveSlotOrThrow = async (userId, session) => {
 export async function createShortUrlService({ full_url, userId = null }) {
   const canonical_url = normalizeUrl(full_url);
   if (userId) {
-    const existingDoc = await findExistingForCanonical(canonical_url, userId);
+    const existingDoc = await measureRequestStep('create.canonicalLookup', () =>
+      findExistingForCanonical(canonical_url, userId)
+    );
     if (existingDoc) return buildExistingReuseResult(existingDoc);
   }
 
@@ -119,7 +124,9 @@ export async function createShortUrlService({ full_url, userId = null }) {
       });
     } catch (error) {
       if (error.code !== 11000 || !error.keyPattern?.canonical_url) throw error;
-      const existing = await findExistingForCanonical(canonical_url, userId);
+      const existing = await measureRequestStep('create.canonicalLookup', () =>
+        findExistingForCanonical(canonical_url, userId)
+      );
       if (existing) return buildExistingReuseResult(existing);
       throw error;
     }
@@ -182,7 +189,9 @@ export async function createCustomShortUrlService({
 }
 
 export async function updateOwnedShortUrlService({ userId, id, updates }) {
-  const url = await findOwnedActiveById(id, userId);
+  const url = await measureRequestStep('link.ownershipLookup', () =>
+    findOwnedActiveById(id, userId)
+  );
   if (!url) {
     throw new NotFoundError('URL not found');
   }
@@ -220,10 +229,14 @@ export async function updateOwnedShortUrlService({ userId, id, updates }) {
     updated = await withSlugConflictHandler(() =>
       updateByIdAndUser(id, userId, patch)
     );
+    if (!updated) throw new NotFoundError('URL not found');
     invalidateRedirectCache(previousSlug);
     if (patch.short_url) invalidateRedirectCache(patch.short_url);
   }
-  invalidateStatsForUser(userId);
+  // Enabled state does not change counts, click analytics, or top-link labels.
+  if (patch.full_url !== undefined || patch.short_url !== undefined) {
+    invalidateStatsForUser(userId);
+  }
 
   return updated;
 }
@@ -259,7 +272,9 @@ export async function listLinksForUserService({
 }
 
 export async function softDeleteLinkService({ userId, id }) {
-  const existing = await findOwnedActiveById(id, userId);
+  const existing = await measureRequestStep('link.ownershipLookup', () =>
+    findOwnedActiveById(id, userId)
+  );
   if (!existing) {
     throw new NotFoundError('URL not found');
   }
@@ -310,6 +325,7 @@ export async function softDeleteLinksService({ userId, ids }) {
 export async function getStatsForUserService({ userId }) {
   const cacheKey = userId.toString();
   const cached = readCached(overviewStatsCache, cacheKey);
+  recordTimingState('overviewCacheHit', Boolean(cached));
   if (cached) return cached;
 
   const pending = buildOverviewStatsForUser(userId).catch((error) => {
@@ -323,9 +339,12 @@ export async function getStatsForUserService({ userId }) {
 export async function getClickAnalyticsForUserService({ userId }) {
   const cacheKey = userId.toString();
   const cached = readCached(clickAnalyticsCache, cacheKey);
+  recordTimingState('analyticsCacheHit', Boolean(cached));
   if (cached) return cached;
 
-  const pending = getClickAggregates(userId)
+  const pending = measureRequestStep('analytics.total', () =>
+    getClickAggregates(userId)
+  )
     .then((clickAnalytics) => ({ clickAnalytics }))
     .catch((error) => {
       clickAnalyticsCache.delete(cacheKey);
@@ -339,9 +358,15 @@ async function buildOverviewStatsForUser(userId) {
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
   const [lifetime, recentActivity, topUrls] = await Promise.all([
-    aggregateLifetimeStatsForUser(userId),
-    aggregateRecentActivityForUser(userId, sevenDaysAgo),
-    findTopClickedForUser(userId)
+    measureRequestStep('overview.lifetime', () =>
+      aggregateLifetimeStatsForUser(userId)
+    ),
+    measureRequestStep('overview.recent', () =>
+      aggregateRecentActivityForUser(userId, sevenDaysAgo)
+    ),
+    measureRequestStep('overview.topLinks', () =>
+      findTopClickedForUser(userId)
+    )
   ]);
 
   return {

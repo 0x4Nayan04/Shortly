@@ -1,3 +1,4 @@
+import { measureRequestStep } from '../utils/requestTiming.js';
 import {
   create as createUser,
   findByEmail as findUserByEmail,
@@ -100,13 +101,17 @@ export const verifyEmailService = async ({ token }) => {
 };
 
 export const loginUserService = async ({ email, password }) => {
-  const user = await findUserByEmail(email);
+  const user = await measureRequestStep('login.lookup', () =>
+    findUserByEmail(email)
+  );
 
   if (!user) {
     throw new AppError('Invalid Credentials', 401);
   }
 
-  const isMatch = await user.comparePassword(password);
+  const isMatch = await measureRequestStep('login.passwordCompare', () =>
+    user.comparePassword(password)
+  );
   if (!isMatch) {
     throw new AppError('Invalid Credentials', 401);
   }

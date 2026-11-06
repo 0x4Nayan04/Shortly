@@ -1,19 +1,24 @@
 import { logger } from '../utils/logger.js';
+import { performance } from 'node:perf_hooks';
+import { requestTiming } from '../utils/requestTiming.js';
 
 export const latencyMiddleware = (req, res, next) => {
-  const start = Date.now();
+  const start = performance.now();
+  const timing = { steps: {}, states: {} };
 
   res.on('finish', () => {
-    const durationMs = Date.now() - start;
+    const durationMs = Math.round((performance.now() - start) * 100) / 100;
     const level =
       res.statusCode >= 500 ? 'error' : res.statusCode >= 400 ? 'warn' : 'info';
 
     const payload = {
       requestId: req.requestId,
       method: req.method,
-      path: req.originalUrl || req.url,
+      path: (req.originalUrl || req.url).split('?')[0],
       statusCode: res.statusCode,
-      durationMs
+      durationMs,
+      steps: timing.steps,
+      timingStates: timing.states
     };
 
     if (req.redirectTiming) {
@@ -24,5 +29,5 @@ export const latencyMiddleware = (req, res, next) => {
     logger[level]('request', payload);
   });
 
-  next();
+  requestTiming.run(timing, next);
 };

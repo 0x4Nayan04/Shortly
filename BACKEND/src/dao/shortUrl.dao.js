@@ -1,3 +1,4 @@
+import { measureRequestStep } from '../utils/requestTiming.js';
 import short_urlModel from '../schema/shortUrl.model.js';
 import { normalizeSlug } from '../utils/normalizeSlug.js';
 import { escapeRegExp } from '../utils/escapeRegExp.js';
@@ -46,9 +47,9 @@ export const saveShortUrl = async ({
     doc.manage_token = manage_token;
   }
 
-  const created = session
+  const created = await measureRequestStep('link.insert', async () => session
     ? (await short_urlModel.create([doc], { session }))[0]
-    : await short_urlModel.create(doc);
+    : await short_urlModel.create(doc));
   return { short_url: slug, id: created._id.toString() };
 };
 
@@ -148,14 +149,14 @@ export const listForUser = async ({
   const sortOptions = { [sortBy]: sortOrder };
 
   const [urls, totalCount] = await Promise.all([
-    short_urlModel
+    measureRequestStep('list.rows', () => short_urlModel
       .find(baseQuery)
       .sort(sortOptions)
       .skip(skip)
       .limit(limit)
       .select('full_url short_url click createdAt disabled')
-      .lean(),
-    short_urlModel.countDocuments(baseQuery)
+      .lean()),
+    measureRequestStep('list.count', () => short_urlModel.countDocuments(baseQuery))
   ]);
 
   return { urls, totalCount };
@@ -199,14 +200,14 @@ export const aggregateRecentActivityForUser = async (userId, since) =>
   ]);
 
 export const updateByIdAndUser = async (id, userId, patch) => {
-  await short_urlModel.updateOne(
-    { _id: id, user: userId, ...ACTIVE_LINK_FILTER },
-    { $set: patch }
-  );
-  return short_urlModel
-    .findOne({ _id: id, user: userId, ...ACTIVE_LINK_FILTER })
+  return measureRequestStep('link.update', () => short_urlModel
+    .findOneAndUpdate(
+      { _id: id, user: userId, ...ACTIVE_LINK_FILTER },
+      { $set: patch },
+      { new: true, runValidators: true }
+    )
     .select(projectionShortUrlFull)
-    .lean();
+    .lean());
 };
 
 export const retireByIdAndUser = async (id, userId, session = null) => {

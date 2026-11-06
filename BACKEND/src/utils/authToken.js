@@ -1,3 +1,4 @@
+import { measureRequestStep, recordTimingState } from './requestTiming.js';
 import { verifyToken } from './helper.js';
 import User from '../schema/user.model.js';
 
@@ -89,13 +90,16 @@ export const resolveUserFromToken = async (req, token) => {
 
   const cacheKey = decoded.id.toString();
   const cached = authUserCache.get(cacheKey);
+  recordTimingState('authCacheHit', Boolean(cached?.expiresAt > Date.now()));
   if (cached?.expiresAt > Date.now()) {
     if (!isTokenVersionValid(cached.user, decoded)) return { kind: 'revoked' };
     return { kind: 'ok', user: cached.user };
   }
   if (cached) authUserCache.delete(cacheKey);
 
-  const user = await User.findById(decoded.id).select('-password').lean();
+  const user = await measureRequestStep('auth.lookup', () =>
+    User.findById(decoded.id).select('-password').lean()
+  );
   if (!user) return { kind: 'missing' };
   if (!isTokenVersionValid(user, decoded)) return { kind: 'revoked' };
   cacheAuthUser(user);

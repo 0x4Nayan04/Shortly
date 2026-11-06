@@ -35,6 +35,7 @@ import {
 const router = express.Router();
 
 const loginAccountLimiter = rateLimiter({
+  policy: 'login-account',
   windowMs: 15 * 60 * 1000,
   max: 5,
   keyGenerator: keyGenerators.loginAccount,
@@ -42,6 +43,7 @@ const loginAccountLimiter = rateLimiter({
 });
 
 const loginIpLimiter = rateLimiter({
+  policy: 'login-ip',
   windowMs: 15 * 60 * 1000,
   max: 30,
   keyGenerator: keyGenerators.loginIp,
@@ -49,36 +51,42 @@ const loginIpLimiter = rateLimiter({
 });
 
 const registerLimiter = rateLimiter({
+  policy: 'register',
   windowMs: 60 * 60 * 1000,
   max: 5,
   keyGenerator: keyGenerators.ip
 });
 
 const recoveryAccountLimiter = rateLimiter({
+  policy: 'recovery-account',
   windowMs: 15 * 60 * 1000,
   max: 3,
   keyGenerator: keyGenerators.recoveryAccount
 });
 
 const recoveryIpLimiter = rateLimiter({
+  policy: 'recovery-ip',
   windowMs: 15 * 60 * 1000,
   max: 15,
   keyGenerator: keyGenerators.recoveryIp
 });
 
 const resetPasswordLimiter = rateLimiter({
+  policy: 'reset-password',
   windowMs: 15 * 60 * 1000,
   max: 5,
   keyGenerator: keyGenerators.ip
 });
 
 const verifyEmailLimiter = rateLimiter({
+  policy: 'verify-email',
   windowMs: 15 * 60 * 1000,
   max: 10,
   keyGenerator: keyGenerators.ip
 });
 
 const meLimiter = rateLimiter({
+  policy: 'profile',
   windowMs: 60 * 1000,
   max: 30,
   keyGenerator: keyGenerators.userId,
