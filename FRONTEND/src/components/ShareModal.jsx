@@ -8,10 +8,9 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 import { Check, Copy, Loader2, QrCode, Share2, X } from 'lucide-react';
-import { FaWhatsapp, FaXTwitter } from 'react-icons/fa6';
-import QRCode from 'qrcode';
 import { buildPublicShortUrl } from '../utils/publicShortUrl';
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
+import { XBrandIcon, WhatsAppBrandIcon } from './ShareBrandIcons';
 import { useCopyToClipboard } from './UxEnhancements';
 import { showToast } from '../utils/showToast';
 
@@ -22,12 +21,20 @@ const QR_OPTIONS = {
   color: { dark: '#0b1015', light: '#ffffff' }
 };
 
-function loadQrDataUrl(shortUrlFull) {
-  if (!shortUrlFull) return Promise.resolve('');
-  return QRCode.toDataURL(shortUrlFull, QR_OPTIONS).catch((err) => {
+async function loadQrLib() {
+  const mod = await import('qrcode');
+  return mod.default;
+}
+
+async function loadQrDataUrl(shortUrlFull) {
+  if (!shortUrlFull) return '';
+  try {
+    const QRCode = await loadQrLib();
+    return await QRCode.toDataURL(shortUrlFull, QR_OPTIONS);
+  } catch (err) {
     console.error(err);
     return '';
-  });
+  }
 }
 
 const ShareModal = memo(({ isOpen, onClose, shortUrl, fullUrl }) => {
@@ -90,6 +97,7 @@ const ShareModal = memo(({ isOpen, onClose, shortUrl, fullUrl }) => {
   const downloadQr = useCallback(async () => {
     setDownloading(true);
     try {
+      const QRCode = await loadQrLib();
       const dataUrl = await QRCode.toDataURL(shortUrlFull, {
         type: 'image/png',
         margin: 2,
@@ -119,7 +127,7 @@ const ShareModal = memo(({ isOpen, onClose, shortUrl, fullUrl }) => {
     },
     {
       label: 'Share on X',
-      icon: <FaXTwitter className="size-[1.125rem]" aria-hidden="true" />,
+      icon: <XBrandIcon className="size-[1.125rem]" />,
       onClick: () =>
         window.open(
           `https://x.com/intent/tweet?text=${encodeURIComponent(shortUrlFull)}`,
@@ -129,7 +137,7 @@ const ShareModal = memo(({ isOpen, onClose, shortUrl, fullUrl }) => {
     },
     {
       label: 'WhatsApp',
-      icon: <FaWhatsapp className="size-5" aria-hidden="true" />,
+      icon: <WhatsAppBrandIcon className="size-5" />,
       primary: true,
       onClick: () =>
         window.open(

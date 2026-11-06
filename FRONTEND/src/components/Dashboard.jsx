@@ -1,12 +1,19 @@
-import { memo, useCallback, useMemo, useReducer, useRef } from 'react';
+import {
+  lazy,
+  memo,
+  Suspense,
+  useCallback,
+  useMemo,
+  useReducer,
+  useRef
+} from 'react';
 import { LiveRegion, useAnnouncement } from './Accessibility';
-import ShareModal from './ShareModal';
 import AppCatalogShell, {
   LandingFrameInner,
   LandingSectionBlock
 } from './app/AppCatalogShell';
 import AppNavbar from './app/AppNavbar';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuthSession, useAuthStats } from '../contexts/AuthContext';
 import {
   ConfirmDialog,
   useConfirmDialog,
@@ -19,6 +26,8 @@ import DashboardInsightsSection from './dashboard/DashboardInsightsSection';
 import DashboardLinksPanel from './dashboard/DashboardLinksPanel';
 import EditLinkModal from './EditLinkModal';
 
+const ShareModal = lazy(() => import('./ShareModal'));
+
 const DashboardModals = ({
   shareUrl,
   onShareClose,
@@ -27,12 +36,16 @@ const DashboardModals = ({
   onSaveEdit
 }) => (
   <>
-    <ShareModal
-      isOpen={!!shareUrl}
-      onClose={onShareClose}
-      shortUrl={shareUrl?.short_url}
-      fullUrl={shareUrl?.full_url}
-    />
+    {shareUrl && (
+      <Suspense fallback={null}>
+        <ShareModal
+          isOpen={!!shareUrl}
+          onClose={onShareClose}
+          shortUrl={shareUrl?.short_url}
+          fullUrl={shareUrl?.full_url}
+        />
+      </Suspense>
+    )}
     <EditLinkModal
       isOpen={!!editingLink}
       onClose={onEditClose}
@@ -80,7 +93,8 @@ const dashboardReducer = (state, action) => {
 };
 
 const Dashboard = () => {
-  const { user, stats, statsLoading, refetchStats } = useAuth();
+  const { user } = useAuthSession();
+  const { stats, statsLoading, refetchStats } = useAuthStats();
   const [state, dispatch] = useReducer(dashboardReducer, initialDashboardState);
   const {
     deletingUrl,
@@ -106,7 +120,6 @@ const Dashboard = () => {
     currentPage,
     totalPages,
     totalCount,
-    search,
     debouncedSearch,
     sortBy,
     sortOrder,
@@ -240,7 +253,6 @@ const Dashboard = () => {
                 onRefresh: refresh
               }}
               toolbar={{
-                search,
                 onSearchChange: handleSearchChange,
                 sortBy,
                 onSortByChange: handleSortByChange,

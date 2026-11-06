@@ -1,8 +1,10 @@
-import ShareModal from './ShareModal';
+import { lazy, Suspense } from 'react';
 import { LiveRegion } from './Accessibility';
 import { useUrlFormController } from '../hooks/useUrlFormController';
 import UrlFormFields from './urlForm/UrlFormFields';
 import UrlFormResult from './urlForm/UrlFormResult';
+
+const ShareModal = lazy(() => import('./ShareModal'));
 
 const UrlForm = ({ onUrlCreated, user, onShowAuth, variant = 'default' }) => {
   const isLanding = variant === 'landing';
@@ -42,12 +44,16 @@ const UrlForm = ({ onUrlCreated, user, onShowAuth, variant = 'default' }) => {
         />
       )}
 
-      <ShareModal
-        isOpen={state.shareOpen}
-        onClose={controller.closeShare}
-        shortUrl={state.createdLink?.slug}
-        fullUrl={state.createdLink?.fullUrl}
-      />
+      {state.shareOpen && (
+        <Suspense fallback={null}>
+          <ShareModal
+            isOpen={state.shareOpen}
+            onClose={controller.closeShare}
+            shortUrl={state.createdLink?.slug}
+            fullUrl={state.createdLink?.fullUrl}
+          />
+        </Suspense>
+      )}
     </div>
   );
 };
