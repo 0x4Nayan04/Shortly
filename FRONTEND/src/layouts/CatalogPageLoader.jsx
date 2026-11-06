@@ -1,23 +1,30 @@
-import {
-  LandingFrameInner,
-  LandingSectionBlock
-} from '../components/app/AppCatalogShell';
+import { useLayoutEffect } from 'react';
 import LoadingSpinner from '../components/LoadingSpinner';
 import CatalogPageShell from './CatalogPageShell';
 
-const CatalogPageLoader = ({ message }) => (
-  <CatalogPageShell
-    mainProps={{
-      'aria-busy': true,
-      'aria-label': message
-    }}
-  >
-    <LandingSectionBlock label="LOADING" index={1} total={1}>
-      <LandingFrameInner className="flex min-h-[50vh] items-center justify-center py-12">
-        <LoadingSpinner size="lg" message={message} />
-      </LandingFrameInner>
-    </LandingSectionBlock>
-  </CatalogPageShell>
-);
+const LCP_SHELL_ID = 'landing-lcp-shell';
+
+/**
+ * App-route loading state. Hides the static LCP hero shell so it cannot sit
+ * above the React navbar + spinner (broken home flash).
+ */
+const CatalogPageLoader = ({ message }) => {
+  useLayoutEffect(() => {
+    const shell = document.getElementById(LCP_SHELL_ID);
+    if (shell) shell.hidden = true;
+  }, []);
+
+  return (
+    <CatalogPageShell
+      mainClassName="flex flex-1 items-center justify-center"
+      mainProps={{
+        'aria-busy': true,
+        'aria-label': message
+      }}
+    >
+      <LoadingSpinner size="lg" message={message} />
+    </CatalogPageShell>
+  );
+};
 
 export default CatalogPageLoader;

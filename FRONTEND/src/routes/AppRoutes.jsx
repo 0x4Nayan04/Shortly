@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { Route, Routes } from 'react-router-dom';
+import LandingPage from '../components/LandingPage';
 import { ROUTES } from '../constants/routes';
 import GuestOnlyLayout from '../layouts/GuestOnlyLayout';
 import ProtectedLayout from '../layouts/ProtectedLayout';
@@ -14,7 +15,7 @@ import {
   VerifyEmailRoute
 } from './authRoutes';
 
-const LandingPage = lazy(() => import('../components/LandingPage'));
+/** Home is eager so the LCP shell never stacks under a Suspense page loader. */
 const Dashboard = lazy(() => import('../components/Dashboard'));
 const AccountSettings = lazy(() => import('../components/AccountSettings'));
 const PrivacyPage = lazy(() => import('../components/PrivacyPage'));
