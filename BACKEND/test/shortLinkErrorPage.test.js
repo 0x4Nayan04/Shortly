@@ -15,6 +15,8 @@ for (const status of [404, 410]) {
     assert.equal(html.status, status);
     assert.match(html.headers['content-type'], /text\/html/);
     assert.match(html.text, /This link is unavailable/);
+    assert.match(html.text, /src="data:image\/webp;base64,/);
+    assert.match(html.headers['content-security-policy'], /img-src data:/);
     assert.match(html.headers.vary, /Accept/);
     assert.equal(html.headers['cache-control'], 'no-store');
     const json = await request(app).get(`/${status}`).set('Accept', 'application/json');
