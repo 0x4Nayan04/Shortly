@@ -15,7 +15,6 @@ import {
   VerifyEmailRoute
 } from './authRoutes';
 
-/** Home is eager so the LCP shell never stacks under a Suspense page loader. */
 const Dashboard = lazy(() => import('../components/Dashboard'));
 const AccountSettings = lazy(() => import('../components/AccountSettings'));
 const PrivacyPage = lazy(() => import('../components/PrivacyPage'));
@@ -23,7 +22,7 @@ const NotFound = lazy(() => import('../components/NotFound'));
 const ClaimLinkPage = lazy(() => import('../components/ClaimLinkPage'));
 
 const AppRoutes = () => (
-  <Suspense fallback={<CatalogPageLoader message="Loading page…" />}>
+  <Suspense fallback={<CatalogPageLoader message="Loading…" />}>
     <Routes>
       <Route element={<GuestOnlyLayout />}>
         <Route path={ROUTES.HOME} element={<LandingPage />} />
