@@ -13,19 +13,24 @@ import {
 } from './components/UxEnhancements.jsx';
 import { apiConfigError } from './config/api.js';
 import { queryClient } from './queryClient.js';
+import { dismissBootSplash } from './utils/bootSplash.js';
+
+const isHome =
+  window.location.pathname === '/' || window.location.pathname === '';
 
 const lcpShell = document.getElementById('landing-lcp-shell');
-if (
-  lcpShell &&
-  window.location.pathname !== '/' &&
-  window.location.pathname !== ''
-) {
+if (lcpShell && !isHome) {
   lcpShell.hidden = true;
+  dismissBootSplash();
+} else {
+  // Safety: never leave the splash stuck if landing never mounts.
+  window.setTimeout(dismissBootSplash, 4000);
 }
 
 const root = createRoot(document.getElementById('root'));
 
 if (apiConfigError) {
+  dismissBootSplash();
   root.render(<ConfigError message={apiConfigError} />);
 } else {
   const router = createBrowserRouter(

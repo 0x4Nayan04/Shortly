@@ -5,6 +5,7 @@ import UrlForm from '../UrlForm';
 import HeroDotGridWrap from './HeroDotGridWrap';
 import { LandingFrameInner } from './LandingFrameInner';
 import { useAuthSession } from '../../contexts/AuthContext';
+import { dismissBootSplash } from '../../utils/bootSplash';
 
 const SHELL_ID = 'landing-lcp-shell';
 const CHIP_SLOT_ID = 'hero-chip-slot';
@@ -41,12 +42,16 @@ const LandingHero = () => {
 
   useLayoutEffect(() => {
     const host = hostRef.current;
-    if (!shell || !host) return undefined;
+    if (!shell || !host) {
+      dismissBootSplash();
+      return undefined;
+    }
 
     shell.hidden = false;
     if (shell.parentElement !== host) {
       host.appendChild(shell);
     }
+    dismissBootSplash();
 
     return () => {
       shell.hidden = true;
