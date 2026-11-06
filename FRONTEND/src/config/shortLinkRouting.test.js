@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   SPA_SLUGS,
+  SPA_FALLBACK_SOURCE,
   SLUG_PATH_PATTERN,
   buildVercelRewrites,
   isShortLinkPath
@@ -38,7 +39,7 @@ describe('buildVercelRewrites', () => {
     const rewrites = buildVercelRewrites('https://api.example.com');
     const sources = rewrites.map((rule) => rule.source);
 
-    expect(sources.at(-1)).toBe('/(.*)');
+    expect(sources.at(-1)).toBe(SPA_FALLBACK_SOURCE);
     expect(sources).toContain(`/:slug(${SLUG_PATH_PATTERN})`);
 
     const slugIndex = sources.indexOf(`/:slug(${SLUG_PATH_PATTERN})`);
@@ -50,5 +51,6 @@ describe('buildVercelRewrites', () => {
       (rule) => rule.source === `/:slug(${SLUG_PATH_PATTERN})`
     );
     expect(slugRule.destination).toBe('https://api.example.com/:slug');
+    expect(SPA_FALLBACK_SOURCE).toContain('(?!assets/)');
   });
 });

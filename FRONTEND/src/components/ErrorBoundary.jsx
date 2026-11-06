@@ -1,6 +1,10 @@
 import React from 'react';
 import { RefreshCw } from 'lucide-react';
 import { ErrorPanel, errorActionButtonClass } from './ErrorPanel';
+import {
+  isChunkLoadError,
+  reloadOnceForChunkError
+} from '../utils/chunkLoadRecovery.js';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -15,6 +19,8 @@ class ErrorBoundary extends React.Component {
   componentDidCatch(error, errorInfo) {
     this.setState({ error, errorInfo });
     console.error('ErrorBoundary caught an error:', error, errorInfo);
+
+    if (isChunkLoadError(error)) reloadOnceForChunkError();
   }
 
   render() {

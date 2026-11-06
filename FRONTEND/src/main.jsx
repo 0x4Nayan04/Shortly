@@ -14,6 +14,9 @@ import {
 import { apiConfigError } from './config/api.js';
 import { queryClient } from './queryClient.js';
 import { dismissBootSplash } from './utils/bootSplash.js';
+import { setupChunkLoadRecovery } from './utils/chunkLoadRecovery.js';
+
+setupChunkLoadRecovery();
 
 const isHome =
   window.location.pathname === '/' || window.location.pathname === '';

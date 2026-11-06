@@ -85,7 +85,7 @@
       "destination": "https://s.nayanswarnkar.com/:slug"
     },
     {
-      "source": "/(.*)",
+      "source": "/((?!assets/).*)",
       "destination": "/index.html"
     }
   ]

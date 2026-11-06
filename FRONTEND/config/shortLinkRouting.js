@@ -14,6 +14,9 @@ export const SPA_SLUGS = new Set([
 /** path-to-regexp segment used in Vercel rewrites for short-link slugs. */
 export const SLUG_PATH_PATTERN = '[a-zA-Z0-9_-]{3,20}';
 
+/** SPA fallback — exclude `/assets/**` so missing chunks 404 instead of index.html. */
+export const SPA_FALLBACK_SOURCE = '/((?!assets/).*)';
+
 const SLUG_REGEX = new RegExp(`^${SLUG_PATH_PATTERN}$`);
 
 export function isShortLinkPath(pathname) {
@@ -37,6 +40,6 @@ export function buildVercelRewrites(proxyOrigin) {
       source: `/:slug(${SLUG_PATH_PATTERN})`,
       destination: `${origin}/:slug`
     },
-    { source: '/(.*)', destination: '/index.html' }
+    { source: SPA_FALLBACK_SOURCE, destination: '/index.html' }
   ];
 }
