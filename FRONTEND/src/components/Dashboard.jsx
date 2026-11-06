@@ -94,7 +94,7 @@ const dashboardReducer = (state, action) => {
 
 const Dashboard = () => {
   const { user } = useAuthSession();
-  const { stats, statsLoading, refetchStats } = useAuthStats();
+  const { stats, statsLoading, refetchStats, refetchOverview } = useAuthStats();
   const [state, dispatch] = useReducer(dashboardReducer, initialDashboardState);
   const {
     deletingUrl,
@@ -121,6 +121,7 @@ const Dashboard = () => {
     currentPage,
     totalPages,
     totalCount,
+    fetchMyUrls,
     debouncedSearch,
     sortBy,
     sortOrder,
@@ -149,7 +150,10 @@ const Dashboard = () => {
     refetchStats
   });
 
-  const handleUrlCreated = useCallback(() => refresh(), [refresh]);
+  const handleUrlCreated = useCallback(() => {
+    fetchMyUrls();
+    refetchOverview();
+  }, [fetchMyUrls, refetchOverview]);
 
   const handlePageChangeWithScroll = useCallback(
     (page) => {

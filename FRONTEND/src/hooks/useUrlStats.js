@@ -46,9 +46,10 @@ export function useUrlStats(enabled = false) {
 
   return {
     stats,
-    loading: overview.isFetching,
+    loading: overview.isLoading,
     hasFetched: overview.isFetched,
     refetch,
+    refetchOverview,
     reset
   };
 }

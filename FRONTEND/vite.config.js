@@ -113,6 +113,9 @@ export default defineConfig(({ mode }) => {
           // proxying so localhost/127.0.0.1 can hit Railway during local verify.
           configure: (proxy) => {
             proxy.on('proxyReq', (proxyReq) => {
+              if (/^(localhost|127\.0\.0\.1|\[::1\])$/i.test(new URL(BACKEND_ORIGIN).hostname)) {
+                return;
+              }
               const allowed =
                 process.env.VITE_PUBLIC_SHORT_URL?.trim() ||
                 'https://shortly.nayanswarnkar.com';

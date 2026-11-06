@@ -55,6 +55,7 @@ export function AuthProvider({ children }) {
     loading: statsFetchLoading,
     hasFetched: statsHasFetched,
     refetch: refetchStats,
+    refetchOverview,
     reset: resetStats
   } = useUrlStats(Boolean(user?._id && onDashboard));
 
@@ -204,9 +205,10 @@ export function AuthProvider({ children }) {
     () => ({
       stats,
       statsLoading,
-      refetchStats
+      refetchStats,
+      refetchOverview
     }),
-    [stats, statsLoading, refetchStats]
+    [stats, statsLoading, refetchStats, refetchOverview]
   );
 
   return (
