@@ -75,6 +75,22 @@ export const useDashboardList = ({ userId, announce, isOnline }) => {
     [setPayload]
   );
 
+  // Enable/disable does not affect search membership or any supported sort.
+  const updateCachedLink = useCallback(
+    ({ id, disabled }) => {
+      queryClient.setQueriesData(
+        { queryKey: ['dashboard-links', userId] },
+        (current) => current ? {
+          ...current,
+          urls: current.urls?.map((url) =>
+            url._id === id ? { ...url, disabled } : url
+          )
+        } : current
+      );
+    },
+    [queryClient, userId]
+  );
+
   const fetchMyUrls = useCallback(async () => {
     if (!isOnline) {
       showToast.error("You're offline. Cannot refresh links.", {
@@ -82,9 +98,14 @@ export const useDashboardList = ({ userId, announce, isOnline }) => {
       });
       return;
     }
+    // Edits can change membership/order in inactive pages and search results.
+    await queryClient.invalidateQueries({
+      queryKey: ['dashboard-links', userId],
+      refetchType: 'none'
+    });
     const result = await refetchQuery();
     if (result.data) announce(`Loaded ${result.data.urls?.length || 0} links`);
-  }, [announce, isOnline, refetchQuery]);
+  }, [announce, isOnline, refetchQuery, queryClient, userId]);
 
   const handleSearchChange = useCallback((value) => {
     setDebouncedSearch(value);
@@ -112,6 +133,7 @@ export const useDashboardList = ({ userId, announce, isOnline }) => {
   return {
     myUrls: data.urls ?? [],
     setMyUrls,
+    updateCachedLink,
     loading: isInitialLoading,
     isRefreshing,
     error: query.error ?? null,

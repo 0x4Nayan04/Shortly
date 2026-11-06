@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -109,4 +110,34 @@ describe('UrlForm', () => {
       expect(screen.getByText(/recovery email sent/i)).toBeInTheDocument();
     });
   });
+});
+
+
+it('clears a changed result without losing the draft or blocking a later reuse', async () => {
+  const id = '64f1c2ab3f1c2ab3f1c2ab3f';
+  createShortUrl.mockResolvedValue({ data: { id, short_url: 'result-one' } });
+  showToast.success.mockReturnValue('result-toast');
+  function Harness() {
+    const [changed, setChanged] = useState(null);
+    return <>
+      <UrlForm changedLinkIds={changed} />
+      <button onClick={() => setChanged(['other'])}>Change unrelated link</button>
+      <button onClick={() => setChanged([id])}>Change result link</button>
+    </>;
+  }
+  const user = userEvent.setup();
+  renderWithProviders(<Harness />);
+  const input = screen.getByLabelText(/enter your long url/i);
+  await user.type(input, 'https://example.com/first');
+  await user.click(screen.getByRole('button', { name: /^shorten$/i }));
+  expect(await screen.findByDisplayValue(/result-one/)).toBeInTheDocument();
+  await user.type(input, 'https://example.com/draft');
+  await user.click(screen.getByRole('button', { name: 'Change unrelated link' }));
+  expect(screen.getByDisplayValue(/result-one/)).toBeInTheDocument();
+  await user.click(screen.getByRole('button', { name: 'Change result link' }));
+  expect(screen.queryByDisplayValue(/result-one/)).not.toBeInTheDocument();
+  expect(input).toHaveValue('https://example.com/draft');
+  expect(showToast.dismiss).toHaveBeenCalledWith('result-toast');
+  await user.click(screen.getByRole('button', { name: /^shorten$/i }));
+  expect(await screen.findByDisplayValue(/result-one/)).toBeInTheDocument();
 });

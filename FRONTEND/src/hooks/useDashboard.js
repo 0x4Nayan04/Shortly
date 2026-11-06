@@ -9,10 +9,11 @@ export const useDashboard = ({
   confirm,
   dispatchUi,
   ui,
-  refetchStats
+  refetchStats,
+  refetchOverview
 }) => {
   const list = useDashboardList({ userId, announce, isOnline });
-  const { fetchMyUrls, myUrls, setMyUrls, setTotalCount } = list;
+  const { fetchMyUrls, myUrls, setMyUrls, setTotalCount, updateCachedLink } = list;
   const { selectedIds, editingLink } = ui;
 
   const visibleSelectedIds = useMemo(() => {
@@ -32,6 +33,8 @@ export const useDashboard = ({
     fetchMyUrls,
     refresh,
     refetchStats,
+    refetchOverview,
+    updateCachedLink,
     isOnline,
     confirm,
     announce,

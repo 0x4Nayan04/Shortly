@@ -7,7 +7,8 @@ const DashboardStatsZone = ({
   user,
   userStats,
   statsLoading,
-  onUrlCreated
+  onUrlCreated,
+  changedLinkIds
 }) => (
   <section
     className="dashboard-zone dashboard-stats-zone"
@@ -17,7 +18,7 @@ const DashboardStatsZone = ({
       Overview
     </h2>
 
-    <UrlForm user={user} variant="landing" onUrlCreated={onUrlCreated} />
+    <UrlForm user={user} variant="landing" onUrlCreated={onUrlCreated} changedLinkIds={changedLinkIds} />
 
     <div className="dashboard-stats-row" aria-busy={statsLoading}>
       {statsLoading ? (

@@ -6,9 +6,9 @@ import UrlFormResult from './urlForm/UrlFormResult';
 
 const ShareModal = lazy(() => import('./ShareModal'));
 
-const UrlForm = ({ onUrlCreated, user, onShowAuth, variant = 'default' }) => {
+const UrlForm = ({ onUrlCreated, user, onShowAuth, variant = 'default', changedLinkIds }) => {
   const isLanding = variant === 'landing';
-  const controller = useUrlFormController({ user, onShowAuth, onUrlCreated });
+  const controller = useUrlFormController({ user, onShowAuth, onUrlCreated, changedLinkIds });
   const { state, validation } = controller;
 
   return (

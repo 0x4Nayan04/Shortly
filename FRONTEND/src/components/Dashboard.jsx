@@ -62,6 +62,7 @@ const initialDashboardState = {
   selectedIds: new Set(),
   shareUrl: null,
   editingLink: null,
+  changedLinkIds: null,
   linkTab: 'links'
 };
 
@@ -85,6 +86,8 @@ const dashboardReducer = (state, action) => {
       return { ...state, shareUrl: action.value };
     case 'setEditingLink':
       return { ...state, editingLink: action.value };
+    case 'linksChanged':
+      return { ...state, changedLinkIds: action.value };
     case 'setLinkTab':
       return { ...state, linkTab: action.value };
     default:
@@ -103,6 +106,7 @@ const Dashboard = () => {
     selectedIds,
     shareUrl,
     editingLink,
+    changedLinkIds,
     linkTab
   } = state;
 
@@ -147,7 +151,8 @@ const Dashboard = () => {
     confirm: confirmDialog.confirm,
     dispatchUi: dispatch,
     ui: { selectedIds, editingLink },
-    refetchStats
+    refetchStats,
+    refetchOverview
   });
 
   const handleUrlCreated = useCallback(() => {
@@ -229,6 +234,7 @@ const Dashboard = () => {
               userStats={userStats}
               statsLoading={statsLoading}
               onUrlCreated={handleUrlCreated}
+              changedLinkIds={changedLinkIds}
             />
 
             <DashboardInsightsSection

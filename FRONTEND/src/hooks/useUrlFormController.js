@@ -68,14 +68,26 @@ function rememberLinkIfAnonymous(payload) {
   });
 }
 
-export function useUrlFormController({ user, onShowAuth, onUrlCreated }) {
+export function useUrlFormController({ user, onShowAuth, onUrlCreated, changedLinkIds }) {
   const [state, dispatch] = useReducer(urlFormReducer, initialState);
   const resultRef = useRef(null);
   const successToastRef = useRef(null);
+  const handledLinkChanges = useRef(changedLinkIds);
   const [announcement, announce] = useAnnouncement();
   const { isOnline } = useOnlineStatus();
   const { copy, isCopied } = useCopyToClipboard();
   const { url, customAlias, shortUrl, useCustomAlias } = state;
+
+  useEffect(() => {
+    // Consume each mutation once so a later reuse result can still be shown.
+    if (handledLinkChanges.current === changedLinkIds) return;
+    handledLinkChanges.current = changedLinkIds;
+    if (!changedLinkIds?.includes(state.createdLink?.id)) return;
+    dispatch({ type: 'CLEAR_RESULT' });
+    if (successToastRef.current) showToast.dismiss(successToastRef.current);
+    successToastRef.current = null;
+    announce('');
+  }, [changedLinkIds, state.createdLink?.id, announce]);
 
   useEffect(() => {
     if (!shortUrl || !resultRef.current) return;

@@ -17,6 +17,8 @@ export const useDashboardMutations = ({
   fetchMyUrls,
   refresh,
   refetchStats,
+  refetchOverview,
+  updateCachedLink,
   isOnline,
   confirm,
   announce,
@@ -48,6 +50,7 @@ export const useDashboardMutations = ({
       const deleteToast = showToast.loading('Deleting link…');
       try {
         await deleteShortUrl(urlId);
+        dispatchUi({ type: 'linksChanged', value: [urlId] });
         setTotalCount((prev) => Math.max(0, prev - 1));
         setMyUrls((prev) => prev.filter((url) => url._id !== urlId));
         dispatchUi({
@@ -108,13 +111,16 @@ export const useDashboardMutations = ({
       dispatchUi({ type: 'setUpdatingUrl', value: editingLink._id });
       try {
         await updateShortUrl(editingLink._id, apiUpdates);
+        dispatchUi({ type: 'linksChanged', value: [editingLink._id] });
         showToast.success('Link updated');
-        refresh();
+        // An edited destination/alias can change search membership and order.
+        fetchMyUrls();
+        refetchOverview();
       } finally {
         dispatchUi({ type: 'setUpdatingUrl', value: null });
       }
     },
-    [editingLink, refresh, dispatchUi]
+    [editingLink, fetchMyUrls, refetchOverview, dispatchUi]
   );
 
   const handleToggleDisabled = useCallback(
@@ -140,11 +146,12 @@ export const useDashboardMutations = ({
         nextDisabled ? 'Disabling link...' : 'Enabling link...'
       );
       try {
-        await updateShortUrl(url._id, { disabled: nextDisabled });
+        const response = await updateShortUrl(url._id, { disabled: nextDisabled });
+        updateCachedLink(getApiPayload(response).url);
+        dispatchUi({ type: 'linksChanged', value: [url._id] });
         showToast.dismiss(updateToast);
         showToast.success(nextDisabled ? 'Link disabled' : 'Link enabled');
         announce(nextDisabled ? 'Link disabled' : 'Link enabled');
-        refresh();
       } catch (err) {
         showToast.dismiss(updateToast);
         showToast.error(getApiErrorMessage(err, 'Failed to update link'));
@@ -152,7 +159,7 @@ export const useDashboardMutations = ({
         dispatchUi({ type: 'setUpdatingUrl', value: null });
       }
     },
-    [confirm, isOnline, dispatchUi, announce, refresh]
+    [confirm, isOnline, dispatchUi, announce, updateCachedLink]
   );
 
   const handleSelectUrl = useCallback(
@@ -204,6 +211,7 @@ export const useDashboardMutations = ({
       const payload = getApiPayload(response);
       const deletedCount = payload?.deletedCount ?? count;
       const skippedCount = payload?.skippedIds?.length ?? 0;
+      dispatchUi({ type: 'linksChanged', value: payload?.deletedIds ?? [] });
       showToast.dismiss(deleteToast);
       const summary = `Deleted ${deletedCount} ${pluralizeLinks(deletedCount)}`;
       showToast.success(
