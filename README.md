@@ -203,11 +203,11 @@ Facets resolve the user’s **active** link IDs, then `$match` + `$facet` on `cl
 <details>
 <summary><strong>8. Bounded process-local caches (not Redis)</strong></summary>
 
-Stats and auth-user resolution use process-local `Map`s (~30s TTL, bounded, invalidated on mutations). Concurrent stats builds coalesce. Redirects are uncached.
+Stats overview, click analytics, auth-user resolution, and redirect slug lookups use process-local `Map`s (short TTLs, bounded, invalidated on mutations). Concurrent builds coalesce. Dashboard splits light overview (`/api/create/stats`) from heavy click facets (`/api/create/stats/analytics`).
 
-**Tradeoff:** Dashboard totals can lag up to the TTL; caches are per Node process. No Redis for a solo portfolio deploy.
+**Tradeoff:** Totals / redirect targets can lag up to the TTL after edits; caches are per Node process. No Redis for a solo portfolio deploy.
 
-Frontend: ~30s `staleTime` default/stats; dashboard list **15s**. Stats fetch only on `/dashboard`.
+Frontend: ~30s `staleTime` for stats; dashboard list **15s**. Stats fetch only on `/dashboard` (overview + analytics as separate queries).
 
 </details>
 
