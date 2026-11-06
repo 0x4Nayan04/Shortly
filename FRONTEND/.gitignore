@@ -26,5 +26,3 @@ dist-ssr
 # CSS assemble script output
 src/styles/.assembled-check.css
 src/styles/dev-backup/
-.vercel
-.env*
