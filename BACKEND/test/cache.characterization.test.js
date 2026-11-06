@@ -16,8 +16,18 @@ const { default: Click } = await import('../src/schema/click.model.js');
 const { signToken } = await import('../src/utils/helper.js');
 const { resolveUserFromToken, invalidateCachedAuthUser } =
   await import('../src/utils/authToken.js');
-const { getStatsForUserService, invalidateStatsForUser } =
-  await import('../src/services/shortUrl.services.js');
+const {
+  getStatsForUserService,
+  getClickAnalyticsForUserService,
+  invalidateStatsForUser,
+  resolveRedirectTargetService,
+  updateOwnedShortUrlService
+} = await import('../src/services/shortUrl.services.js');
+const {
+  clearRedirectCache,
+  invalidateRedirectCache,
+  REDIRECT_CACHE_TTL_MS_FOR_TESTS
+} = await import('../src/services/shortUrl/redirectCache.js');
 
 let replSet;
 let findByIdCalls = 0;
@@ -120,18 +130,97 @@ test('auth-user cache: req.user reuse skips cache and Mongo when valid', async (
   assert.equal(findByIdCalls, 0);
 });
 
-test('stats cache: concurrent cold requests share one build (single Click.aggregate)', async () => {
+test('overview stats cache: concurrent cold requests share one ShortUrl.aggregate build', async () => {
   const user = await User.create({
     name: 'Stats Tester',
     email: `stats-${Date.now()}@example.com`,
     password: 'hashed'
   });
-  const link = await ShortUrl.create({
+  await ShortUrl.create({
     short_url: 'cachestats1',
     full_url: 'https://example.com/a',
     canonical_url: 'https://example.com/a',
     user: user._id,
     click: 3,
+    disabled: false,
+    retiredAt: null
+  });
+
+  let aggregateCalls = 0;
+  const originalAggregate = ShortUrl.aggregate.bind(ShortUrl);
+  ShortUrl.aggregate = (...args) => {
+    aggregateCalls += 1;
+    return originalAggregate(...args);
+  };
+
+  try {
+    invalidateStatsForUser(user._id);
+    const [a, b, c] = await Promise.all([
+      getStatsForUserService({ userId: user._id }),
+      getStatsForUserService({ userId: user._id }),
+      getStatsForUserService({ userId: user._id })
+    ]);
+    // lifetime + recent activity each call aggregate once per shared build
+    assert.equal(aggregateCalls, 2);
+    assert.equal(a.stats.totalUrls, b.stats.totalUrls);
+    assert.equal(b.stats.totalUrls, c.stats.totalUrls);
+    assert.equal(a.clickAnalytics, undefined);
+  } finally {
+    ShortUrl.aggregate = originalAggregate;
+  }
+});
+
+test('overview stats cache: warm hit skips rebuild; invalidate rebuilds', async () => {
+  const user = await User.create({
+    name: 'Stats Warm',
+    email: `stats-warm-${Date.now()}@example.com`,
+    password: 'hashed'
+  });
+  await ShortUrl.create({
+    short_url: 'cachestats2',
+    full_url: 'https://example.com/b',
+    canonical_url: 'https://example.com/b',
+    user: user._id,
+    click: 0,
+    disabled: false,
+    retiredAt: null
+  });
+
+  let aggregateCalls = 0;
+  const originalAggregate = ShortUrl.aggregate.bind(ShortUrl);
+  ShortUrl.aggregate = (...args) => {
+    aggregateCalls += 1;
+    return originalAggregate(...args);
+  };
+
+  try {
+    invalidateStatsForUser(user._id);
+    await getStatsForUserService({ userId: user._id });
+    assert.equal(aggregateCalls, 2);
+
+    await getStatsForUserService({ userId: user._id });
+    assert.equal(aggregateCalls, 2);
+
+    invalidateStatsForUser(user._id);
+    await getStatsForUserService({ userId: user._id });
+    assert.equal(aggregateCalls, 4);
+  } finally {
+    ShortUrl.aggregate = originalAggregate;
+  }
+});
+
+test('click analytics cache: concurrent cold requests share one Click.aggregate', async () => {
+  const user = await User.create({
+    name: 'Analytics Tester',
+    email: `analytics-${Date.now()}@example.com`,
+    password: 'hashed'
+  });
+  const link = await ShortUrl.create({
+    short_url: 'cacheanalytics1',
+    full_url: 'https://example.com/analytics',
+    canonical_url: 'https://example.com/analytics',
+    user: user._id,
+    click: 2,
     disabled: false,
     retiredAt: null
   });
@@ -149,54 +238,115 @@ test('stats cache: concurrent cold requests share one build (single Click.aggreg
 
   try {
     invalidateStatsForUser(user._id);
-    const [a, b, c] = await Promise.all([
-      getStatsForUserService({ userId: user._id }),
-      getStatsForUserService({ userId: user._id }),
-      getStatsForUserService({ userId: user._id })
+    const [a, b] = await Promise.all([
+      getClickAnalyticsForUserService({ userId: user._id }),
+      getClickAnalyticsForUserService({ userId: user._id })
     ]);
     assert.equal(aggregateCalls, 1);
-    assert.equal(a.stats.totalUrls, b.stats.totalUrls);
-    assert.equal(b.stats.totalUrls, c.stats.totalUrls);
+    assert.equal(a.clickAnalytics.overview.total, b.clickAnalytics.overview.total);
   } finally {
     Click.aggregate = originalAggregate;
   }
 });
 
-test('stats cache: warm hit skips Click.aggregate; invalidate rebuilds', async () => {
+test('redirect cache: first resolve hits Mongo; repeat within TTL does not', async () => {
+  clearRedirectCache();
+  await ShortUrl.create({
+    short_url: 'redirwarm1',
+    full_url: 'https://example.com/redirect-warm',
+    canonical_url: 'https://example.com/redirect-warm',
+    click: 0,
+    disabled: false,
+    retiredAt: null
+  });
+
+  let findCalls = 0;
+  const originalFindOne = ShortUrl.findOne.bind(ShortUrl);
+  ShortUrl.findOne = (...args) => {
+    findCalls += 1;
+    return originalFindOne(...args);
+  };
+
+  try {
+    const first = await resolveRedirectTargetService('redirwarm1');
+    assert.equal(first.data.full_url, 'https://example.com/redirect-warm');
+    assert.equal(first.cacheHit, false);
+    assert.equal(findCalls, 1);
+
+    const second = await resolveRedirectTargetService('redirwarm1');
+    assert.equal(second.cacheHit, true);
+    assert.equal(findCalls, 1);
+    assert.equal(second.data.full_url, first.data.full_url);
+  } finally {
+    ShortUrl.findOne = originalFindOne;
+  }
+});
+
+test('redirect cache: invalidate after disable forces Mongo re-read and 410', async () => {
+  clearRedirectCache();
   const user = await User.create({
-    name: 'Stats Warm',
-    email: `stats-warm-${Date.now()}@example.com`,
+    name: 'Redirect Cache',
+    email: `redir-cache-${Date.now()}@example.com`,
     password: 'hashed'
   });
-  await ShortUrl.create({
-    short_url: 'cachestats2',
-    full_url: 'https://example.com/b',
-    canonical_url: 'https://example.com/b',
+  const link = await ShortUrl.create({
+    short_url: 'redirdisable1',
+    full_url: 'https://example.com/disable-me',
+    canonical_url: 'https://example.com/disable-me',
     user: user._id,
     click: 0,
     disabled: false,
     retiredAt: null
   });
 
-  let aggregateCalls = 0;
-  const originalAggregate = Click.aggregate.bind(Click);
-  Click.aggregate = (...args) => {
-    aggregateCalls += 1;
-    return originalAggregate(...args);
+  const warm = await resolveRedirectTargetService('redirdisable1');
+  assert.equal(warm.cacheHit, false);
+
+  await updateOwnedShortUrlService({
+    userId: user._id,
+    id: link._id,
+    updates: { disabled: true }
+  });
+
+  await assert.rejects(
+    () => resolveRedirectTargetService('redirdisable1'),
+    (err) => err.statusCode === 410
+  );
+});
+
+test('redirect cache: expired entry re-reads Mongo', async () => {
+  clearRedirectCache();
+  await ShortUrl.create({
+    short_url: 'redirexpire1',
+    full_url: 'https://example.com/expire',
+    canonical_url: 'https://example.com/expire',
+    click: 0,
+    disabled: false,
+    retiredAt: null
+  });
+
+  let findCalls = 0;
+  const originalFindOne = ShortUrl.findOne.bind(ShortUrl);
+  ShortUrl.findOne = (...args) => {
+    findCalls += 1;
+    return originalFindOne(...args);
   };
 
+  const realNow = Date.now;
+  let offset = 0;
+  Date.now = () => realNow() + offset;
+
   try {
-    invalidateStatsForUser(user._id);
-    await getStatsForUserService({ userId: user._id });
-    assert.equal(aggregateCalls, 1);
+    await resolveRedirectTargetService('redirexpire1');
+    assert.equal(findCalls, 1);
 
-    await getStatsForUserService({ userId: user._id });
-    assert.equal(aggregateCalls, 1);
-
-    invalidateStatsForUser(user._id);
-    await getStatsForUserService({ userId: user._id });
-    assert.equal(aggregateCalls, 2);
+    offset = REDIRECT_CACHE_TTL_MS_FOR_TESTS + 1;
+    const again = await resolveRedirectTargetService('redirexpire1');
+    assert.equal(again.cacheHit, false);
+    assert.equal(findCalls, 2);
   } finally {
-    Click.aggregate = originalAggregate;
+    Date.now = realNow;
+    ShortUrl.findOne = originalFindOne;
+    invalidateRedirectCache('redirexpire1');
   }
 });

@@ -198,7 +198,7 @@ const Dashboard = () => {
     !!stats &&
     ((stats.recentActivity?.length ?? 0) > 0 ||
       (stats.topUrls?.length ?? 0) > 0);
-  const showClickAnalytics = !statsLoading && !!stats?.clickAnalytics;
+  const showClickAnalytics = !!stats?.clickAnalytics;
 
   // Keep search usable while a refetch is in flight; only lock on first load / bulk delete.
   const toolbarDisabled = loading || isBulkDeleting;

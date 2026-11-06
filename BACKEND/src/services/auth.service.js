@@ -115,7 +115,7 @@ export const loginUserService = async ({ email, password }) => {
     throw new AppError('Please verify your email before logging in.', 403);
   }
 
-  const token = await signToken({
+  const token = signToken({
     id: user._id,
     tokenVersion: user.tokenVersion ?? 0
   });

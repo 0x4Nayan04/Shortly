@@ -34,6 +34,12 @@ import {
   generateUniqueShortUrl,
   saveShortUrlOnDuplicateSlug
 } from './shortUrl/persistShortUrl.js';
+import {
+  invalidateRedirectCache,
+  invalidateRedirectCacheMany,
+  clearRedirectCache
+} from './shortUrl/redirectCache.js';
+
 export { claimAnonymousLinksService } from './shortUrl/claimAnonymousLinks.js';
 export {
   emailAnonymousClaimRecoveryService,
@@ -43,15 +49,41 @@ export {
   getShortUrlService,
   resolveRedirectTargetService
 } from './shortUrl/redirect.js';
+export {
+  invalidateRedirectCache,
+  invalidateRedirectCacheMany,
+  clearRedirectCache
+};
 
 const generateManageToken = () => crypto.randomBytes(24).toString('hex');
 const hashManageToken = (token) => hashEmailToken(token);
 const STATS_CACHE_TTL_MS = 30_000;
 const STATS_CACHE_MAX = 5_000;
-const statsCache = new Map();
+const overviewStatsCache = new Map();
+const clickAnalyticsCache = new Map();
+
+const readCached = (cache, key) => {
+  const cached = cache.get(key);
+  if (cached && cached.expiresAt > Date.now()) return cached.value;
+  if (cached) cache.delete(key);
+  return null;
+};
+
+const writeCached = (cache, key, value) => {
+  if (cache.size >= STATS_CACHE_MAX) {
+    cache.delete(cache.keys().next().value);
+  }
+  cache.set(key, {
+    value,
+    expiresAt: Date.now() + STATS_CACHE_TTL_MS
+  });
+};
 
 export const invalidateStatsForUser = (userId) => {
-  if (userId) statsCache.delete(userId.toString());
+  if (!userId) return;
+  const key = userId.toString();
+  overviewStatsCache.delete(key);
+  clickAnalyticsCache.delete(key);
 };
 
 const reserveSlotOrThrow = async (userId, session) => {
@@ -188,6 +220,8 @@ export async function updateOwnedShortUrlService({ userId, id, updates }) {
     updated = await withSlugConflictHandler(() =>
       updateByIdAndUser(id, userId, patch)
     );
+    invalidateRedirectCache(previousSlug);
+    if (patch.short_url) invalidateRedirectCache(patch.short_url);
   }
   invalidateStatsForUser(userId);
 
@@ -238,6 +272,7 @@ export async function softDeleteLinkService({ userId, id }) {
   if (!removed) {
     throw new AppError('You can only delete your own URLs', 403);
   }
+  invalidateRedirectCache(existing.short_url);
   invalidateStatsForUser(userId);
 }
 
@@ -263,6 +298,7 @@ export async function softDeleteLinksService({ userId, ids }) {
     .filter((id) => !ownedIds.includes(id))
     .map((id) => ({ id, reason: 'not_found' }));
 
+  invalidateRedirectCacheMany(owned.map((link) => link.short_url));
   invalidateStatsForUser(userId);
   return {
     deletedCount,
@@ -273,31 +309,39 @@ export async function softDeleteLinksService({ userId, ids }) {
 
 export async function getStatsForUserService({ userId }) {
   const cacheKey = userId.toString();
-  const cached = statsCache.get(cacheKey);
-  if (cached && cached.expiresAt > Date.now()) return cached.value;
+  const cached = readCached(overviewStatsCache, cacheKey);
+  if (cached) return cached;
 
-  const pending = buildStatsForUser(userId).catch((error) => {
-    statsCache.delete(cacheKey);
+  const pending = buildOverviewStatsForUser(userId).catch((error) => {
+    overviewStatsCache.delete(cacheKey);
     throw error;
   });
-  if (statsCache.size >= STATS_CACHE_MAX) {
-    statsCache.delete(statsCache.keys().next().value);
-  }
-  statsCache.set(cacheKey, {
-    value: pending,
-    expiresAt: Date.now() + STATS_CACHE_TTL_MS
-  });
+  writeCached(overviewStatsCache, cacheKey, pending);
   return pending;
 }
 
-async function buildStatsForUser(userId) {
+export async function getClickAnalyticsForUserService({ userId }) {
+  const cacheKey = userId.toString();
+  const cached = readCached(clickAnalyticsCache, cacheKey);
+  if (cached) return cached;
+
+  const pending = getClickAggregates(userId)
+    .then((clickAnalytics) => ({ clickAnalytics }))
+    .catch((error) => {
+      clickAnalyticsCache.delete(cacheKey);
+      throw error;
+    });
+  writeCached(clickAnalyticsCache, cacheKey, pending);
+  return pending;
+}
+
+async function buildOverviewStatsForUser(userId) {
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
-  const [lifetime, recentActivity, topUrls, clickStats] = await Promise.all([
+  const [lifetime, recentActivity, topUrls] = await Promise.all([
     aggregateLifetimeStatsForUser(userId),
     aggregateRecentActivityForUser(userId, sevenDaysAgo),
-    findTopClickedForUser(userId),
-    getClickAggregates(userId)
+    findTopClickedForUser(userId)
   ]);
 
   return {
@@ -308,7 +352,6 @@ async function buildStatsForUser(userId) {
       clickEventRetentionDays: CLICK_RETENTION_DAYS
     },
     recentActivity,
-    topUrls,
-    clickAnalytics: clickStats
+    topUrls
   };
 }

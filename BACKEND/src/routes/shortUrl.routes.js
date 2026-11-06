@@ -6,6 +6,7 @@ import {
   deleteShortUrl,
   bulkDeleteUrls,
   getUrlStats,
+  getUrlClickAnalytics,
   updateShortUrl,
   claimAnonymousShortUrls,
   emailAnonymousClaimRecovery,
@@ -94,6 +95,12 @@ router.get(
   getUserUrls
 );
 router.get('/stats', isAuthenticated, statsLimiter, getUrlStats);
+router.get(
+  '/stats/analytics',
+  isAuthenticated,
+  statsLimiter,
+  getUrlClickAnalytics
+);
 router.post(
   '/claim',
   isAuthenticated,

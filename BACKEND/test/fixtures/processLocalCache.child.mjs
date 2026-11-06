@@ -58,8 +58,8 @@ const token = await signToken({
 });
 
 let aggregateCalls = 0;
-const originalAggregate = Click.aggregate.bind(Click);
-Click.aggregate = (...args) => {
+const originalAggregate = ShortUrl.aggregate.bind(ShortUrl);
+ShortUrl.aggregate = (...args) => {
   aggregateCalls += 1;
   return originalAggregate(...args);
 };

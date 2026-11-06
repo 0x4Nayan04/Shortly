@@ -49,16 +49,17 @@ export function AuthProvider({ children }) {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const onDashboard = location.pathname === ROUTES.DASHBOARD;
   const {
     stats,
     loading: statsFetchLoading,
     hasFetched: statsHasFetched,
     refetch: refetchStats,
     reset: resetStats
-  } = useUrlStats(Boolean(user?._id && location.pathname === ROUTES.DASHBOARD));
+  } = useUrlStats(Boolean(user?._id && onDashboard));
 
   const statsLoading = Boolean(
-    user?._id && (statsFetchLoading || !statsHasFetched)
+    user?._id && onDashboard && (statsFetchLoading || !statsHasFetched)
   );
 
   useEffect(() => {

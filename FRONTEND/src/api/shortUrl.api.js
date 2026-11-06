@@ -65,6 +65,11 @@ export const getUrlStats = async () => {
   return data;
 };
 
+export const getUrlClickAnalytics = async () => {
+  const { data } = await axiosinstance.get(`/api/create/stats/analytics`);
+  return data;
+};
+
 export const claimAnonymousLinks = async (links) => {
   const { data } = await axiosinstance.post(`/api/create/claim`, { links });
   return data;

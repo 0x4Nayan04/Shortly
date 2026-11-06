@@ -20,6 +20,7 @@ import {
   softDeleteLinkService,
   softDeleteLinksService,
   getStatsForUserService,
+  getClickAnalyticsForUserService,
   invalidateStatsForUser
 } from '../services/shortUrl.services.js';
 import { recordClickFromRequest } from '../services/click.service.js';
@@ -66,7 +67,9 @@ export const createShortUrl = asyncHandler(async (req, res, _next) => {
 export const redirectFromShortUrl = asyncHandler(async (req, res, next) => {
   const { short_url } = req.validatedParams;
 
-  const shortUrlData = await resolveRedirectTargetService(short_url);
+  const { data: shortUrlData, cacheHit, lookupMs } =
+    await resolveRedirectTargetService(short_url);
+  req.redirectTiming = { cacheHit, lookupMs };
 
   if (!isSafeRedirectUrl(shortUrlData.full_url)) {
     logger.warn('Blocked unsafe redirect destination', {
@@ -232,8 +235,12 @@ export const bulkDeleteUrls = asyncHandler(async (req, res, _next) => {
 
 export const getUrlStats = asyncHandler(async (req, res, _next) => {
   const userId = req.user._id;
-
   const result = await getStatsForUserService({ userId });
-
   res.json(successResponse('URL stats fetched', result));
+});
+
+export const getUrlClickAnalytics = asyncHandler(async (req, res, _next) => {
+  const userId = req.user._id;
+  const result = await getClickAnalyticsForUserService({ userId });
+  res.json(successResponse('Click analytics fetched', result));
 });

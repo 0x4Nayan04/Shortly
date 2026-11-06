@@ -1,9 +1,10 @@
-import { getMyUrls, getUrlStats } from '../api/shortUrl.api';
+import { getMyUrls, getUrlClickAnalytics, getUrlStats } from '../api/shortUrl.api';
 import { ROUTES } from '../constants/routes';
 import { queryClient } from '../queryClient';
 import { getApiPayload } from '../utils/axiosInstance';
 
-export const URL_STATS_QUERY_KEY = ['url-stats'];
+export const URL_STATS_OVERVIEW_QUERY_KEY = ['url-stats', 'overview'];
+export const URL_STATS_ANALYTICS_QUERY_KEY = ['url-stats', 'analytics'];
 export const URL_STATS_STALE_TIME = 30_000;
 
 export const DASHBOARD_PAGE_SIZE = 10;
@@ -16,8 +17,11 @@ export const DEFAULT_DASHBOARD_LIST_PARAMS = {
   sortOrder: 'desc'
 };
 
-export const fetchUrlStatsQuery = async () =>
+export const fetchUrlStatsOverviewQuery = async () =>
   getApiPayload(await getUrlStats()) ?? null;
+
+export const fetchUrlStatsAnalyticsQuery = async () =>
+  getApiPayload(await getUrlClickAnalytics()) ?? null;
 
 export const getDashboardLinksQueryKey = (
   userId,
@@ -45,14 +49,9 @@ export const fetchDashboardLinksQuery = async ({
   return getApiPayload(response) ?? {};
 };
 
+/** Prefetch link list only — stats are owned by useUrlStats to avoid a double GET. */
 export function prefetchDashboardQueries(userId) {
   if (!userId || window.location.pathname !== ROUTES.DASHBOARD) return;
-
-  void queryClient.prefetchQuery({
-    queryKey: URL_STATS_QUERY_KEY,
-    queryFn: fetchUrlStatsQuery,
-    staleTime: URL_STATS_STALE_TIME
-  });
 
   void queryClient.prefetchQuery({
     queryKey: getDashboardLinksQueryKey(userId),

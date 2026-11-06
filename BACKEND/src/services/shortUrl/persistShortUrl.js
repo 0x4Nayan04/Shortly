@@ -1,6 +1,5 @@
 import {
   findExistingForCanonical,
-  isSlugAvailable,
   saveShortUrl
 } from '../../dao/shortUrl.dao.js';
 import { generateNanoId } from '../../utils/helper.js';
@@ -8,7 +7,6 @@ import { AppError } from '../../utils/errorHandler.js';
 import { normalizeSlug } from '../../utils/normalizeSlug.js';
 
 const MAX_DUPLICATE_SAVE_ATTEMPTS = 5;
-const MAX_SLUG_GENERATION_ATTEMPTS = 5;
 
 export const buildExistingReuseResult = (doc) => ({
   short_url: doc.short_url,
@@ -17,17 +15,9 @@ export const buildExistingReuseResult = (doc) => ({
   reused: true
 });
 
-export const generateUniqueShortUrl = async () => {
-  for (let attempt = 0; attempt < MAX_SLUG_GENERATION_ATTEMPTS; attempt++) {
-    const short_url = normalizeSlug(generateNanoId(7));
-    if (await isSlugAvailable(short_url)) return short_url;
-  }
-
-  throw new AppError(
-    'Could not generate unique short URL after multiple attempts',
-    500
-  );
-};
+/** Candidate slug — uniqueness is enforced by the DB unique index on insert. */
+export const generateUniqueShortUrl = async () =>
+  normalizeSlug(generateNanoId(7));
 
 /**
  * Saves a short URL; on global slug collision, retries with a newly generated slug.
