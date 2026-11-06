@@ -1,5 +1,5 @@
 import { createRoot } from 'react-dom/client';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import './index.css';
 import App from './App.jsx';
@@ -12,18 +12,18 @@ import {
   OfflineBanner
 } from './components/UxEnhancements.jsx';
 import { apiConfigError } from './config/api.js';
+import { queryClient } from './queryClient.js';
+
+const lcpShell = document.getElementById('landing-lcp-shell');
+if (
+  lcpShell &&
+  window.location.pathname !== '/' &&
+  window.location.pathname !== ''
+) {
+  lcpShell.hidden = true;
+}
 
 const root = createRoot(document.getElementById('root'));
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 30_000,
-      gcTime: 5 * 60_000,
-      refetchOnWindowFocus: false,
-      retry: 1
-    }
-  }
-});
 
 if (apiConfigError) {
   root.render(<ConfigError message={apiConfigError} />);

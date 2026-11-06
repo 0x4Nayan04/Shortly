@@ -2,20 +2,140 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <link
+      rel="preload"
+      href="/fonts/dm-sans-latin-var.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href="/fonts/instrument-serif-italic-hero.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Instrument+Serif:ital@0;1&family=Space+Grotesk:wght@400;500;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap"
       media="print"
       onload="this.media = 'all'"
     />
     <noscript>
       <link
         rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Instrument+Serif:ital@0;1&family=Space+Grotesk:wght@400;500;600&display=swap"
+        href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap"
       />
     </noscript>
+    <style>
+      /* Critical LCP hero — enough to paint title/lead before the full CSS bundle. */
+      @font-face {
+        font-family: 'DM Sans';
+        font-style: normal;
+        font-weight: 400 700;
+        font-display: swap;
+        src: url('/fonts/dm-sans-latin-var.woff2') format('woff2');
+      }
+      @font-face {
+        font-family: 'Instrument Serif';
+        font-style: italic;
+        font-weight: 400;
+        font-display: swap;
+        src: url('/fonts/instrument-serif-italic-hero.woff2') format('woff2');
+      }
+      :root {
+        --color-primary: #0562ef;
+        --color-ink: #0b1015;
+        --color-muted-strong: #6b7480;
+        --color-surface: #ffffff;
+        --color-background: #f5f9ff;
+        --font-sans: 'DM Sans', system-ui, sans-serif;
+        --font-display: 'Space Grotesk', 'DM Sans', system-ui, sans-serif;
+        --frame-px: 3rem;
+        --landing-gap-md: 1.25rem;
+        --landing-gap-lg: 2rem;
+        --hero-pad-y: 2rem;
+        --hero-pad-bottom: 2rem;
+      }
+      html,
+      body {
+        margin: 0;
+        background: var(--color-background);
+        color: var(--color-ink);
+        font-family: var(--font-sans);
+      }
+      #landing-lcp-shell {
+        background: var(--color-surface);
+      }
+      #landing-lcp-shell .landing-frame-inner {
+        padding-inline: clamp(1.25rem, 4vw, var(--frame-px));
+      }
+      #landing-lcp-shell .landing-hero-inner {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: var(--landing-gap-lg);
+        padding-top: var(--hero-pad-y);
+        padding-bottom: calc(var(--hero-pad-y) + var(--hero-pad-bottom));
+        text-align: center;
+      }
+      #landing-lcp-shell .landing-hero-copy {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: var(--landing-gap-md);
+      }
+      #landing-lcp-shell .landing-hero-title {
+        margin: 0;
+        max-width: 18ch;
+        font-family: var(--font-display);
+        font-size: clamp(2.25rem, 5vw, 4.5rem);
+        font-weight: 500;
+        line-height: 1.04;
+        letter-spacing: -0.058em;
+        color: var(--color-ink);
+      }
+      #landing-lcp-shell .hero-heading-em,
+      #landing-lcp-shell .hero-copy-em {
+        font-family: 'Instrument Serif', Georgia, serif;
+        font-style: italic;
+      }
+      #landing-lcp-shell .text-primary {
+        color: var(--color-primary);
+      }
+      #landing-lcp-shell .landing-section-lead--hero {
+        margin: 0;
+        max-width: 36rem;
+        font-size: 1rem;
+        line-height: 1.5;
+        color: var(--color-muted-strong);
+      }
+      @media (max-width: 767px) {
+        #landing-lcp-shell .landing-hero-inner {
+          gap: 1.25rem;
+          padding-top: 1.25rem;
+          padding-bottom: calc(1.25rem + var(--hero-pad-bottom));
+        }
+        #landing-lcp-shell .landing-hero-copy {
+          gap: 0.875rem;
+          width: 100%;
+        }
+        #landing-lcp-shell .landing-hero-title {
+          max-width: 11ch;
+          font-size: clamp(2.35rem, 9.5vw, 3.05rem);
+          line-height: 1.08;
+          letter-spacing: -0.045em;
+        }
+        #landing-lcp-shell .landing-section-lead--hero {
+          max-width: 18.5rem;
+          font-size: 0.95rem;
+          line-height: 1.52;
+        }
+      }
+    </style>
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -31,10 +151,7 @@
       property="og:description"
       content="Shortly is a privacy-first URL shortener. Shorten links instantly, use custom aliases, and get click analytics without storing visitor IP addresses or tracking cookies."
     />
-    <meta
-      property="og:image"
-      content="/og-image.png"
-    />
+    <meta property="og:image" content="/og-image.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
@@ -46,12 +163,39 @@
       name="twitter:description"
       content="Shortly is a privacy-first URL shortener. Shorten links instantly, use custom aliases, and get click analytics without storing visitor IP addresses or tracking cookies."
     />
-    <meta
-      name="twitter:image"
-      content="/og-image.png"
-    />
+    <meta name="twitter:image" content="/og-image.png" />
   </head>
   <body>
+    <section
+      id="landing-lcp-shell"
+      class="bg-surface"
+      aria-labelledby="hero-heading"
+    >
+      <div class="hero-dot-grid-wrap">
+        <div class="relative z-10">
+          <div class="landing-frame-inner landing-hero-inner">
+            <div class="landing-hero-copy">
+              <div id="hero-chip-slot"></div>
+              <h1
+                id="hero-heading"
+                class="landing-hero-title max-w-[18ch] text-ink"
+              >
+                Long links, <span class="hero-heading-em">shortened</span
+                ><span class="text-primary">.</span>
+              </h1>
+              <p class="landing-section-lead landing-section-lead--hero">
+                Paste any URL and get a clean link you can share everywhere.
+                Sign up free for
+                <span class="hero-copy-em">custom aliases</span> and
+                <span class="hero-copy-em">real-time analytics</span>,
+                privacy-first, with no visitor tracking cookies.
+              </p>
+            </div>
+            <div id="hero-form-slot" class="hero-action-stack"></div>
+          </div>
+        </div>
+      </div>
+    </section>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

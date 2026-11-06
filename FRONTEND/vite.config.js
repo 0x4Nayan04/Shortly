@@ -8,6 +8,22 @@ const BACKEND_ORIGIN =
   process.env.VITE_BACKEND_DEV_URL || 'http://127.0.0.1:3001';
 const BACKEND_HOST = new URL(BACKEND_ORIGIN).host;
 
+/** Defer built CSS so critical inline hero styles can paint LCP first. */
+function deferStylesheetPlugin() {
+  return {
+    name: 'defer-stylesheet',
+    transformIndexHtml(html) {
+      return html.replace(
+        /<link(\s[^>]*\s|\s)rel="stylesheet"([^>]*href="[^"]+\.css"[^>]*)>/gi,
+        (_match, pre, post) => {
+          if (/\bmedia=/.test(pre + post)) return _match;
+          return `<link${pre}rel="stylesheet"${post} media="print" onload="this.media='all'"><noscript><link${pre}rel="stylesheet"${post}></noscript>`;
+        }
+      );
+    }
+  };
+}
+
 /** Dev: proxy /ZcrzivY → backend so short links work on the same port as the SPA (5173). */
 function shortUrlProxyPlugin() {
   return {
@@ -49,7 +65,12 @@ export default defineConfig(({ mode }) => {
   }
 
   return {
-    plugins: [react(), tailwindcss(), shortUrlProxyPlugin()],
+    plugins: [
+      react(),
+      tailwindcss(),
+      shortUrlProxyPlugin(),
+      deferStylesheetPlugin()
+    ],
     build: {
       rollupOptions: {
         output: {
@@ -87,7 +108,26 @@ export default defineConfig(({ mode }) => {
       proxy: {
         '/api': {
           target: BACKEND_ORIGIN,
-          changeOrigin: true
+          changeOrigin: true,
+          // Remote API CORS only allows the prod frontend origin; rewrite when
+          // proxying so localhost/127.0.0.1 can hit Railway during local verify.
+          configure: (proxy) => {
+            proxy.on('proxyReq', (proxyReq) => {
+              const allowed =
+                process.env.VITE_PUBLIC_SHORT_URL?.trim() ||
+                'https://shortly.nayanswarnkar.com';
+              try {
+                const { origin } = new URL(allowed);
+                if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin)) {
+                  return;
+                }
+                proxyReq.setHeader('Origin', origin);
+                proxyReq.setHeader('Referer', `${origin}/`);
+              } catch {
+                /* keep browser Origin */
+              }
+            });
+          }
         }
       }
     }

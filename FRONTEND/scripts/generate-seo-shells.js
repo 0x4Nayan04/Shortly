@@ -17,6 +17,62 @@ const seoDir = resolve(distDir, '_seo');
 const siteOrigin =
   process.env.VITE_PUBLIC_SHORT_URL?.trim() || SHORTLY_SITE_URL;
 
+function assertSingleDeferredGoogleFontsStylesheet(html, pathname) {
+  const hrefs = [
+    ...html.matchAll(
+      /href=["'](https:\/\/fonts\.googleapis\.com\/css2[^"']*)["']/gi
+    )
+  ].map((match) => match[1]);
+
+  if (hrefs.length === 0) {
+    return;
+  }
+
+  const uniqueHrefs = new Set(hrefs);
+  if (uniqueHrefs.size !== 1) {
+    throw new Error(
+      `[Shortly] ${pathname}: expected one Google Fonts CSS URL; found ${uniqueHrefs.size}.`
+    );
+  }
+
+  if (hrefs.length > 2) {
+    throw new Error(
+      `[Shortly] ${pathname}: Google Fonts CSS linked ${hrefs.length} times; expected ≤2 (deferred + noscript).`
+    );
+  }
+
+  const deferred = [
+    ...html.matchAll(
+      /<link\b[^>]*href=["']https:\/\/fonts\.googleapis\.com\/css2[^"']*["'][^>]*>/gi
+    )
+  ].some(
+    (match) =>
+      /\bmedia=["']print["']/i.test(match[0]) && /\bonload=/i.test(match[0])
+  );
+
+  if (!deferred) {
+    throw new Error(
+      `[Shortly] ${pathname}: missing deferred Google Fonts stylesheet (media=print onload).`
+    );
+  }
+}
+
+/** Home keeps `#landing-lcp-shell`; other SEO paths hide it. */
+function applyLandingLcpShellVisibility(html, pathname) {
+  if (!html.includes('id="landing-lcp-shell"')) {
+    throw new Error(
+      `[Shortly] ${pathname}: missing #landing-lcp-shell in dist/index.html`
+    );
+  }
+  if (pathname === '/') {
+    return html;
+  }
+  return html.replace(
+    /id="landing-lcp-shell"/,
+    'id="landing-lcp-shell" hidden'
+  );
+}
+
 let indexHtml;
 try {
   indexHtml = readFileSync(indexPath, 'utf8');
@@ -30,7 +86,9 @@ mkdirSync(seoDir, { recursive: true });
 
 for (const pathname of SEO_PUBLIC_PATHS) {
   const meta = getDocumentMetaForPath(pathname, siteOrigin);
-  const shellHtml = injectDocumentMeta(indexHtml, meta);
+  let shellHtml = injectDocumentMeta(indexHtml, meta);
+  shellHtml = applyLandingLcpShellVisibility(shellHtml, pathname);
+  assertSingleDeferredGoogleFontsStylesheet(shellHtml, pathname);
   const slug = pathname === '/' ? 'home' : pathname.slice(1);
   const outputPath = resolve(seoDir, `${slug}.html`);
   writeFileSync(outputPath, shellHtml);

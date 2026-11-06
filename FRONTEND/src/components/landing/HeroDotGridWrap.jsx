@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { DotGridSpotlight } from '../DotGridSpotlight';
 
 const DOT_GRID_DEFAULTS = {
@@ -12,16 +12,31 @@ const DOT_GRID_DEFAULTS = {
   activeMinAlpha: 0.38
 };
 
-/**
- * Landing-style blue dot grid background with optional side fades.
- */
+/** Landing-style blue dot grid background with optional side fades. */
 const HeroDotGridWrap = ({ children, className = '', wrapClassName = '' }) => {
   const wrapRef = useRef(null);
+  const [isVisible, setIsVisible] = useState(true);
+
+  useEffect(() => {
+    const root = wrapRef.current;
+    if (!root) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsVisible(entry.isIntersecting);
+      },
+      { rootMargin: '80px 0px', threshold: 0 }
+    );
+    observer.observe(root);
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <div ref={wrapRef} className={`hero-dot-grid-wrap ${wrapClassName}`.trim()}>
       <div className="hero-dot-grid-mask" aria-hidden="true">
-        <DotGridSpotlight interactionRef={wrapRef} {...DOT_GRID_DEFAULTS} />
+        {isVisible ? (
+          <DotGridSpotlight interactionRef={wrapRef} {...DOT_GRID_DEFAULTS} />
+        ) : null}
       </div>
       <div className={`relative z-10 ${className}`.trim()}>{children}</div>
     </div>
