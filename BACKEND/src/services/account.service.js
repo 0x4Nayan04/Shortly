@@ -17,6 +17,7 @@ import {
 import { alertEmailDeliveryFailure } from './opsAlert.service.js';
 import { logger } from '../utils/logger.js';
 import { invalidateCachedAuthUser } from '../utils/authToken.js';
+import { clearRedirectCache } from './shortUrl/redirectCache.js';
 
 const GENERIC_RESET_MESSAGE =
   'If an account with that email exists, a reset link has been sent.';
@@ -78,6 +79,7 @@ export const deleteAccountService = async ({ userId, password }) => {
     await retireAllForUser(userId, session);
     await findUserByIdAndDelete(userId, session);
   });
+  clearRedirectCache();
   invalidateCachedAuthUser(userId);
 };
 

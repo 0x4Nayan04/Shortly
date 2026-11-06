@@ -8,13 +8,20 @@ export const latencyMiddleware = (req, res, next) => {
     const level =
       res.statusCode >= 500 ? 'error' : res.statusCode >= 400 ? 'warn' : 'info';
 
-    logger[level]('request', {
+    const payload = {
       requestId: req.requestId,
       method: req.method,
       path: req.originalUrl || req.url,
       statusCode: res.statusCode,
       durationMs
-    });
+    };
+
+    if (req.redirectTiming) {
+      payload.redirectCacheHit = req.redirectTiming.cacheHit;
+      payload.redirectLookupMs = req.redirectTiming.lookupMs;
+    }
+
+    logger[level]('request', payload);
   });
 
   next();

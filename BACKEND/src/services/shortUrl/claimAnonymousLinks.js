@@ -9,6 +9,7 @@ import {
   releaseActiveLinkSlots
 } from '../../dao/user.dao.js';
 import { runWithTransaction } from '../../utils/mongoTransaction.js';
+import { invalidateRedirectCache } from './redirectCache.js';
 
 const hashManageToken = (token) => hashEmailToken(token);
 
@@ -57,6 +58,7 @@ export async function claimAnonymousLinksService({ userId, claims }) {
     } catch (error) {
       if (error.code !== 11000 || !error.keyPattern?.canonical_url) throw error;
       await retireAnonymousByToken(doc._id, tokenHash);
+      invalidateRedirectCache(doc.short_url);
       skipped.push({
         id,
         reason: 'duplicate_destination',
