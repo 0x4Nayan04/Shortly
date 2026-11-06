@@ -56,8 +56,8 @@ export const rangeOptions = [
   { value: '30d', label: '30D', subtitle: 'Last 30 days' },
   {
     value: 'all',
-    label: 'Available',
-    subtitle: 'Since first click',
+    label: 'Stored',
+    subtitle: 'All stored days',
     title: 'Every stored day from your first click — up to 30 days of records'
   }
 ];

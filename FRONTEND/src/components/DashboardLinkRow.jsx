@@ -41,9 +41,10 @@ const CopyButton = ({ isCopied, shortUrlFull, onCopy }) => (
   <ActionButton
     onClick={() => onCopy(shortUrlFull)}
     className={`dashboard-link-item__action${isCopied ? ' dashboard-link-item__action--done' : ''}`}
-    aria-label={
+    ariaLabel={
       isCopied ? 'Copied to clipboard' : `Copy ${shortUrlFull} to clipboard`
     }
+    title={isCopied ? 'Copied' : 'Copy link'}
   >
     {isCopied ? (
       <Check className="size-[1.125rem]" aria-hidden="true" />
@@ -57,7 +58,8 @@ const ShareButton = ({ disabled, shortUrl, onShare, fullUrl }) => (
   <ActionButton
     onClick={() => onShare({ short_url: shortUrl, full_url: fullUrl })}
     disabled={disabled}
-    aria-label={`Share ${shortUrl}`}
+    ariaLabel={`Share ${shortUrl}`}
+    title="Share link"
   >
     <Share2 className="size-[1.125rem]" aria-hidden="true" />
   </ActionButton>
@@ -67,7 +69,7 @@ const EditButton = ({ disabled, shortUrl, isUpdating, onEdit }) => (
   <ActionButton
     onClick={onEdit}
     disabled={disabled}
-    aria-label={`Edit ${shortUrl}`}
+    ariaLabel={`Edit ${shortUrl}`}
     title="Edit destination or alias"
   >
     {isUpdating ? (
@@ -82,7 +84,7 @@ const ToggleButton = ({ disabled, shortUrl, isDisabled, onToggleDisabled }) => (
   <ActionButton
     onClick={onToggleDisabled}
     disabled={disabled}
-    aria-label={isDisabled ? `Enable ${shortUrl}` : `Disable ${shortUrl}`}
+    ariaLabel={isDisabled ? `Enable ${shortUrl}` : `Disable ${shortUrl}`}
     title={isDisabled ? 'Enable link' : 'Disable link'}
   >
     {isDisabled ? (
@@ -98,8 +100,9 @@ const DeleteButton = ({ disabled, shortUrl, isDeleting, onDelete }) => (
     onClick={onDelete}
     disabled={disabled}
     className="dashboard-link-item__action dashboard-link-item__action--danger"
-    aria-busy={isDeleting}
-    aria-label={isDeleting ? 'Deleting link' : `Delete ${shortUrl}`}
+    ariaBusy={isDeleting}
+    ariaLabel={isDeleting ? 'Deleting link' : `Delete ${shortUrl}`}
+    title="Delete link"
   >
     {isDeleting ? (
       <Loader2 className="size-[1.125rem] animate-spin" aria-hidden="true" />

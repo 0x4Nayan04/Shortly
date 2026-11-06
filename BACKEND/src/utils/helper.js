@@ -1,8 +1,12 @@
 import jwt from 'jsonwebtoken';
-import { nanoid } from 'nanoid';
+import { customAlphabet } from 'nanoid';
 
-export const generateNanoId = (length) => {
-  return nanoid(length);
+/** Alphanumeric only — avoids leading `-`/`_` in random short paths. */
+const SHORT_URL_ALPHABET =
+  '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+
+export const generateNanoId = (length = 7) => {
+  return customAlphabet(SHORT_URL_ALPHABET, length)();
 };
 
 export const signToken = (payload) => {

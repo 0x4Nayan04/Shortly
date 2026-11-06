@@ -1558,6 +1558,11 @@
     gap: var(--space-s2);
     min-width: 0;
   }
+  .dashboard-links-body--refreshing {
+    opacity: 0.72;
+    transition: opacity 0.15s ease;
+    pointer-events: none;
+  }
   .dashboard-links-panel__header {
     display: flex;
     align-items: flex-start;

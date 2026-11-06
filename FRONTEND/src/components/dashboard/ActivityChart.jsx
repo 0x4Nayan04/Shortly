@@ -110,8 +110,8 @@ const ActivityChart = memo(({ data }) => {
                       </strong>
                       {day.clicks > 0 && (
                         <span>
-                          {day.clicks} click{day.clicks !== 1 ? 's' : ''}{' '}
-                          (lifetime)
+                          {day.clicks} click{day.clicks !== 1 ? 's' : ''} on
+                          links created that day
                         </span>
                       )}
                       <span>{dateLabel}</span>

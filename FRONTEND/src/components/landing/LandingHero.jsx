@@ -54,10 +54,8 @@ const LandingHero = () => {
     dismissBootSplash();
 
     return () => {
-      shell.hidden = true;
-      if (shell.parentElement === host) {
-        document.body.insertBefore(shell, document.getElementById('root'));
-      }
+      // Drop the static LCP shell so login/dashboard don't keep a ghost H1.
+      shell.remove();
     };
   }, [shell]);
 

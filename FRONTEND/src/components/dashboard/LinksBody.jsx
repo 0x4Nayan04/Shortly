@@ -5,6 +5,7 @@ import LoadingSkeleton from './LoadingSkeleton';
 
 const LinksBody = ({
   loading,
+  isRefreshing = false,
   error,
   myUrls,
   debouncedSearch,
@@ -15,8 +16,9 @@ const LinksBody = ({
   selectedIds,
   handlers
 }) => {
-  if (loading) return <LoadingSkeleton />;
-  if (error) {
+  // Skeleton only on first load — keep prior rows visible while search/sort refetches.
+  if (loading && myUrls.length === 0) return <LoadingSkeleton />;
+  if (error && myUrls.length === 0) {
     return (
       <ErrorRecovery
         error={error}
@@ -29,14 +31,21 @@ const LinksBody = ({
   if (myUrls.length === 0)
     return <LinksEmpty debouncedSearch={debouncedSearch} />;
   return (
-    <LinksList
-      myUrls={myUrls}
-      copiedCheck={copiedCheck}
-      deletingUrl={deletingUrl}
-      updatingUrl={updatingUrl}
-      selectedIds={selectedIds}
-      handlers={handlers}
-    />
+    <div
+      className={
+        isRefreshing ? 'dashboard-links-body dashboard-links-body--refreshing' : undefined
+      }
+      aria-busy={isRefreshing || undefined}
+    >
+      <LinksList
+        myUrls={myUrls}
+        copiedCheck={copiedCheck}
+        deletingUrl={deletingUrl}
+        updatingUrl={updatingUrl}
+        selectedIds={selectedIds}
+        handlers={handlers}
+      />
+    </div>
   );
 };
 

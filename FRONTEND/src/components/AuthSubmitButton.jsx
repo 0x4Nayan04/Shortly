@@ -20,14 +20,11 @@ const AuthSubmitButton = memo(
       {loading ? (
         <>
           <BrandedSpinner size="sm" decorative />
-          {loadingLabel}
+          <span>{loadingLabel}</span>
         </>
       ) : (
         children
       )}
-      <span className="sr-only" aria-live="polite" aria-atomic="true">
-        {loading ? loadingLabel : ''}
-      </span>
     </button>
   )
 );

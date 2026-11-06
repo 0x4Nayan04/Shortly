@@ -38,7 +38,7 @@ const ClickAnalytics = ({ clickAnalytics }) => {
 
   const statCards = [
     {
-      label: `Clicks (${periodDays}d)`,
+      label: `Clicks (stored ${periodDays}d)`,
       value: totalClicks,
       icon: MousePointerClick,
       variant: 'dashboard-stat-card--clicks'
@@ -134,8 +134,8 @@ const ClickAnalytics = ({ clickAnalytics }) => {
           </div>
         </header>
         <p className="click-analytics__chart-note">
-          Daily click records are kept for up to {retentionDays} days: this
-          chart cannot show lifetime history. For all-time totals, see{' '}
+          These charts use stored click events (kept up to {retentionDays}{' '}
+          days). For all-time totals, see{' '}
           <strong>Total clicks (all time)</strong> in the overview above.
         </p>
         <ClicksChart

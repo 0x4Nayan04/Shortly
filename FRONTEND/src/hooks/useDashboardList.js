@@ -102,11 +102,18 @@ export const useDashboardList = ({ userId, announce, isOnline }) => {
   }, []);
 
   const data = query.data ?? {};
+  const isInitialLoading = Boolean(
+    userId && query.isLoading && !query.isPlaceholderData
+  );
+  const isRefreshing = Boolean(
+    userId && query.isFetching && !isInitialLoading
+  );
 
   return {
     myUrls: data.urls ?? [],
     setMyUrls,
-    loading: Boolean(userId && query.isFetching),
+    loading: isInitialLoading,
+    isRefreshing,
     error: query.error ?? null,
     currentPage,
     totalPages: data.totalPages || 1,
