@@ -72,7 +72,7 @@ const UrlFormResult = ({
         <input
           id="short-url-output"
           type="text"
-          value={shortUrl}
+          value={shortUrl.replace(/^https?:\/\//i, '')}
           readOnly
           className="short-link-result__input"
           onClick={(e) => e.target.select()}

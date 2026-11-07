@@ -11,6 +11,7 @@ import {
   useSyncExternalStore
 } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { flushSync } from 'react-dom';
 import { useUrlStats } from '../hooks/useUrlStats';
 import { getCurrentUser, logoutUser } from '../api/user.api';
 import { LiveRegion, useAnnouncement } from '../components/Accessibility';
@@ -152,9 +153,13 @@ export function AuthProvider({ children }) {
     if (loggedOut) {
       showToast.success('You have been signed out.');
     }
-    clearAuthSessionUser();
+    // Publish the signed-out session and route together so the protected-route
+    // guard cannot replace the intended destination with the login page.
+    flushSync(() => {
+      clearAuthSessionUser();
+      navigate(ROUTES.HOME, { replace: true, flushSync: true });
+    });
     announce('You have been signed out.');
-    navigate(ROUTES.HOME);
   }, [navigate, announce, confirmLogout]);
 
   const openLogin = useCallback(() => navigate(ROUTES.LOGIN), [navigate]);

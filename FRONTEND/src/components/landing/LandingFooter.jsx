@@ -1,4 +1,5 @@
 import { createElement } from 'react';
+import { ArrowRight, ArrowUpRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { LANDING_SECTION_LINKS, LANDING_INFO_LINKS } from '../../constants/landingNav';
 import { ROUTES } from '../../constants/routes';
@@ -33,7 +34,10 @@ const FooterInlineLink = ({ link }) => {
 };
 
 const getFooterLinks = (user) => [
-  ...LANDING_SECTION_LINKS,
+  ...LANDING_SECTION_LINKS.map((link) => ({
+    ...link,
+    href: `${ROUTES.HOME}${link.href}`
+  })),
   ...LANDING_INFO_LINKS,
   user
     ? { label: 'Dashboard', to: ROUTES.DASHBOARD }
@@ -72,25 +76,24 @@ const LandingFooter = () => {
   const footerLinks = getFooterLinks(user);
 
   return (
-    <footer className="landing-footer border-t border-border bg-surface">
+    <footer className="landing-footer" aria-labelledby="footer-heading">
       <LandingFrameInner className="landing-footer-inner">
         <div className="landing-footer-main">
-          <a
-            href="/"
-            className="nav-landing-logo landing-footer-logo outline-none"
-            aria-label="Shortly — home"
-          >
-            <ShortlyLogo
-              variant="full"
-              className="shortly-logo--footer hidden md:inline-flex"
-            />
-            <ShortlyLogo
-              variant="mark"
-              className="shortly-logo--footer md:hidden"
-            />
-          </a>
+          <div className="landing-footer-invitation">
+            <h2 id="footer-heading">Keep it short.</h2>
+            <p className="landing-footer-description">
+              Less URL. More room for what matters.
+            </p>
+            <a href={`${ROUTES.HOME}#main-content`} className="landing-footer-cta">
+              <span>Shorten a link</span>
+              <span className="landing-footer-cta-arrow">
+                <ArrowRight size={18} aria-hidden="true" />
+              </span>
+            </a>
+          </div>
 
           <nav className="landing-footer-inline-nav" aria-label="Footer">
+            <h3 className="landing-footer-group-title">Explore</h3>
             <ul className="landing-footer-inline-links">
               {footerLinks.map((link) => (
                 <li key={link.label}>
@@ -99,24 +102,38 @@ const LandingFooter = () => {
               ))}
             </ul>
           </nav>
-
-          <div className="landing-footer-social" aria-label="Social links">
+          <div className="landing-footer-social" role="group" aria-labelledby="footer-social-heading">
+            <h3 id="footer-social-heading" className="landing-footer-group-title">Elsewhere</h3>
             {SOCIAL_ICON_LINKS.map(({ label, href, icon }) => (
               <a
                 key={label}
                 href={href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="landing-icon-btn outline-none"
-                aria-label={label}
+                className="landing-footer-social-link"
+                aria-label={`${label} (opens in a new tab)`}
               >
                 {createElement(icon, {
                   className: 'h-4 w-4',
                   'aria-hidden': true
                 })}
+                <span>{label}</span>
+                <ArrowUpRight size={14} aria-hidden="true" />
               </a>
             ))}
           </div>
+        </div>
+        <div className="landing-footer-bottom">
+          <a
+            href="/"
+            className="nav-landing-logo landing-footer-logo"
+            aria-label="Shortly — home"
+          >
+            <ShortlyLogo variant="full" className="shortly-logo--footer" />
+          </a>
+          <p className="landing-footer-copyright">
+            &copy; {new Date().getFullYear()} Shortly
+          </p>
         </div>
       </LandingFrameInner>
     </footer>

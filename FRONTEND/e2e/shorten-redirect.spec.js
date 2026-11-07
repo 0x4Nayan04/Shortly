@@ -17,7 +17,7 @@ test('anonymous shorten, redirect, and dashboard analytics', async ({
   await expect(result).toBeVisible();
   const shortUrl = (await result.inputValue()).trim();
   expect(shortUrl).toMatch(
-    /^https?:\/\/localhost:5173\/[a-zA-Z0-9_-]+$/
+    /^localhost:5173\/[a-zA-Z0-9_-]+$/
   );
 
   const slug = shortUrl.split('/').pop();
