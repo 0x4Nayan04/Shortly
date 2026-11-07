@@ -10,14 +10,28 @@ export const invalidateCachedAuthUser = (userId) => {
   if (userId) authUserCache.delete(userId.toString());
 };
 
-const cacheAuthUser = (user) => {
+const loadAuthUser = (cacheKey) => {
   if (authUserCache.size >= AUTH_USER_CACHE_MAX) {
     authUserCache.delete(authUserCache.keys().next().value);
   }
-  authUserCache.set(user._id.toString(), {
-    user,
-    expiresAt: Date.now() + AUTH_USER_CACHE_TTL_MS
+  const entry = { expiresAt: Date.now() + AUTH_USER_CACHE_TTL_MS };
+  authUserCache.set(cacheKey, entry);
+  entry.pending = measureRequestStep('auth.lookup', () =>
+    User.findById(cacheKey).select('-password').lean()
+  ).then((user) => {
+    // Logout, expiry, or eviction can replace this lookup while it is in flight.
+    if (authUserCache.get(cacheKey) === entry) {
+      if (user) authUserCache.set(cacheKey, {
+        user, expiresAt: Date.now() + AUTH_USER_CACHE_TTL_MS
+      });
+      else authUserCache.delete(cacheKey);
+    }
+    return user;
+  }).catch((error) => {
+    if (authUserCache.get(cacheKey) === entry) authUserCache.delete(cacheKey);
+    throw error;
   });
+  return entry.pending;
 };
 
 export const getTokenFromRequest = (req) => {
@@ -90,18 +104,17 @@ export const resolveUserFromToken = async (req, token) => {
 
   const cacheKey = decoded.id.toString();
   const cached = authUserCache.get(cacheKey);
-  recordTimingState('authCacheHit', Boolean(cached?.expiresAt > Date.now()));
-  if (cached?.expiresAt > Date.now()) {
-    if (!isTokenVersionValid(cached.user, decoded)) return { kind: 'revoked' };
-    return { kind: 'ok', user: cached.user };
+  const usable = cached?.expiresAt > Date.now();
+  recordTimingState('authCacheHit', Boolean(usable && cached.user));
+  recordTimingState('authLookupShared', Boolean(usable && cached.pending));
+  let user;
+  if (usable) {
+    user = cached.user ?? await measureRequestStep('auth.lookupWait', () => cached.pending);
+  } else {
+    if (cached) authUserCache.delete(cacheKey);
+    user = await loadAuthUser(cacheKey);
   }
-  if (cached) authUserCache.delete(cacheKey);
-
-  const user = await measureRequestStep('auth.lookup', () =>
-    User.findById(decoded.id).select('-password').lean()
-  );
   if (!user) return { kind: 'missing' };
   if (!isTokenVersionValid(user, decoded)) return { kind: 'revoked' };
-  cacheAuthUser(user);
   return { kind: 'ok', user };
 };

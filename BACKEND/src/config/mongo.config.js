@@ -1,9 +1,10 @@
 import mongoose from 'mongoose';
 import { logger } from '../utils/logger.js';
+import { performance } from 'node:perf_hooks';
 
 const mongooseOptions = {
   maxPoolSize: 10,
-  minPoolSize: 2,
+  minPoolSize: 4,
   serverSelectionTimeoutMS: 30000,
   socketTimeoutMS: 45000,
   connectTimeoutMS: 30000,
@@ -17,6 +18,70 @@ if (ipFamily !== undefined && ipFamily !== '') {
   mongooseOptions.family = Number(ipFamily);
 }
 
+// The initial dashboard can need four connections at once. Keep TLS/auth setup
+// out of its request path, while preserving the existing maximum pool size.
+export async function warmMongoPool(connection) {
+  const client = connection.getClient();
+  const readyConnections = new Map();
+  let primary;
+  let resolveReady;
+  let timeout;
+  const check = () => {
+    if ((readyConnections.get(primary)?.size ?? 0) >= mongooseOptions.minPoolSize) {
+      resolveReady?.();
+    }
+  };
+  const remember = ({ address, connectionId }) => {
+    if (!readyConnections.has(address)) readyConnections.set(address, new Set());
+    readyConnections.get(address).add(connectionId);
+    check();
+  };
+  const forget = ({ address, connectionId }) => {
+    readyConnections.get(address)?.delete(connectionId);
+  };
+  const clear = ({ address }) => { readyConnections.delete(address); };
+  client.on('connectionReady', remember);
+  client.on('connectionCheckedOut', remember);
+  client.on('connectionClosed', forget);
+  client.on('connectionPoolCleared', clear);
+  const start = performance.now();
+  try {
+    await Promise.race([
+      (async () => {
+        const hello = await connection.db.admin().command({ hello: 1 });
+        // Standalone MongoDB omits replica-set names in hello.
+        const singleHost = client.options?.hosts?.length === 1
+          ? client.options.hosts[0].toString() : null;
+        primary = hello.me ?? hello.primary ?? singleHost;
+        if (!primary) throw new Error('Could not identify the MongoDB primary');
+        check();
+        // Checked-out events also discover connections ready before subscription.
+        await Promise.all(Array.from({ length: mongooseOptions.minPoolSize }, () =>
+          connection.db.admin().command({ ping: 1 })
+        ));
+        await new Promise((resolve) => {
+          resolveReady = resolve;
+          check();
+        });
+      })(),
+      new Promise((_, reject) => {
+        timeout = setTimeout(() => reject(new Error('MongoDB pool warmup timed out')),
+          mongooseOptions.connectTimeoutMS);
+      })
+    ]);
+    logger.info('MongoDB pool ready', {
+      minimumConnections: mongooseOptions.minPoolSize,
+      warmupMs: Math.round(performance.now() - start)
+    });
+  } finally {
+    clearTimeout(timeout);
+    client.off('connectionReady', remember);
+    client.off('connectionCheckedOut', remember);
+    client.off('connectionClosed', forget);
+    client.off('connectionPoolCleared', clear);
+  }
+}
+
 const connectDB = async () => {
   let retries = 3;
 
@@ -26,6 +91,8 @@ const connectDB = async () => {
         process.env.MONGODB_URI,
         mongooseOptions
       );
+
+      await warmMongoPool(connection.connection);
 
       logger.info('MongoDB connected', { host: connection.connection.host });
 
@@ -43,6 +110,7 @@ const connectDB = async () => {
 
       break;
     } catch (error) {
+      await mongoose.disconnect();
       retries--;
       logger.error('MongoDB connection error', {
         error: error.message,

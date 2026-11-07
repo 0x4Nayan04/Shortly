@@ -162,42 +162,44 @@ export const listForUser = async ({
   return { urls, totalCount };
 };
 
-export const findTopClickedForUser = async (userId, limit = 5) =>
-  short_urlModel
-    .find({ user: userId, ...ACTIVE_LINK_FILTER })
-    .sort({ click: -1 })
-    .limit(limit)
-    .select('full_url short_url click createdAt')
-    .lean();
-
-export const aggregateLifetimeStatsForUser = async (userId) => {
+export const aggregateOverviewForUser = async (userId, since) => {
   const [result] = await short_urlModel.aggregate([
     { $match: { user: userId, ...ACTIVE_LINK_FILTER } },
     {
-      $group: {
-        _id: null,
-        totalUrls: { $sum: 1 },
-        totalClicksLifetime: { $sum: '$click' },
-        avgClicks: { $avg: '$click' }
+      $facet: {
+        lifetime: [{
+          $group: {
+            _id: null,
+            totalUrls: { $sum: 1 },
+            totalClicksLifetime: { $sum: '$click' },
+            avgClicks: { $avg: '$click' }
+          }
+        }],
+        recentActivity: [
+          { $match: { createdAt: { $gte: since } } },
+          {
+            $group: {
+              _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+              count: { $sum: 1 },
+              clicks: { $sum: '$click' }
+            }
+          },
+          { $sort: { _id: 1 } }
+        ],
+        topUrls: [
+          { $sort: { click: -1 } },
+          { $limit: 5 },
+          { $project: { full_url: 1, short_url: 1, click: 1, createdAt: 1 } }
+        ]
       }
     }
   ]);
-  return result || { totalUrls: 0, totalClicksLifetime: 0, avgClicks: 0 };
+  return {
+    lifetime: result?.lifetime[0] ?? { totalUrls: 0, totalClicksLifetime: 0, avgClicks: 0 },
+    recentActivity: result?.recentActivity ?? [],
+    topUrls: result?.topUrls ?? []
+  };
 };
-
-export const aggregateRecentActivityForUser = async (userId, since) =>
-  short_urlModel.aggregate([
-    { $match: { user: userId, ...ACTIVE_LINK_FILTER } },
-    { $match: { createdAt: { $gte: since } } },
-    {
-      $group: {
-        _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
-        count: { $sum: 1 },
-        clicks: { $sum: '$click' }
-      }
-    },
-    { $sort: { _id: 1 } }
-  ]);
 
 export const updateByIdAndUser = async (id, userId, patch) => {
   return measureRequestStep('link.update', () => short_urlModel

@@ -160,8 +160,8 @@ test('overview stats cache: concurrent cold requests share one ShortUrl.aggregat
       getStatsForUserService({ userId: user._id }),
       getStatsForUserService({ userId: user._id })
     ]);
-    // lifetime + recent activity each call aggregate once per shared build
-    assert.equal(aggregateCalls, 2);
+    // One aggregate is shared across concurrent cold requests.
+    assert.equal(aggregateCalls, 1);
     assert.equal(a.stats.totalUrls, b.stats.totalUrls);
     assert.equal(b.stats.totalUrls, c.stats.totalUrls);
     assert.equal(a.clickAnalytics, undefined);
@@ -196,14 +196,14 @@ test('overview stats cache: warm hit skips rebuild; invalidate rebuilds', async 
   try {
     invalidateStatsForUser(user._id);
     await getStatsForUserService({ userId: user._id });
-    assert.equal(aggregateCalls, 2);
+    assert.equal(aggregateCalls, 1);
 
     await getStatsForUserService({ userId: user._id });
-    assert.equal(aggregateCalls, 2);
+    assert.equal(aggregateCalls, 1);
 
     invalidateStatsForUser(user._id);
     await getStatsForUserService({ userId: user._id });
-    assert.equal(aggregateCalls, 4);
+    assert.equal(aggregateCalls, 2);
   } finally {
     ShortUrl.aggregate = originalAggregate;
   }
@@ -349,4 +349,101 @@ test('redirect cache: expired entry re-reads Mongo', async () => {
     ShortUrl.findOne = originalFindOne;
     invalidateRedirectCache('redirexpire1');
   }
+});
+
+test('concurrent cold auth lookups share a read and validate every token version', async () => {
+  const { user, token } = await createUserAndToken();
+  const revoked = signToken({ id: user._id, tokenVersion: 99 });
+  const results = await Promise.all([
+    resolveUserFromToken({}, token), resolveUserFromToken({}, token),
+    resolveUserFromToken({}, revoked)
+  ]);
+  assert.deepEqual(results.map((r) => r.kind), ['ok', 'ok', 'revoked']);
+  assert.equal(findByIdCalls, 1);
+});
+
+test('overview returns consistent active-link totals, activity, and rankings with one query', async () => {
+  const { user } = await createUserAndToken();
+  const other = new mongoose.Types.ObjectId();
+  const now = new Date();
+  const old = new Date(Date.now() - 10 * 86400000);
+  await ShortUrl.insertMany([
+    { user: user._id, short_url: 'overview-new', full_url: 'https://example.com/new', click: 3, createdAt: now },
+    { user: user._id, short_url: 'overview-disabled', full_url: 'https://example.com/disabled', click: 7, disabled: true, createdAt: now },
+    { user: user._id, short_url: 'overview-old', full_url: 'https://example.com/old', click: 11, createdAt: old },
+    { user: user._id, short_url: 'overview-retired', click: 99, retiredAt: now },
+    { user: other, short_url: 'overview-other', click: 99 }
+  ]);
+  const originalAggregate = ShortUrl.aggregate.bind(ShortUrl);
+  const originalFind = ShortUrl.find.bind(ShortUrl);
+  let queries = 0;
+  ShortUrl.aggregate = (...args) => { queries++; return originalAggregate(...args); };
+  ShortUrl.find = (...args) => { queries++; return originalFind(...args); };
+  try {
+    const result = await getStatsForUserService({ userId: user._id });
+    assert.equal(result.stats.totalUrls, 3);
+    assert.equal(result.stats.totalClicks, 21);
+    assert.equal(result.stats.avgClicksPerUrl, 7);
+    assert.equal(result.recentActivity.length, 1);
+    assert.equal(result.recentActivity[0].count, 2);
+    assert.equal(result.recentActivity[0].clicks, 10);
+    assert.deepEqual(result.topUrls.map((x) => x.short_url), ['overview-old', 'overview-disabled', 'overview-new']);
+    assert.ok(result.topUrls.every((x) => x._id && x.full_url && x.createdAt));
+    assert.equal(queries, 1);
+  } finally {
+    ShortUrl.aggregate = originalAggregate;
+    ShortUrl.find = originalFind;
+  }
+});
+
+test('invalidating an in-flight auth lookup cannot refill a revoked user cache', async () => {
+  const { user, token } = await createUserAndToken();
+  const savedFind = User.findById;
+  let finish;
+  const gate = new Promise((resolve) => { finish = resolve; });
+  User.findById = () => { findByIdCalls++; return { select: () => ({ lean: () => gate }) }; };
+  try {
+    const pending = resolveUserFromToken({}, token);
+    await new Promise(setImmediate);
+    assert.equal(findByIdCalls, 1);
+    await User.updateOne({ _id: user._id }, { $inc: { tokenVersion: 1 } });
+    invalidateCachedAuthUser(user._id);
+    finish({ _id: user._id, tokenVersion: 0 });
+    await pending;
+    User.findById = savedFind;
+    const next = await resolveUserFromToken({}, token);
+    assert.equal(next.kind, 'revoked');
+    assert.equal(findByIdCalls, 2);
+  } finally {
+    User.findById = savedFind;
+    invalidateCachedAuthUser(user._id);
+  }
+});
+
+test('failed shared auth lookups are removed so the next request can retry', async () => {
+  const { user, token } = await createUserAndToken();
+  const savedFind = User.findById;
+  User.findById = () => { findByIdCalls++; throw new Error('temporary database failure'); };
+  try {
+    const attempts = await Promise.allSettled([
+      resolveUserFromToken({}, token), resolveUserFromToken({}, token)
+    ]);
+    assert.ok(attempts.every((r) => r.status === 'rejected'));
+    assert.equal(findByIdCalls, 1);
+    User.findById = savedFind;
+    assert.equal((await resolveUserFromToken({}, token)).kind, 'ok');
+    assert.equal(findByIdCalls, 2);
+  } finally {
+    User.findById = savedFind;
+    invalidateCachedAuthUser(user._id);
+  }
+});
+
+test('overview of an empty account keeps zero totals and empty lists', async () => {
+  const result = await getStatsForUserService({ userId: new mongoose.Types.ObjectId() });
+  assert.equal(result.stats.totalUrls, 0);
+  assert.equal(result.stats.totalClicks, 0);
+  assert.equal(result.stats.avgClicksPerUrl, 0);
+  assert.deepEqual(result.recentActivity, []);
+  assert.deepEqual(result.topUrls, []);
 });

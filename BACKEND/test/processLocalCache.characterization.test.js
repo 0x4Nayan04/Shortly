@@ -51,11 +51,11 @@ test('auth-user cache is process-local (warm process A does not warm process B)'
 
 test('stats cache is process-local (process B still cold after process A prime)', () => {
   const a = runChild('stats-prime');
-  // overview build: lifetime + recent-activity ShortUrl.aggregates
-  assert.equal(a.aggregateCalls, 2);
+  // One overview aggregate per process-local build.
+  assert.equal(a.aggregateCalls, 1);
 
   const b = runChild('stats-cold');
-  assert.equal(b.aggregateCalls, 2);
+  assert.equal(b.aggregateCalls, 1);
   assert.notEqual(a.pid, b.pid);
 });
 

@@ -5,14 +5,12 @@ import {
   findExistingForCanonical,
   findOwnedActiveById,
   findOwnedActiveByIds,
-  findTopClickedForUser,
   isSlugAvailable,
   listForUser,
   saveShortUrl,
   retireByIdAndUser,
   retireManyByIdsAndUser,
-  aggregateLifetimeStatsForUser,
-  aggregateRecentActivityForUser,
+  aggregateOverviewForUser,
   updateByIdAndUser
 } from '../dao/shortUrl.dao.js';
 import { AppError, NotFoundError } from '../utils/errorHandler.js';
@@ -357,17 +355,9 @@ export async function getClickAnalyticsForUserService({ userId }) {
 async function buildOverviewStatsForUser(userId) {
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
-  const [lifetime, recentActivity, topUrls] = await Promise.all([
-    measureRequestStep('overview.lifetime', () =>
-      aggregateLifetimeStatsForUser(userId)
-    ),
-    measureRequestStep('overview.recent', () =>
-      aggregateRecentActivityForUser(userId, sevenDaysAgo)
-    ),
-    measureRequestStep('overview.topLinks', () =>
-      findTopClickedForUser(userId)
-    )
-  ]);
+  const { lifetime, recentActivity, topUrls } = await measureRequestStep(
+    'overview.aggregate', () => aggregateOverviewForUser(userId, sevenDaysAgo)
+  );
 
   return {
     stats: {
