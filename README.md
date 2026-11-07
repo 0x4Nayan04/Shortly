@@ -1,271 +1,222 @@
 # Shortly
 
-<p align="left">
-  <img src="./FRONTEND/public/assets/Shortly_Logo_nav.webp" alt="Shortly" height="40" />
-</p>
+A self-hostable URL shortener with guest links, custom aliases, QR codes, and a dashboard for managing links and understanding clicks.
 
-Privacy-first URL shortener with click analytics, custom aliases, and a signed-in dashboard. Live at [shortly.nayanswarnkar.com](https://shortly.nayanswarnkar.com/); short links on [s.nayanswarnkar.com](https://s.nayanswarnkar.com/).
+<img src="./FRONTEND/public/assets/Shortly_Logo_nav.webp" alt="Shortly logo" height="40" />
 
-Built as an end-to-end learning project (React, Express, MongoDB) that is also deployed and used — not a tutorial clone of Bitly.
+[Try Shortly](https://shortly.nayanswarnkar.com/) · [Short-link domain](https://s.nayanswarnkar.com/) · [Privacy policy](https://shortly.nayanswarnkar.com/privacy) · [MIT license](./LICENSE)
 
-[![Live](https://img.shields.io/badge/status-live-brightgreen)](https://shortly.nayanswarnkar.com/)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
-[![Node](https://img.shields.io/badge/node-22-339933)](https://nodejs.org/)
+Built as a full-stack portfolio and learning project with React, Express, and MongoDB. The repository includes the application, automated tests, and Vercel frontend routing. It is maintained by one author; it does not promise hosted-service uptime or multi-region operation.
 
-<video src="./FRONTEND/public/demo/demo.mp4" width="1280" autoplay loop muted playsinline>
-  <a href="./FRONTEND/public/demo/demo.mp4">Watch the Shortly demo</a>
-</video>
+Instead of relying on a hosted shortener, you can run the application and keep link ownership and analytics in your own MongoDB database. Guests can shorten a URL immediately and claim it after signing in. Detailed click events expire after 30 days; the link's lifetime counter remains until the link is deleted.
 
-## Why this exists
+[Watch the demo](./FRONTEND/public/demo/demo.mp4)
 
-Most shorteners bury privacy and ownership details behind a SaaS wall. Shortly is a small, self-hostable stack that:
+## Run locally
 
-- Lets guests create links without an account (device-local manage tokens, optional email claim)
-- Keeps detailed click events for **30 days** (TTL) while lifetime click totals stay on the link
-- Documents the real tradeoffs (async click recording, process-local caches, slug retirement) instead of pretending it is Redis-scale infra
-
-**Status:** live portfolio app, actively maintained by one author. MIT. Expect solo-project ops (per-process caches, no Redis).
-
-**Not for you if** you need multi-region redirects, shared rate limits across many API instances, or mid-string dashboard search.
-
-## Quick start
-
-Requires **Node 22** and a **MongoDB replica set** (Atlas is fine). Click recording and several account flows use transactions — a standalone local `mongod` will redirect but may fail to record clicks.
+Use **Node.js 22** (the version used in CI), npm, and a **MongoDB replica set**, such as MongoDB Atlas. A standalone MongoDB server cannot support the transactions used for signed-in link creation, click recording, and account deletion. For Atlas, allow your development machine's IP and create a database user with access to the database.
 
 ```bash
 git clone https://github.com/0x4Nayan04/Shortly.git
 cd Shortly
+npm ci
 npm run install:all
-
-cp BACKEND/.env.example BACKEND/.env
 cp FRONTEND/.env.example FRONTEND/.env
 ```
 
-Minimum backend values for local work:
+Create `BACKEND/.env` with the following values. Replace the MongoDB URI and use your own JWT secret of at least 32 characters:
 
 ```env
 MONGODB_URI=mongodb+srv://USER:PASSWORD@cluster.example.mongodb.net/url_shortener
-JWT_SECRET=your_super_secret_jwt_key_at_least_32_chars
+JWT_SECRET=replace-with-a-random-secret-at-least-32-characters-long
 FRONT_END_URL=http://127.0.0.1:5173
+PUBLIC_BASE_URL=http://127.0.0.1:3001
 PORT=3001
 NODE_ENV=development
+RESEND_API_KEY=
+```
+
+Start the API and frontend in **two separate terminals**, both from the repository root:
+
+```bash
+# Terminal 1
+npm run dev:backend
 ```
 
 ```bash
-npm run dev:backend   # http://127.0.0.1:3001
-npm run dev:frontend  # http://127.0.0.1:5173
+# Terminal 2
+npm run dev:frontend
 ```
 
-Open [http://127.0.0.1:5173](http://127.0.0.1:5173).
+Open [http://127.0.0.1:5173](http://127.0.0.1:5173). Keep `VITE_APP_URL` empty for local development; Vite proxies `/api` requests and short-link paths to the API on port 3001.
 
-> **Email:** `RESEND_API_KEY` is optional in development. Without it, registration auto-verifies; the user still signs in on the login form (no session cookie at register). Full variable lists: [BACKEND/.env.example](./BACKEND/.env.example), [FRONTEND/.env.example](./FRONTEND/.env.example).
+Paste a public HTTP(S) URL, shorten it, and use **Copy** to get the full URL. The result field hides `http://` or `https://` for display; copying and sharing keep the scheme. Opening the copied link returns an HTTP `302` redirect to the destination.
 
-## Features
+With `RESEND_API_KEY` empty, development registration marks the email verified; sign in separately afterward. Email verification, password-reset delivery, and cross-device claim emails need a configured Resend account. If you use [BACKEND/.env.example](./BACKEND/.env.example) instead, remove its placeholder Resend key and optional webhook URL before running locally.
 
-**Links**
+Verify the API is ready:
 
-- Guest shorten (random 7-char slug) or signed-in custom aliases (3–20 characters, starting with a letter or number; hyphens and underscores allowed)
-- Edit destination/alias; disable without deleting; permanent slug retirement on delete (HTTP 410)
-- Claim guest links on sign-in; email a one-time claim for another device
-- Same-destination reuse for authenticated users (returns the existing link)
+```bash
+curl --fail http://127.0.0.1:3001/api/health/ready
+```
 
-**Dashboard & analytics**
+A successful response has `success: true` and `data.mongo.connected: true`. `/api/health` also checks readiness; `/api/health/live` checks whether the API process is running.
 
-- Lifetime click totals; 30-day breakdowns (countries, devices, browsers, OS, referrers, top URLs)
-- Prefix search, sort, pagination, bulk delete, QR codes
-- Stats load only on `/dashboard` (TanStack Query; API process-local cache ~30s)
+## What you can do
 
-**Account**
+- **Shorten as a guest:** generate a seven-character slug without an account. The browser keeps a management token for claiming the link when you sign in. An optional one-time email claim link supports another device.
+- **Create custom aliases:** signed-in users can choose 3–20 characters, starting with a letter or number, using letters, digits, hyphens, and underscores. Slugs are normalized to lowercase; reserved application paths are unavailable.
+- **Manage links:** change destinations or aliases, disable and re-enable links, or delete individual links and bulk selections. Changing an alias replaces its URL; the old alias is not kept as a forwarding address.
+- **Reuse existing links:** ordinary signed-in shortening reuses the user's existing link for the same normalized destination. Custom-alias creation is a separate flow. Accounts default to a limit of 1,000 active links, configurable with `MAX_LINKS_PER_USER`.
+- **Explore the dashboard:** search by case-sensitive URL or alias prefix, sort and page through links, copy and share them, and generate QR codes.
+- **Read analytics:** see lifetime click totals, recent activity, top links, and 30-day breakdowns by date, country, device, browser, operating system, and referrer hostname.
+- **Manage an account:** update the profile name, change the password, verify email, reset a forgotten password, and delete the account. Passwords require at least 12 characters. Confirmed sign-out returns to the landing page.
 
-- Profile name, password (min 12), account deletion
-- Email verification / password reset via Resend (**required in production**)
-- In-app privacy policy at `/privacy`
-- Per-endpoint rate limits; `/api/health`, `/api/ready`, `/api/live`
+The landing and authentication pages send signed-in users to `/dashboard`. `/dashboard`, `/settings`, and `/claim-link/:token` require a session; `/privacy` is public.
 
-## Tech stack
+## Stack and project structure
 
-| Layer | Stack |
-| ----- | ----- |
-| Frontend | React 19, Vite 6, Tailwind CSS 4, React Router, TanStack Query, Axios, qrcode |
-| Backend | Node.js, Express 5, MongoDB + Mongoose 8, JWT (HTTP-only cookies), bcrypt, Joi, Resend, Helmet, geoip-lite, ua-parser-js |
-| Tests | Vitest, Testing Library, Playwright, Node test runner, mongodb-memory-server |
+| Layer                 | Technologies                                                                              |
+| --------------------- | ----------------------------------------------------------------------------------------- |
+| Frontend              | React 19, Vite 6, Tailwind CSS 4, React Router 7, TanStack Query 5, Axios, Lucide, qrcode |
+| API                   | Node.js, Express 5, Mongoose 8, Joi, bcrypt, JWT, Resend, Helmet                          |
+| Storage and analytics | MongoDB, geoip-lite, ua-parser-js                                                         |
+| Tests                 | Vitest, Testing Library, Playwright, Node test runner, mongodb-memory-server              |
 
-## Architecture
+```text
+Shortly/
+├── FRONTEND/
+│   ├── src/
+│   │   ├── api/          API clients
+│   │   ├── components/   Landing, auth, dashboard, settings, and shared UI
+│   │   ├── contexts/     Authentication and session state
+│   │   ├── hooks/        Forms, dashboard queries, and mutations
+│   │   ├── layouts/      Route guards and page shells
+│   │   ├── routes/       Application routes
+│   │   └── styles/       Design tokens and domain styles
+│   ├── config/           Short-link routing, metadata, and security headers
+│   ├── scripts/          Build generation and routing smoke checks
+│   └── e2e/              Playwright scenarios
+├── BACKEND/
+│   ├── index.js          Startup, database connection, and shutdown
+│   ├── src/
+│   │   ├── routes/       Auth, link, and health endpoints
+│   │   ├── controllers/  HTTP input and response handling
+│   │   ├── services/     Link lifecycle, accounts, email, and analytics
+│   │   ├── dao/          Database queries
+│   │   ├── schema/       User, ShortUrl, Click, and RateLimit models
+│   │   ├── middleware/   Auth, CSRF, validation, rate limits, and timing
+│   │   └── validation/   Joi request schemas
+│   ├── scripts/          Isolated E2E server and index repair
+│   └── test/             Backend tests
+└── .github/workflows/    Frontend and backend CI
+```
+
+The browser calls the Express API, which passes requests through controllers, services, and database access functions to MongoDB. In development, Vite proxies API requests and short-link redirects. In production, the frontend calls the configured API origin directly; Vercel rewrites short-link paths to the backend.
 
 ```mermaid
 flowchart LR
-  Browser["Browser / SPA"]
-  Vite["Vite / Vercel<br/>SPA + short-link proxy"]
-  API["Express API"]
-  Mongo[("MongoDB replica set")]
-
-  Browser --> Vite
-  Vite -->|"/api/*, /:slug"| API
-  API --> Mongo
+  Browser[Browser] --> Frontend[React frontend]
+  Frontend -->|API requests| API[Express API]
+  Browser -->|Short-link URL| Proxy[Vite or Vercel proxy]
+  Proxy -->|Slug lookup| API
+  API --> Mongo[(MongoDB replica set)]
+  API -->|302 Location response| Browser
+  Browser -->|Follow Location| Destination[Destination website]
 ```
 
-```mermaid
-flowchart TB
-  subgraph frontend [FRONTEND]
-    Pages["Routes + layouts"]
-    Query["TanStack Query"]
-    Axios["Axios clients"]
-    Pages --> Query --> Axios
-  end
+## How links and analytics work
 
-  subgraph backend [BACKEND]
-    Routes["routes/"]
-    Controllers["controllers/"]
-    Services["services/"]
-    Dao["dao/"]
-    Schema["schema/"]
-    Routes --> Controllers --> Services --> Dao --> Schema
-  end
+**Redirects and click recording.** The API resolves a slug, checks whether it is disabled or retired, validates the destination, and sends a `302`. Click recording runs after the response finishes, so a database write does not delay the redirect. Known bot user-agents are skipped. Recording is best effort: database failures or process termination can lose events; counts are not a billing-grade audit log.
 
-  Axios --> Routes
-```
+**Retention and ownership.** MongoDB expires detailed click events with a 30-day TTL index; cleanup is asynchronous. Link counters are separate and are not expired by that index. Analytics queries are scoped to the user's non-retired links. Guest management tokens are stored hashed on the server and raw in browser `localStorage`. Clearing browser data before claiming a link loses local management access unless you saved an email claim link; the short URL still works.
 
-| Path | Access | Page |
-| ---- | ------ | ---- |
-| `/` | Public | Landing |
-| `/login`, `/register`, `/verify-email/:token`, `/forgot-password`, `/reset-password/:token` | Guest | Auth |
-| `/dashboard`, `/settings` | Signed in | Dashboard, settings |
-| `/claim-link/:token` | Signed in | Guest email claim recovery |
-| `/privacy` | Public | Privacy policy |
-| `/:short_url` | Public | Proxied redirect (dev: Vite → API) |
+**Deletion and disabling.** Disabling is reversible and returns `410 Gone`. Deletion scrubs the link's destination, owner, tokens, and counter while retaining its slug and retirement time. Deleted slugs also return `410` and cannot be reused. Account deletion removes the account and its click events and retires its links.
 
-Backend layout: `routes/` → `controllers/` → `services/` (shortUrl persist/redirect/claim, auth, account, analytics, email, click) → `dao/` → `schema/` (`User`, `ShortUrl`, `Click`, `RateLimit`), plus middleware (auth, CSRF, rate limit, validation) and Joi under `validation/`.
+**Caching.** Redirect lookups use a bounded, process-local cache with a **10-second TTL**. Auth-user lookups and dashboard overview/analytics use **30-second TTLs**. Mutations invalidate relevant entries in the process handling the write; other instances can serve stale entries until expiry. There is no shared cache or cross-instance invalidation. Frontend dashboard lists stay fresh for 15 seconds and stats for 30 seconds; overview and detailed analytics use separate requests, fetched on `/dashboard`.
 
-Frontend layout: `api/`, `contexts/` (session), `hooks/` (dashboard list ~15s stale, stats ~30s), `layouts/`, `components/`, `styles/domains/` (`npm run css:check` after CSS edits).
+**Rate limits and search.** Auth, creation, claims, and stats use MongoDB-backed rate limits with separate policy namespaces. Redirects use an in-memory per-IP limit that is independent on each API instance. Dashboard search uses indexed, case-sensitive prefix matching rather than substring or fuzzy search.
 
-`GET /api/auth/me` returns `Cache-Control: no-store` and reuses the user already resolved by auth middleware when present.
+## Security and data handling
 
-## Design tradeoffs
+- Passwords are hashed with bcrypt. Sessions use JWTs in HTTP-only cookies with a one-day lifetime and a token version for revocation on logout or password changes. Auth caching means another API process can take up to 30 seconds to observe revocation.
+- Joi validates requests; ownership checks protect link and account operations. Cookie-backed writes have CSRF protection, and CORS uses configured frontend origins.
+- Redirect destinations must use HTTP(S). Validation rejects localhost and specified private, loopback, and link-local literal IP ranges, on save and redirect. It does not resolve DNS or fetch destinations and is not a malware scanner.
+- Click records store country, referrer hostname, user-agent, and derived device/browser/OS details, without a visitor-IP field. Request IPs are used for geolocation and rate limiting; authentication still uses session cookies.
+- Helmet headers, response compression, request IDs, request timing, and graceful shutdown are configured on the API. See the in-app [privacy policy source](./FRONTEND/src/components/PrivacyPage.jsx) for data-handling details.
 
-Intentional decisions — useful for reviewers and interviews.
+## Deployment configuration
 
-<details>
-<summary><strong>1. Fast redirects over exact click counts</strong></summary>
+The frontend includes Vercel routing and crawler metadata support. Run the backend as a Node service connected to a MongoDB replica set. Deployment is separate from local setup; these instructions do not provision hosting.
 
-The redirect handler sends `302` first, then records the click after the response finishes (`res.once('finish', recordClick)`).
+| Where          | Variable                              | Purpose                                                                                                            |
+| -------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Backend        | `NODE_ENV=production`                 | Enables production checks and secure session cookies                                                               |
+| Backend        | `MONGODB_URI`, `JWT_SECRET`, `PORT`   | Database, signing secret of at least 32 characters, and listening port                                             |
+| Backend        | `FRONT_END_URL`                       | Public frontend origin and email-link base                                                                         |
+| Backend        | `ALLOWED_ORIGINS`                     | Optional comma-separated CORS origins; replaces the default origin list when set                                   |
+| Backend        | `PUBLIC_BASE_URL`                     | Public short-link origin; required in production                                                                   |
+| Backend        | `TRUST_PROXY`                         | Required in production; configure for the actual proxy topology (`1` for one trusted hop, `0` for direct exposure) |
+| Backend        | `RESEND_API_KEY`, `RESEND_FROM_EMAIL` | Required in production; use a sender configured in Resend                                                          |
+| Backend        | `EMAIL_ASSET_BASE_URL`                | Optional public origin for email images; needed when the frontend URL is local                                     |
+| Backend        | `OPERATIONS_ALERT_WEBHOOK_URL`        | Optional delivery-failure alert webhook                                                                            |
+| Frontend build | `VITE_APP_URL`                        | Required API origin                                                                                                |
+| Frontend build | `VITE_PUBLIC_SHORT_URL`               | Public short-link origin for display, copy, QR, and generated SEO URLs                                             |
+| Frontend build | `SHORT_LINK_PROXY_ORIGIN`             | Backend target for Vercel short-link rewrites; defaults to `VITE_APP_URL`                                          |
 
-**Tradeoff:** Closing the tab immediately after the redirect may skip recording. Bot user-agents are not recorded.
+Full examples: [backend environment](./BACKEND/.env.example) · [frontend environment](./FRONTEND/.env.example).
 
-</details>
+Use HTTPS and same-site frontend/API subdomains for the default `SameSite=Lax` cookies. An intentional cross-site setup requires `COOKIE_SAME_SITE=none`, secure cookies, and browsers that allow those cookies. Keep secrets on the backend; `VITE_*` values are public frontend configuration.
 
-<details>
-<summary><strong>2. 30-day analytics window, lifetime click totals</strong></summary>
-
-`clicks` use a MongoDB TTL index (`CLICK_RETENTION_DAYS = 30`). The link `click` counter is incremented transactionally and is not TTL-bound — charts cover 30 days; totals are lifetime.
-
-</details>
-
-<details>
-<summary><strong>3. Anonymous links: device-local, with email recovery</strong></summary>
-
-Guests get a `manage_token`; the frontend stores `{ id, manage_token }` in `localStorage`. Sign-in claims via `/api/create/claim`. Cross-device: `POST /api/create/claim/email` → `/claim-link/:token`.
-
-**Tradeoff:** Without sign-in or email recovery, clearing browser data loses manage access; the short link still works.
-
-</details>
-
-<details>
-<summary><strong>4. Two rate-limit strategies</strong></summary>
-
-- DB-backed `rateLimiter` for auth / custom-create — accurate across instances, one Mongo round-trip
-- In-memory `memoryRateLimiter` on the redirect hot path — free per request, not shared across instances
-
-Redirects always read Mongo so edits, disables, and retirements stay consistent.
-
-</details>
-
-<details>
-<summary><strong>5. Permanent slug retirement</strong></summary>
-
-Deletes become non-identifying tombstones (destination/owner/token/counter scrubbed; slug + retirement time kept). Retired slugs return **410** and cannot be reused.
-
-</details>
-
-<details>
-<summary><strong>6. Redirect destination validation</strong></summary>
-
-`isSafeRedirectUrl` allows only HTTP(S) and rejects localhost plus literal loopback/private/unspecified/link-local addresses. No DNS resolve or destination fetch. Checked on save and before redirect.
-
-</details>
-
-<details>
-<summary><strong>7. Analytics scoped to the user’s links</strong></summary>
-
-Facets resolve the user’s **active** link IDs, then `$match` + `$facet` on `clicks` (`{ short_url_id, timestamp }`) — avoids a collection-wide `$lookup` over every click in the DB.
-
-</details>
-
-<details>
-<summary><strong>8. Bounded process-local caches (not Redis)</strong></summary>
-
-Stats overview, click analytics, auth-user resolution, and redirect slug lookups use process-local `Map`s (short TTLs, bounded, invalidated on mutations). Concurrent builds coalesce. Dashboard splits light overview (`/api/create/stats`) from heavy click facets (`/api/create/stats/analytics`).
-
-**Tradeoff:** Totals / redirect targets can lag up to the TTL after edits; caches are per Node process. No Redis for a solo portfolio deploy.
-
-Frontend: ~30s `staleTime` for stats; dashboard list **15s**. Stats fetch only on `/dashboard` (overview + analytics as separate queries).
-
-</details>
-
-<details>
-<summary><strong>9. Prefix dashboard search for indexes</strong></summary>
-
-Case-sensitive **prefix** match on `short_url` / `full_url` so compound `{ user, retiredAt, … }` indexes apply. No mid-string or case-insensitive search.
-
-</details>
-
-## Security
-
-- bcrypt passwords; JWT in HTTP-only cookies (~24h) with `tokenVersion` (invalidated on password change / logout)
-- Email verification when Resend is configured (required in production)
-- Joi on inputs; CSRF on cookie-backed writes; CORS allowlist (`FRONT_END_URL` + `ALLOWED_ORIGINS`)
-- Per-endpoint rate limits, reserved slugs, redirect URL validation
-- Guest manage tokens stored hashed; raw token only at create time
-- Helmet, gzip, request IDs, latency tracking, graceful shutdown
-
-## Production (Vercel)
-
-Frontend build writes `vercel.json` rewrites so slug-shaped paths (`/^[a-zA-Z0-9_-]{3,20}$/`, excluding SPA routes) proxy to `SHORT_LINK_PROXY_ORIGIN` (defaults to `VITE_APP_URL`). Same idea as the Vite dev proxy in `FRONTEND/vite.config.js`.
+Set frontend variables in the **build process environment**, such as Vercel project settings or shell exports. The configuration generator runs before Vite and does not load `.env` files itself:
 
 ```bash
-PUBLIC_SHORT_HOST=https://shortly.example.com \
+export VITE_APP_URL=https://api.example.com
+export VITE_PUBLIC_SHORT_URL=https://s.example.com
+export SHORT_LINK_PROXY_ORIGIN=https://api.example.com
+npm run build:frontend
+```
+
+This generates `FRONTEND/vercel.json` rewrites and security headers, builds `FRONTEND/dist`, then generates crawler HTML shells, `sitemap.xml`, and `robots.txt`. Configure the Vercel project root as `FRONTEND`, build command as `npm run build`, and output directory as `dist`. Its middleware serves crawler metadata for `/` and `/privacy`. `VITE_PUBLIC_SHORT_URL` also supplies the generated canonical/SEO origin; there is no separate marketing-origin setting.
+
+Start the configured backend with `npm run start:backend`. Monitor `/api/health/live` for liveness and `/api/health/ready` for database readiness.
+
+After deployment, check routing with an existing active slug, replacing the example hosts and `your-slug`:
+
+```bash
+PUBLIC_SHORT_HOST=https://s.example.com \
 SHORT_LINK_PROXY_ORIGIN=https://api.example.com \
-npm run smoke:routing --prefix FRONTEND your-slug
+npm run smoke:routing --prefix FRONTEND -- your-slug
 ```
 
-`npm run build:frontend` runs:
+Without a slug, the script checks routing configuration and backend health only. It does not verify a public redirect.
 
-1. `generate-vercel-config.js` — rewrites + security headers
-2. `vite build`
-3. `generate-seo-shells.js` — crawler shells, `sitemap.xml`, `robots.txt`
+## Tests and development commands
 
-Production backend also needs `PUBLIC_BASE_URL`, `TRUST_PROXY`, and Resend. Crawlers hitting `/` or `/privacy` get OG metadata via [`FRONTEND/middleware.js`](./FRONTEND/middleware.js) and the SEO shells.
+Run these from the repository root:
 
-Privacy policy (live): [shortly.nayanswarnkar.com/privacy](https://shortly.nayanswarnkar.com/privacy)
+| Command                                          | What it does                                                           |
+| ------------------------------------------------ | ---------------------------------------------------------------------- |
+| `npm run test:backend`                           | Node tests; database tests start disposable MongoDB replica sets       |
+| `npm run test:frontend`                          | Vitest and Testing Library tests                                       |
+| `npm run test:all`                               | Backend and frontend unit/integration tests                            |
+| `npm run test:e2e`                               | Playwright Chromium scenarios against a test API and Vite              |
+| `npm run lint:backend` / `npm run lint:frontend` | ESLint                                                                 |
+| `npm run css:check`                              | Checks assembled design CSS                                            |
+| `npm run build:frontend`                         | Generates deployment config, builds the frontend, and writes SEO files |
+| `npm run format:check` / `npm run format`        | Checks or applies repository-wide Prettier formatting                  |
 
-## Testing & scripts
-
-| Command | Runs |
-| ------- | ---- |
-| `npm run test:backend` | Node test runner + in-memory MongoDB replica set |
-| `npm run test:frontend` | Vitest + Testing Library |
-| `npm run test:e2e` | Playwright (test API + Vite) |
-| `npm run test:all` | Backend + frontend unit tests |
-| `npm run install:all` | Install both packages |
-| `npm run lint:frontend` / `lint:backend` | ESLint |
-| `npm run css:check` | Design tokens |
-| `npm run format` / `format:check` | Prettier |
+Install Chromium before the first E2E run:
 
 ```bash
-npm run test:all && npm run test:e2e
+cd FRONTEND
+npx playwright install chromium
+cd ..
+npm run test:e2e
 ```
 
-CI: [backend-ci.yml](./.github/workflows/backend-ci.yml) (lint, tests, audit) · [frontend-ci.yml](./.github/workflows/frontend-ci.yml) (unit + Playwright on Node 22).
+On Linux CI, use `npx playwright install --with-deps chromium`. Database tests may download a MongoDB binary on first use. The E2E configuration starts an isolated API on **3011** and Vite on **5173**; stop your development servers first, because local runs can reuse an already-running server and test the wrong backend.
 
-From `FRONTEND/`: `npm run generate:vercel`, `npm run smoke:routing`, `npm run doctor`, `npm run check`.
+The [backend workflow](./.github/workflows/backend-ci.yml) runs lint, tests, and a dependency audit. The [frontend workflow](./.github/workflows/frontend-ci.yml) runs unit tests and Playwright on Node 22. Additional frontend commands include `npm run doctor` and `npm run check` from `FRONTEND/`; `check` also builds, so it needs the production build variables above.
 
-MIT — see [LICENSE](./LICENSE).
+Licensed under [MIT](./LICENSE).
