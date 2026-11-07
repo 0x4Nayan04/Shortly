@@ -123,15 +123,14 @@ const LandingFaq = () => {
 
           <div
             className="faq-filters shrink-0"
-            role="tablist"
+            role="group"
             aria-label="Filter questions by topic"
           >
             {FAQ_CATEGORIES.map((cat) => (
               <button
                 key={cat.id}
                 type="button"
-                role="tab"
-                aria-selected={activeCategory === cat.id}
+                aria-pressed={activeCategory === cat.id}
                 onClick={() => handleCategoryChange(cat.id)}
                 className={`faq-filter focus-ring ${
                   activeCategory === cat.id ? 'faq-filter-active' : ''

@@ -28,6 +28,8 @@ const UserProfileModal = ({ isOpen, onClose, user, userStats }) => {
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
       aria-labelledby="profile-modal-title"
     >
       <div
@@ -73,7 +75,7 @@ const UserProfileModal = ({ isOpen, onClose, user, userStats }) => {
                 {user.name}
               </p>
               <p
-                className="font-mono text-xs leading-snug text-muted-strong sm:truncate"
+                className="break-all font-mono text-xs leading-snug text-muted-strong sm:truncate"
                 title={user.email}
               >
                 {user.email}

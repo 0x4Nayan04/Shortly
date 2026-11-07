@@ -81,11 +81,24 @@ const LandingFeaturesCatalog = () => {
                 <button
                   type="button"
                   aria-pressed={isActive}
+                  aria-controls={`feature-detail-${item.num}`}
                   className={`catalog-row catalog-list-row outline-none${isActive ? ' catalog-row--active' : ''}`}
                   onClick={() => setActiveIndex(index)}
                 >
                   <span className="catalog-row-num">{item.num}</span>
-                  <span className="catalog-row-label">{item.title}</span>
+                  <span className="min-w-0 flex-1 text-left">
+                    <span className="catalog-row-label">{item.title}</span>
+                    <span
+                      id={`feature-detail-${item.num}`}
+                      className={
+                        isActive
+                          ? 'mt-1 block text-sm font-normal text-muted-strong md:hidden'
+                          : 'hidden'
+                      }
+                    >
+                      {item.detail || item.stat}
+                    </span>
+                  </span>
                   <span className="catalog-row-marker" aria-hidden="true" />
                 </button>
               </li>

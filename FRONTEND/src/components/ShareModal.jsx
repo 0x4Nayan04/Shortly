@@ -27,34 +27,44 @@ async function loadQrLib() {
 }
 
 async function loadQrDataUrl(shortUrlFull) {
-  if (!shortUrlFull) return '';
-  try {
-    const QRCode = await loadQrLib();
-    return await QRCode.toDataURL(shortUrlFull, QR_OPTIONS);
-  } catch (err) {
-    console.error(err);
-    return '';
-  }
+  const QRCode = await loadQrLib();
+  return QRCode.toDataURL(shortUrlFull, QR_OPTIONS);
 }
 
 const ShareModal = memo(({ isOpen, onClose, shortUrl, fullUrl }) => {
   const dialogRef = useRef(null);
   const [downloading, setDownloading] = useState(false);
-  const [qrDataUrl, setQrDataUrl] = useState('');
+  const [qr, setQr] = useState(null);
+  const [qrAttempt, setQrAttempt] = useState(0);
   const { copy, isCopied } = useCopyToClipboard();
   const shortUrlFull = shortUrl ? buildPublicShortUrl(shortUrl) : '';
   const copied = shortUrlFull ? isCopied(shortUrlFull) : false;
+  const currentQr =
+    qr?.url === shortUrlFull && qr?.attempt === qrAttempt ? qr : null;
+  const qrDataUrl = currentQr?.data;
 
-  const setDialogRef = useCallback(
-    (node) => {
-      dialogRef.current = node;
-      if (!node) return;
-      if (!node.open) node.showModal();
-      node.focus();
-      loadQrDataUrl(shortUrlFull).then(setQrDataUrl);
-    },
-    [shortUrlFull]
-  );
+  const setDialogRef = useCallback((node) => {
+    dialogRef.current = node;
+    if (!node) return;
+    if (!node.open) node.showModal();
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen || !shortUrlFull) return;
+    let active = true;
+    loadQrDataUrl(shortUrlFull).then(
+      (data) => {
+        if (active) setQr({ url: shortUrlFull, attempt: qrAttempt, data });
+      },
+      () => {
+        if (active)
+          setQr({ url: shortUrlFull, attempt: qrAttempt, error: true });
+      }
+    );
+    return () => {
+      active = false;
+    };
+  }, [isOpen, shortUrlFull, qrAttempt]);
 
   useBodyScrollLock(isOpen);
 
@@ -63,14 +73,6 @@ const ShareModal = memo(({ isOpen, onClose, shortUrl, fullUrl }) => {
   useLayoutEffect(() => {
     onCloseRef.current = onClose;
   }, [onClose]);
-
-  useEffect(() => {
-    const handleEscape = (e) => {
-      if (e.key === 'Escape' && isOpen) onCloseRef.current?.();
-    };
-    document.addEventListener('keydown', handleEscape);
-    return () => document.removeEventListener('keydown', handleEscape);
-  }, [isOpen]);
 
   const handleCopy = useCallback(() => {
     copy(shortUrlFull, 'Link copied to clipboard!');
@@ -163,7 +165,10 @@ const ShareModal = memo(({ isOpen, onClose, shortUrl, fullUrl }) => {
       ref={setDialogRef}
       className="share-modal-dialog fixed inset-0 m-0 size-full max-h-none max-w-none overflow-hidden bg-transparent p-3 sm:p-4"
       aria-labelledby="share-dialog-title"
-      onCancel={onClose}
+      onCancel={(event) => {
+        event.preventDefault();
+        onCloseRef.current?.();
+      }}
     >
       <div className="flex size-full items-center justify-center">
         <div className="share-modal relative app-panel flex w-full max-w-[28rem] max-h-[calc(100dvh-1.5rem)] sm:max-h-[calc(100dvh-2rem)] flex-col overflow-hidden animate-scale-in p-5 sm:p-6">
@@ -198,6 +203,19 @@ const ShareModal = memo(({ isOpen, onClose, shortUrl, fullUrl }) => {
                     alt="QR Code"
                     className="size-32 sm:size-36 object-contain"
                   />
+                </div>
+              ) : currentQr?.error ? (
+                <div className="flex flex-col items-center gap-2" role="status">
+                  <p className="text-sm text-muted-strong">
+                    Could not load QR code.
+                  </p>
+                  <button
+                    type="button"
+                    className="sm-btn sm-btn-secondary"
+                    onClick={() => setQrAttempt((attempt) => attempt + 1)}
+                  >
+                    Retry QR code
+                  </button>
                 </div>
               ) : (
                 <div className="size-32 sm:size-36 flex items-center justify-center text-muted">
@@ -278,7 +296,10 @@ const ShareModal = memo(({ isOpen, onClose, shortUrl, fullUrl }) => {
                   key={action.label}
                   type="button"
                   onClick={action.onClick}
-                  disabled={!shortUrlFull}
+                  disabled={
+                    !shortUrlFull ||
+                    (action.label === 'Download QR' && downloading)
+                  }
                   className={`share-modal__action-button ${
                     action.primary ? 'share-modal__action-button--primary' : ''
                   }`}

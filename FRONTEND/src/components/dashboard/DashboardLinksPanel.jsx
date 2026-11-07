@@ -45,33 +45,41 @@ const DashboardLinksPanel = ({
         />
       </div>
 
-      {onLinksTab ? (
-        <>
-          <DashboardLinksToolbar
-            onSearchChange={toolbar.onSearchChange}
-            sortBy={toolbar.sortBy}
-            onSortByChange={toolbar.onSortByChange}
-            sortOrder={toolbar.sortOrder}
-            onSortOrderChange={toolbar.onSortOrderChange}
-            disabled={toolbar.disabled}
-            selectedCount={toolbar.selectedCount}
-            onDeselectAll={toolbar.onDeselectAll}
-            onBulkDelete={toolbar.onBulkDelete}
-            isBulkDeleting={toolbar.isBulkDeleting}
-          />
+      <div
+        id="links-tabpanel"
+        role="tabpanel"
+        aria-labelledby={onLinksTab ? 'links-tab' : 'analytics-tab'}
+        tabIndex={0}
+        className="flex min-w-0 flex-col gap-[inherit]"
+      >
+        {onLinksTab ? (
+          <>
+            <DashboardLinksToolbar
+              onSearchChange={toolbar.onSearchChange}
+              sortBy={toolbar.sortBy}
+              onSortByChange={toolbar.onSortByChange}
+              sortOrder={toolbar.sortOrder}
+              onSortOrderChange={toolbar.onSortOrderChange}
+              disabled={toolbar.disabled}
+              selectedCount={toolbar.selectedCount}
+              onDeselectAll={toolbar.onDeselectAll}
+              onBulkDelete={toolbar.onBulkDelete}
+              isBulkDeleting={toolbar.isBulkDeleting}
+            />
 
-          <LinksBody {...list} />
+            <LinksBody {...list} />
 
-          <Pagination
-            currentPage={pagination.currentPage}
-            totalPages={pagination.totalPages}
-            onPageChange={pagination.onPageChange}
-            disabled={pagination.disabled}
-          />
-        </>
-      ) : (
-        <ClickAnalytics clickAnalytics={clickAnalytics} />
-      )}
+            <Pagination
+              currentPage={pagination.currentPage}
+              totalPages={pagination.totalPages}
+              onPageChange={pagination.onPageChange}
+              disabled={pagination.disabled}
+            />
+          </>
+        ) : (
+          <ClickAnalytics clickAnalytics={clickAnalytics} />
+        )}
+      </div>
     </section>
   );
 };

@@ -110,6 +110,18 @@ const AppNavbar = memo(() => {
     if (e.key === 'Escape') {
       setIsDropdownOpen(false);
       dropdownButtonRef.current?.focus();
+      return;
+    }
+    const items = [...e.currentTarget.querySelectorAll('[role="menuitem"]')];
+    const index = items.indexOf(document.activeElement);
+    let next;
+    if (e.key === 'ArrowDown') next = (index + 1) % items.length;
+    if (e.key === 'ArrowUp') next = (index - 1 + items.length) % items.length;
+    if (e.key === 'Home') next = 0;
+    if (e.key === 'End') next = items.length - 1;
+    if (next !== undefined) {
+      e.preventDefault();
+      items[next]?.focus();
     }
   }, []);
 

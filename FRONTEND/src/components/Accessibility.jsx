@@ -71,16 +71,20 @@ export const useFocusTrap = (isActive, options = {}) => {
     previousFocusRef.current = document.activeElement;
 
     const container = containerRef.current;
-    let focusableElements;
-    try {
-      focusableElements = container.querySelectorAll(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    const getFocusableElements = () =>
+      [
+        ...container.querySelectorAll(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        )
+      ].filter(
+        (element) =>
+          !element.matches(':disabled, [tabindex="-1"]') &&
+          !element.closest('[hidden], [inert]') &&
+          getComputedStyle(element).display !== 'none' &&
+          getComputedStyle(element).visibility !== 'hidden'
       );
-    } catch {
-      return;
-    }
+    const focusableElements = getFocusableElements();
     const firstFocusable = focusableElements[0];
-    const lastFocusable = focusableElements[focusableElements.length - 1];
 
     if (firstFocusable && typeof firstFocusable.focus === 'function') {
       firstFocusable.focus();
@@ -93,6 +97,14 @@ export const useFocusTrap = (isActive, options = {}) => {
       }
 
       if (e.key !== 'Tab') return;
+
+      const currentElements = getFocusableElements();
+      const firstFocusable = currentElements[0];
+      const lastFocusable = currentElements[currentElements.length - 1];
+      if (!firstFocusable) {
+        e.preventDefault();
+        return;
+      }
 
       if (e.shiftKey) {
         if (document.activeElement === firstFocusable) {

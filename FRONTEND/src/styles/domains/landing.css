@@ -616,10 +616,9 @@
     outline: none;
     box-shadow: none;
   }
-  .landing-page .catalog-list .catalog-list-row:focus,
   .landing-page .catalog-list .catalog-list-row:focus-visible {
-    outline: none !important;
-    box-shadow: none !important;
+    outline: 2px solid var(--color-primary);
+    outline-offset: -2px;
   }
   .catalog-list .catalog-row,
   .catalog-list .catalog-list-row {

@@ -18,6 +18,8 @@ const EditLinkModal = ({ isOpen, onClose, link, onSave }) => {
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4"
+      role="dialog"
+      aria-modal="true"
       aria-labelledby="edit-link-modal-title"
     >
       <div

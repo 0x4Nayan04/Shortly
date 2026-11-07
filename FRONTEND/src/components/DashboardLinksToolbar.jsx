@@ -51,7 +51,12 @@ const SortSelect = memo(({ value, onChange, options, disabled, id, label }) => {
   const onKeyDown = useCallback(
     (e) => {
       if (!open) {
-        if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') {
+        if (
+          e.key === 'Enter' ||
+          e.key === ' ' ||
+          e.key === 'ArrowDown' ||
+          e.key === 'ArrowUp'
+        ) {
           e.preventDefault();
           setFocusIdx(selectedIdx >= 0 ? selectedIdx : 0);
           setOpen(true);
@@ -68,11 +73,19 @@ const SortSelect = memo(({ value, onChange, options, disabled, id, label }) => {
           break;
         case 'ArrowDown':
           e.preventDefault();
-          setFocusIdx((prev) => (prev < options.length - 1 ? prev + 1 : 0));
+          setFocusIdx((activeIdx + 1) % options.length);
           break;
         case 'ArrowUp':
           e.preventDefault();
-          setFocusIdx((prev) => (prev > 0 ? prev - 1 : options.length - 1));
+          setFocusIdx((activeIdx - 1 + options.length) % options.length);
+          break;
+        case 'Home':
+          e.preventDefault();
+          setFocusIdx(0);
+          break;
+        case 'End':
+          e.preventDefault();
+          setFocusIdx(options.length - 1);
           break;
         case 'Enter':
         case ' ':
@@ -114,6 +127,7 @@ const SortSelect = memo(({ value, onChange, options, disabled, id, label }) => {
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls={`${id}-listbox`}
+        aria-activedescendant={open ? `${id}-option-${activeIdx}` : undefined}
         aria-label={label}
         disabled={disabled}
         className="dashboard-toolbar-compound__select outline-none"
@@ -130,14 +144,19 @@ const SortSelect = memo(({ value, onChange, options, disabled, id, label }) => {
       {open && (
         <ul
           id={`${id}-listbox`}
+          role="listbox"
           aria-label={label}
           className="sort-select__panel"
         >
           {options.map((opt, idx) => (
             <li
               key={opt.value}
+              id={`${id}-option-${idx}`}
+              role="option"
+              aria-selected={opt.value === value}
               className={`sort-select__option${opt.value === value ? ' sort-select__option--selected' : ''}${idx === activeIdx ? ' sort-select__option--focused' : ''}`}
-              onPointerDown={() => select(opt.value)}
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => select(opt.value)}
               onMouseEnter={() => setFocusIdx(idx)}
             >
               <span className="sort-select__option-check">
@@ -178,10 +197,7 @@ const DashboardLinksToolbar = memo(
     const [searchInput, setSearchInput] = useState('');
     const searchDebounceRef = useRef(null);
 
-    useEffect(
-      () => () => clearTimeout(searchDebounceRef.current),
-      []
-    );
+    useEffect(() => () => clearTimeout(searchDebounceRef.current), []);
 
     const handleSearchChange = useCallback(
       (event) => {

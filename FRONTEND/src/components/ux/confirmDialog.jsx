@@ -3,6 +3,7 @@ import {
   memo,
   useCallback,
   useEffect,
+  useId,
   useLayoutEffect,
   useRef,
   useState
@@ -61,6 +62,7 @@ export const ConfirmDialog = memo(
     onConfirm,
     onCancel
   }) => {
+    const titleId = useId();
     const dialogRef = useRef(null);
     const onCancelRef = useRef(onCancel);
     const onConfirmRef = useRef(onConfirm);
@@ -104,19 +106,19 @@ export const ConfirmDialog = memo(
     return createPortal(
       <dialog
         ref={dialogRef}
-        className="fixed inset-0 z-[100] m-0 max-h-none max-w-none h-full w-full border-0 bg-transparent p-4 open:flex open:items-center open:justify-center backdrop:bg-[color-mix(in_srgb,var(--color-ink)_45%,transparent)]"
-        aria-labelledby="confirm-dialog-title"
+        className="fixed inset-0 z-[100] m-0 max-h-none max-w-none h-full w-full border-0 bg-transparent p-4 open:flex open:items-center open:justify-center backdrop:bg-[color-mix(in_srgb,var(--color-ink)_45%,transparent)] backdrop:backdrop-blur-sm"
+        aria-labelledby={titleId}
       >
-        <div className="app-panel max-w-md w-full animate-scale-in">
+        <div className="app-panel max-w-md w-full max-h-full overflow-y-auto animate-scale-in">
           <h2
-            id="confirm-dialog-title"
+            id={titleId}
             className="text-lg font-semibold text-ink mb-2"
           >
             {title}
           </h2>
           <p className="text-muted-strong mb-6">{message}</p>
 
-          <div className="flex gap-3 justify-end">
+          <div className="flex flex-wrap gap-3 justify-end">
             <button
               type="button"
               onClick={() => onCancelRef.current?.()}
