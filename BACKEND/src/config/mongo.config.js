@@ -18,8 +18,8 @@ if (ipFamily !== undefined && ipFamily !== '') {
   mongooseOptions.family = Number(ipFamily);
 }
 
-// The initial dashboard can need four connections at once. Keep TLS/auth setup
-// out of its request path, while preserving the existing maximum pool size.
+
+
 export async function warmMongoPool(connection) {
   const client = connection.getClient();
   const readyConnections = new Map();
@@ -49,13 +49,13 @@ export async function warmMongoPool(connection) {
     await Promise.race([
       (async () => {
         const hello = await connection.db.admin().command({ hello: 1 });
-        // Standalone MongoDB omits replica-set names in hello.
+
         const singleHost = client.options?.hosts?.length === 1
           ? client.options.hosts[0].toString() : null;
         primary = hello.me ?? hello.primary ?? singleHost;
         if (!primary) throw new Error('Could not identify the MongoDB primary');
         check();
-        // Checked-out events also discover connections ready before subscription.
+
         await Promise.all(Array.from({ length: mongooseOptions.minPoolSize }, () =>
           connection.db.admin().command({ ping: 1 })
         ));

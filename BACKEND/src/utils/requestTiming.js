@@ -3,7 +3,7 @@ import { performance } from 'node:perf_hooks';
 
 export const requestTiming = new AsyncLocalStorage();
 
-// Labels are fixed in source; never pass user input or query contents here.
+
 export const recordTimingState = (name, value) => {
   const context = requestTiming.getStore();
   if (context) context.states[name] = value;

@@ -20,7 +20,7 @@ export const isAuthenticated = async (req, res, next) => {
   next();
 };
 
-/** Sets req.user when a valid session exists; otherwise continues without error (for GET /me). */
+
 export const optionalAuthenticate = async (req, res, next) => {
   const token = getTokenFromRequest(req);
   if (!token) return next();

@@ -232,7 +232,7 @@ export async function updateOwnedShortUrlService({ userId, id, updates }) {
     invalidateRedirectCache(previousSlug);
     if (patch.short_url) invalidateRedirectCache(patch.short_url);
   }
-  // Enabled state does not change counts, click analytics, or top-link labels.
+
   if (patch.full_url !== undefined || patch.short_url !== undefined) {
     invalidateStatsForUser(userId);
   }

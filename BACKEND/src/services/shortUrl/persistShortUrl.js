@@ -15,13 +15,13 @@ export const buildExistingReuseResult = (doc) => ({
   reused: true
 });
 
-/** Candidate slug — uniqueness is enforced by the DB unique index on insert. */
+
 export const generateUniqueShortUrl = async () =>
   normalizeSlug(generateNanoId(7));
 
-/**
- * Saves a short URL; on global slug collision, retries with a newly generated slug.
- */
+
+
+
 export const saveShortUrlOnDuplicateSlug = async (
   {
     short_url,

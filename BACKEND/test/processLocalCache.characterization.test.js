@@ -1,9 +1,9 @@
-/**
- * Process-local cache / rate-limiter characterization for multi-instance caveats.
- *
- * Child processes load separate module graphs, proving auth-user + stats caches
- * and memoryRateLimiter Maps are NOT shared across processes (Railway replica caveat).
- */
+
+
+
+
+
+
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
@@ -51,7 +51,7 @@ test('auth-user cache is process-local (warm process A does not warm process B)'
 
 test('stats cache is process-local (process B still cold after process A prime)', () => {
   const a = runChild('stats-prime');
-  // One overview aggregate per process-local build.
+
   assert.equal(a.aggregateCalls, 1);
 
   const b = runChild('stats-cold');
@@ -62,7 +62,7 @@ test('stats cache is process-local (process B still cold after process A prime)'
 test('memoryRateLimiter buckets are process-local across child processes', () => {
   const a = runChild('memory-limiter');
   const b = runChild('memory-limiter');
-  // Each process allows max=2 successes independently.
+
   assert.equal(a.ok, 2);
   assert.equal(a.blocked, 2);
   assert.equal(b.ok, 2);

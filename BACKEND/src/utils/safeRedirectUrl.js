@@ -47,7 +47,7 @@ function isPrivateOrLocalHost(hostname) {
   return isBlockedIp(host);
 }
 
-/** Only allow http(s) destinations for public redirects (blocks javascript:, etc.). */
+
 export function isSafeRedirectUrl(url) {
   if (typeof url !== 'string') return false;
   const normalized = url.trim();

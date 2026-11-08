@@ -160,7 +160,7 @@ test('overview stats cache: concurrent cold requests share one ShortUrl.aggregat
       getStatsForUserService({ userId: user._id }),
       getStatsForUserService({ userId: user._id })
     ]);
-    // One aggregate is shared across concurrent cold requests.
+
     assert.equal(aggregateCalls, 1);
     assert.equal(a.stats.totalUrls, b.stats.totalUrls);
     assert.equal(b.stats.totalUrls, c.stats.totalUrls);

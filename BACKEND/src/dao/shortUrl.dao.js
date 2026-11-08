@@ -140,8 +140,8 @@ export const listForUser = async ({
   const trimmedSearch = search?.trim();
 
   if (trimmedSearch) {
-    // Prefix matching can use MongoDB indexes; an unanchored, case-insensitive
-    // regex forces a collection scan as the link collection grows.
+
+
     const searchRegex = new RegExp(`^${escapeRegExp(trimmedSearch)}`);
     baseQuery.$or = [{ full_url: searchRegex }, { short_url: searchRegex }];
   }

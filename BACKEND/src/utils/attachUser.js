@@ -3,7 +3,7 @@ import {
   resolveUserFromToken
 } from './authToken.js';
 
-/** Sets req.user when a valid session exists; otherwise continues without error. */
+
 export const loadUserIfAuthenticated = async (req, res, next) => {
   const token = getTokenFromRequest(req);
   if (!token) return next();

@@ -522,7 +522,7 @@ test('create, stats, and claim use independent counters and windows', async () =
   const statsBucket = await RateLimit.findOne({ key: statsKey });
   const claimBucket = await RateLimit.findOne({ key: claimKey });
   assert.equal(createBucket.count, 1);
-  assert.equal(statsBucket.count, 2); // Overview + analytics keep their shared budget.
+  assert.equal(statsBucket.count, 2);
   assert.equal(claimBucket.count, 1);
   assert.ok(createBucket.expires_at - statsBucket.expires_at > 230_000);
   await RateLimit.updateOne({ key: statsKey }, { $set: { count: 30 } });
@@ -556,7 +556,7 @@ test('updated links return saved values and ownership, conflicts, and redirect i
   });
   const id = created.body.data.id;
   const resolveRedirect = (await import('../src/services/shortUrl/redirect.js')).resolveRedirectTargetService;
-  await resolveRedirect('edit-before'); // Prime redirect cache without background click writes.
+  await resolveRedirect('edit-before');
   const denied = await other.patch(`/api/create/${id}`).set(origin).send({ disabled: true });
   assert.equal(denied.status, 404);
   const edited = await owner.patch(`/api/create/${id}`).set(origin).send({

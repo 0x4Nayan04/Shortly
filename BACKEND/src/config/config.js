@@ -4,8 +4,8 @@ export function resolveSameSite() {
     return override;
   }
 
-  // Shortly's supported deployment uses same-site frontend/API subdomains.
-  // Cross-site deployments must explicitly opt in with COOKIE_SAME_SITE=none.
+
+
   return 'lax';
 }
 

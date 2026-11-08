@@ -90,7 +90,7 @@ userSchema.methods.generateResetToken = function () {
     .createHash('sha256')
     .update(token)
     .digest('hex');
-  this.resetPasswordExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+  this.resetPasswordExpires = new Date(Date.now() + 60 * 60 * 1000);
   return token;
 };
 

@@ -1,4 +1,4 @@
-/** Detailed click events are retained this many days (MongoDB TTL on Click.timestamp). */
+
 export const CLICK_RETENTION_DAYS = 30;
 
 const rawMaxLinks = process.env.MAX_LINKS_PER_USER || '1000';

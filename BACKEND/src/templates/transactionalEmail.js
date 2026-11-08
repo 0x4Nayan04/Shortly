@@ -1,8 +1,8 @@
-/**
- * Transactional email layout — table + inline styles for email client support.
- */
 
-/** @type {Readonly<Record<string, string>>} */
+
+
+
+
 const EMAIL_TOKENS = Object.freeze({
   primary: '#0562ef',
   primaryActive: '#0263ef',
@@ -55,7 +55,7 @@ function isPrivateOrigin(url) {
   }
 }
 
-/** Public origin for email images (Gmail etc. cannot load localhost). */
+
 function resolveEmailAssetBase(frontEndUrl) {
   const explicit = process.env.EMAIL_ASSET_BASE_URL?.trim();
   if (explicit) {

@@ -1,9 +1,9 @@
 import { AppError } from './errorHandler.js';
 
-/**
- * Canonical form for duplicate detection. Preserves scheme, query, and hash;
- * lowercases hostname and trims trailing slashes on non-root paths.
- */
+
+
+
+
 export function normalizeUrl(input) {
   if (typeof input !== 'string') {
     throw new AppError('Please provide a valid URL', 400);

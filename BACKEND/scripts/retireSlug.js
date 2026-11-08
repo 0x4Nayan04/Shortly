@@ -1,9 +1,9 @@
-/**
- * Manual takedown: retire a short-link slug (clears destination, keeps tombstone).
- *
- * Usage (from BACKEND/):
- *   node scripts/retireSlug.js <slug>
- */
+
+
+
+
+
+
 import mongoose from 'mongoose';
 import ShortUrl from '../src/schema/shortUrl.model.js';
 import { releaseActiveLinkSlots } from '../src/dao/user.dao.js';

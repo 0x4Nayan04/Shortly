@@ -99,7 +99,7 @@ function normalizeEmail(email) {
 const hashEmail = (email) =>
   crypto.createHash('sha256').update(normalizeEmail(email)).digest('hex');
 
-/** In-process limiter for hot paths (e.g. redirects). Not shared across server instances. */
+
 export const memoryRateLimiter = ({
   windowMs,
   max,

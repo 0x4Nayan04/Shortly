@@ -1,4 +1,4 @@
-// Isolated local diagnostic only: always starts its own disposable replica set.
+
 import { writeFile } from 'node:fs/promises';
 import { performance } from 'node:perf_hooks';
 import mongoose from 'mongoose';
@@ -59,7 +59,7 @@ try {
   await request(app).get('/api/create/my-urls').set(origin);
 
   async function sample(action, count, run, before = () => {}) {
-    // Only the disposable fixture's counters are reset, between action groups.
+
     await RateLimit.deleteMany({});
     for (let i = 0; i < count; i += 1) {
       await before();

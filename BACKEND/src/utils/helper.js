@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { customAlphabet } from 'nanoid';
 
-/** Alphanumeric only — avoids leading `-`/`_` in random short paths. */
+
 const SHORT_URL_ALPHABET =
   '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 

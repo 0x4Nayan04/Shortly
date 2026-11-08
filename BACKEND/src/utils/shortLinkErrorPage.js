@@ -21,7 +21,7 @@ footer{border-top:1px solid #c5dbf2;padding:1.25rem clamp(1.25rem,4vw,3rem);colo
 `;
 const styleHash = createHash('sha256').update(css).digest('base64');
 
-// Only redirect failures use this handler; API and non-browser responses keep JSON.
+
 export function shortLinkErrorPage(err, req, res, next) {
   if (![404, 410].includes(err.statusCode)) return next(err);
   res.vary('Accept');

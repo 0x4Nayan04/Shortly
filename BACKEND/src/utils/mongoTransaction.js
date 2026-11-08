@@ -18,7 +18,7 @@ export async function runWithTransaction(work) {
   const session = await mongoose.startSession();
   try {
     let result;
-    // total includes work, commit, and driver retries; work.count exposes retries.
+
     await measureRequestStep('transaction.total', () =>
       session.withTransaction(async () => {
         result = await measureRequestStep('transaction.work', () => work(session));

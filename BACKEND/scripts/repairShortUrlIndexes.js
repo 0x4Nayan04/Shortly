@@ -17,7 +17,7 @@ async function duplicateGroups(collection, match, group) {
   return result?.groups ?? 0;
 }
 
-// Read-only unless apply is explicitly requested. Never drops indexes or edits data.
+
 export async function repairShortUrlIndexes(collection, { apply = false } = {}) {
   const existing = await collection.indexes();
   const duplicates = {
@@ -29,7 +29,7 @@ export async function repairShortUrlIndexes(collection, { apply = false } = {}) 
   const planned = integrityIndexes.filter(([, options]) =>
     !existing.some((index) => index.name === options.name)
   );
-  // A same-name index with different options must be investigated, never replaced blindly.
+
   const conflicts = integrityIndexes.filter(([key, options]) => {
     const actual = existing.find((index) => index.name === options.name);
     return actual && (
@@ -70,7 +70,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     console.log(JSON.stringify(report, null, 2));
     if (report.blocked) process.exitCode = 1;
   } catch (error) {
-    // Driver errors can contain destination values; do not log raw messages.
+
     console.error(JSON.stringify({ status: 'failed', errorType: error.name,
       code: error.code ?? null,
       note: 'No data or existing indexes were removed. Any completed index builds remain in place.' }));

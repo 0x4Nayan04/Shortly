@@ -1,7 +1,7 @@
-/**
- * Child process helper for process-local cache characterization.
- * Speaks one JSON line on stdout. Uses its own MongoMemoryReplSet.
- */
+
+
+
+
 import mongoose from 'mongoose';
 import { MongoMemoryReplSet } from 'mongodb-memory-server';
 
@@ -68,7 +68,7 @@ try {
   if (mode === 'auth-prime' || mode === 'auth-hit-check') {
     await resolveUserFromToken({}, token);
     if (mode === 'auth-prime') {
-      // Second call in same process should be a cache hit.
+
       const before = findByIdCalls;
       await resolveUserFromToken({}, token);
       if (findByIdCalls !== before) {

@@ -19,7 +19,7 @@ const loadAuthUser = (cacheKey) => {
   entry.pending = measureRequestStep('auth.lookup', () =>
     User.findById(cacheKey).select('-password').lean()
   ).then((user) => {
-    // Logout, expiry, or eviction can replace this lookup while it is in flight.
+
     if (authUserCache.get(cacheKey) === entry) {
       if (user) authUserCache.set(cacheKey, {
         user, expiresAt: Date.now() + AUTH_USER_CACHE_TTL_MS
