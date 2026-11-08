@@ -1,9 +1,9 @@
 import { memo } from 'react';
 import { BrandedSpinner } from './LoadingSpinner';
 
-/**
- * Primary auth submit control — disabled + busy state, in-button loader, subtle progress.
- */
+
+
+
 const AuthSubmitButton = memo(
   ({
     loading,

@@ -6,9 +6,9 @@ const SPINNER_SIZE_CLASS = {
   lg: 'sm-spinner--lg'
 };
 
-/**
- * Primary-ring spinner — design-token sm-spinner (auth + app surfaces).
- */
+
+
+
 export const BrandedSpinner = memo(
   ({ size = 'md', decorative = false, label = 'Loading' }) => {
     const sizeClass = SPINNER_SIZE_CLASS[size] ?? '';
@@ -100,9 +100,9 @@ const AuthFormSkeleton = memo(
 
 AuthFormSkeleton.displayName = 'AuthFormSkeleton';
 
-/**
- * Auth route suspense fallback — skeleton preview of the form shell.
- */
+
+
+
 export const AuthPageLoader = memo(
   ({ variant = 'login', label = 'Loading form...', showForgotRow }) => {
     const forgotRow = showForgotRow ?? variant === 'login';
@@ -151,9 +151,9 @@ export const DashboardInsightsGridSkeleton = memo(() => (
 
 DashboardInsightsGridSkeleton.displayName = 'DashboardInsightsGridSkeleton';
 
-/**
- * Dashboard links list row skeleton — matches catalog list rhythm.
- */
+
+
+
 export const UrlTableSkeletonRow = memo(() => (
   <li
     className="dashboard-link-item dashboard-link-item--skeleton dashboard-url-skeleton-row"

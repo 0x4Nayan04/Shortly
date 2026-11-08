@@ -1,6 +1,6 @@
-/**
- * Catalog-frame shell for app routes — reuses landing frame primitives.
- */
+
+
+
 
 import LandingFrame from '../landing/LandingFrame';
 import { LandingFrameInner } from '../landing/LandingFrameInner';

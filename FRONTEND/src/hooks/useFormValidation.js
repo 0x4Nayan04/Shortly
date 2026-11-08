@@ -9,13 +9,13 @@ function falseTouchedState(fieldNames) {
   return Object.fromEntries(fieldNames.map((name) => [name, false]));
 }
 
-/**
- * Shared touched/fieldErrors state with blur, change, and submit validation.
- *
- * @param {string[]} fieldNames
- * @param {() => Record<string, Function | Function[]>} getRules
- * @param {{ onAfterFieldChange?: (field: string, values: object, ctx: { setFieldErrors: Function, getTouched: () => object }) => void }} [options]
- */
+
+
+
+
+
+
+
 export function useFormValidation(fieldNames, getRules, options = {}) {
   const { onAfterFieldChange } = options;
   const [fieldErrors, setFieldErrors] = useState(() =>

@@ -26,7 +26,7 @@ if (lcpShell && !isHome) {
   lcpShell.hidden = true;
   dismissBootSplash();
 } else {
-  // Safety: never leave the splash stuck if landing never mounts.
+
   window.setTimeout(dismissBootSplash, 4000);
 }
 

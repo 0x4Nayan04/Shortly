@@ -1,9 +1,9 @@
 import { useEffect, useRef } from 'react';
 
-/**
- * Interactive dot grid with cursor-tracking spotlight.
- * @see https://chanhdai.com/components/dot-grid-spotlight
- */
+
+
+
+
 export function DotGridSpotlight({
   dotColor = 'rgba(255, 255, 255, 0.05)',
   activeDotColor = 'rgba(255, 255, 255, 0.1)',

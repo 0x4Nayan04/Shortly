@@ -1,4 +1,4 @@
-/** Brand assets, document metadata, and route titles */
+
 
 export {
   SHORTLY_DEFAULT_TITLE,

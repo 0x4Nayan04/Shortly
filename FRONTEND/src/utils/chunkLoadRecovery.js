@@ -20,7 +20,7 @@ function claimChunkReload(storage = sessionStorage, now = Date.now()) {
   }
 }
 
-/** Hard-reload once after a stale deploy chunk miss. */
+
 export function reloadOnceForChunkError({
   storage = sessionStorage,
   reload = () => window.location.reload(),
@@ -31,7 +31,7 @@ export function reloadOnceForChunkError({
   return true;
 }
 
-/** Recover from Vite preload/chunk failures with a single hard reload. */
+
 export function setupChunkLoadRecovery({
   storage = sessionStorage,
   reload = () => window.location.reload()

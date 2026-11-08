@@ -1,6 +1,6 @@
-/**
- * Shared design-system form class helpers (Phase 0 tokens).
- */
+
+
+
 
 export function getDesignInputClass({ hasError = false, className = '' } = {}) {
   return ['sm-input', hasError ? 'sm-input--error' : '', className]

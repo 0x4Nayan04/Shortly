@@ -51,7 +51,7 @@ axiosInstance.interceptors.response.use(
 
 export default axiosInstance;
 
-/** Returns the (possibly envelope-merged) API body from an axios response or raw body object. */
+
 export function getApiPayload(response) {
   return response?.data ?? response;
 }

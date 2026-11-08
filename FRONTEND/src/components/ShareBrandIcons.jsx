@@ -1,4 +1,4 @@
-/** Brand icons for share actions (inline SVG, no extra dependency). */
+
 
 export function XBrandIcon({ className = 'w-5 h-5' }) {
   return (

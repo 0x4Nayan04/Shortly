@@ -5,7 +5,7 @@ function writeAnonymousLinks(links) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(links));
     return true;
   } catch {
-    // Storage can be unavailable in private browsing or when the quota is full.
+
     return false;
   }
 }

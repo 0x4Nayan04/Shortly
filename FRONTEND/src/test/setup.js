@@ -9,8 +9,8 @@ afterEach(() => {
   cleanup();
 });
 
-// Node 25+ exposes a broken global localStorage unless --localstorage-file is set.
-// Prefer jsdom's implementation when present; otherwise install a minimal stub.
+
+
 const storage =
   globalThis.window?.localStorage ?? globalThis.localStorage ?? null;
 if (!storage || typeof storage.clear !== 'function') {

@@ -31,7 +31,7 @@ const ensureCanonicalLink = (href) => {
   el.href = href;
 };
 
-/** Sync document title, canonical URL, and description / Open Graph tags with the current route. */
+
 export function useDocumentMeta(pathname) {
   useEffect(() => {
     const origin =

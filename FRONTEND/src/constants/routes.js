@@ -1,4 +1,4 @@
-/** Canonical app paths — single source for routing, guards, and axios session checks. */
+
 
 export const ROUTES = {
   HOME: '/',
@@ -14,7 +14,7 @@ export const ROUTES = {
   CLAIM_LINK: '/claim-link'
 };
 
-/** Auth flows only available to signed-out users (redirect to dashboard when signed in). */
+
 const GUEST_ONLY_PATHS = [
   ROUTES.LOGIN,
   ROUTES.REGISTER,
@@ -31,7 +31,7 @@ function isGuestOnlyPath(pathname) {
   );
 }
 
-/** Auth API endpoints that must not trigger a session-expired redirect. */
+
 const AUTH_API_PATHS = [
   '/auth/me',
   '/auth/login',
@@ -43,7 +43,7 @@ export function isAuthApiPath(url) {
   return AUTH_API_PATHS.some((segment) => url.includes(segment));
 }
 
-/** Browser paths where a 401 should not dispatch `auth:expired`. */
+
 export function shouldSuppressSessionExpired(pathname) {
   return isGuestOnlyPath(pathname);
 }

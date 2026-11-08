@@ -75,7 +75,7 @@ export const useDashboardList = ({ userId, announce, isOnline }) => {
     [setPayload]
   );
 
-  // Enable/disable does not affect search membership or any supported sort.
+
   const updateCachedLink = useCallback(
     ({ id, disabled }) => {
       queryClient.setQueriesData(
@@ -98,7 +98,7 @@ export const useDashboardList = ({ userId, announce, isOnline }) => {
       });
       return;
     }
-    // Edits can change membership/order in inactive pages and search results.
+
     await queryClient.invalidateQueries({
       queryKey: ['dashboard-links', userId],
       refetchType: 'none'

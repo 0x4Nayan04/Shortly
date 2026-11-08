@@ -54,7 +54,7 @@ const LandingHero = () => {
     dismissBootSplash();
 
     return () => {
-      // Drop the static LCP shell so login/dashboard don't keep a ghost H1.
+
       shell.remove();
     };
   }, [shell]);

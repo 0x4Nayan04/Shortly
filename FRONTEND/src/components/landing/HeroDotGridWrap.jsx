@@ -12,7 +12,7 @@ const DOT_GRID_DEFAULTS = {
   activeMinAlpha: 0.38
 };
 
-/** Landing-style blue dot grid background with optional side fades. */
+
 const HeroDotGridWrap = ({ children, className = '', wrapClassName = '' }) => {
   const wrapRef = useRef(null);
   const [isVisible, setIsVisible] = useState(true);

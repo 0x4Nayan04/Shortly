@@ -16,7 +16,7 @@ const LinksBody = ({
   selectedIds,
   handlers
 }) => {
-  // Skeleton only on first load — keep prior rows visible while search/sort refetches.
+
   if (loading && myUrls.length === 0) return <LoadingSkeleton />;
   if (error && myUrls.length === 0) {
     return (

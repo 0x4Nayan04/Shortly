@@ -49,7 +49,7 @@ export const fetchDashboardLinksQuery = async ({
   return getApiPayload(response) ?? {};
 };
 
-/** Prefetch link list only — stats are owned by useUrlStats to avoid a double GET. */
+
 export function prefetchDashboardQueries(userId) {
   if (!userId || window.location.pathname !== ROUTES.DASHBOARD) return;
 

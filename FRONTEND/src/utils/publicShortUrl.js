@@ -1,6 +1,6 @@
-/**
- * Base URL for public short links (display, copy, QR in SPA).
- */
+
+
+
 export function getPublicShortBaseUrl() {
   const configured =
     import.meta.env.VITE_PUBLIC_SHORT_URL?.trim() ||

@@ -79,7 +79,7 @@ export function useUrlFormController({ user, onShowAuth, onUrlCreated, changedLi
   const { url, customAlias, shortUrl, useCustomAlias } = state;
 
   useEffect(() => {
-    // Consume each mutation once so a later reuse result can still be shown.
+
     if (handledLinkChanges.current === changedLinkIds) return;
     handledLinkChanges.current = changedLinkIds;
     if (!changedLinkIds?.includes(state.createdLink?.id)) return;

@@ -1,6 +1,6 @@
 const BOOT_SPLASH_ID = 'app-boot-splash';
 
-/** Hide the static HTML boot splash once the app shell is ready to show. */
+
 export function dismissBootSplash() {
   const splash = document.getElementById(BOOT_SPLASH_ID);
   if (!splash || splash.dataset.dismissed === '1') return;

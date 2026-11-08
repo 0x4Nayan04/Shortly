@@ -154,8 +154,8 @@ export function AuthProvider({ children }) {
       return;
     }
     showToast.success('You have been signed out.');
-    // Publish the signed-out session and route together so the protected-route
-    // guard cannot replace the intended destination with the login page.
+
+
     flushSync(() => {
       clearAuthSessionUser();
       navigate(ROUTES.HOME, { replace: true, flushSync: true });

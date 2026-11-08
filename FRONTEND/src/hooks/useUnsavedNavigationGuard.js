@@ -11,10 +11,10 @@ const UNSAVED_LEAVE_OPTIONS = {
   variant: 'danger'
 };
 
-/**
- * Blocks in-app navigation and tab close when a form has unsaved input.
- * Returns confirm-dialog props for `<ConfirmDialog {...unsavedDialog} />`.
- */
+
+
+
+
 export const useUnsavedNavigationGuard = (hasUnsavedChanges) => {
   useUnsavedChanges(hasUnsavedChanges);
   const navigationBlocker = useBlocker(hasUnsavedChanges);

@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 const scrollLockCount = { current: 0 };
 let previousOverflow = null;
 
-/** Ref-counted document scroll lock — safe when multiple overlays are open. */
+
 export function useBodyScrollLock(isLocked) {
   useEffect(() => {
     if (!isLocked) return undefined;

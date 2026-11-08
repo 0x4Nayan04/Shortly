@@ -113,7 +113,7 @@ export const useDashboardMutations = ({
         await updateShortUrl(editingLink._id, apiUpdates);
         dispatchUi({ type: 'linksChanged', value: [editingLink._id] });
         showToast.success('Link updated');
-        // An edited destination/alias can change search membership and order.
+
         fetchMyUrls();
         refetchOverview();
       } finally {
