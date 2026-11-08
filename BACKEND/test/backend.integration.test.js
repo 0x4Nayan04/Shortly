@@ -421,7 +421,7 @@ test('late click after link deletion does not restore counter or insert click do
 
   const afterLateClick = await ShortUrl.findById(linkId).lean();
   assert.equal(afterLateClick.click, 0);
-  assert.equal(await Click.countDocuments({ short_url_id: linkId }), 1);
+  assert.equal(await Click.countDocuments({ short_url_id: linkId }), 0);
 });
 
 test('account deletion removes personal data and clicks but preserves tombstones', async () => {
@@ -652,4 +652,69 @@ test('index repair refuses duplicates and same-name conflicts without modifying 
   assert.equal(conflicting.blocked, true);
   assert.deepEqual(conflicting.conflicts, ['short_url_global_unique']);
   assert.equal(conflicting.built.length, 0);
+});
+
+
+test('single and bulk retirement delete clicks before subsequent account deletion', async () => {
+  const agent = await register('retirement-privacy@example.com');
+  const ids = [];
+  for (const slug of ['private-one', 'private-two', 'private-three']) {
+    const response = await agent.post('/api/create/custom').set(origin).send({
+      full_url: `https://example.com/${slug}`, custom_url: slug
+    });
+    assert.equal(response.status, 201, response.text);
+    ids.push(response.body.data.id);
+    await recordClickFromRequest({ shortUrlId: response.body.data.id, req: {
+      headers: { 'user-agent': 'Mozilla/5.0' }, get: () => '', ip: '203.0.113.1'
+    } });
+  }
+  const user = await User.findOne({ email: 'retirement-privacy@example.com' }).lean();
+  const { softDeleteLinkService, softDeleteLinksService } = await import('../src/services/shortUrl.services.js');
+  const { deleteAccountService } = await import('../src/services/account.service.js');
+  await softDeleteLinkService({ userId: user._id, id: ids[0] });
+  const bulk = await softDeleteLinksService({ userId: user._id, ids: ids.slice(1) });
+  assert.equal(bulk.deletedCount, 2);
+  assert.equal(await Click.countDocuments({ short_url_id: { $in: ids } }), 0);
+  assert.equal((await User.findById(user._id)).activeLinkCount, 0);
+  await deleteAccountService({ userId: user._id, password });
+  assert.equal(await User.countDocuments({ _id: user._id }), 0);
+  assert.equal(await Click.countDocuments({ short_url_id: { $in: ids } }), 0);
+  assert.equal(await ShortUrl.countDocuments({ _id: { $in: ids }, retiredAt: { $ne: null }, user: { $exists: false } }), 3);
+});
+
+test('concurrent click and retirement leave no click data', async () => {
+  const agent = await register('retirement-race@example.com');
+  const created = await agent.post('/api/create/custom').set(origin).send({
+    full_url: 'https://example.com/race', custom_url: 'privacy-race'
+  });
+  const id = created.body.data.id;
+  const req = { headers: { 'user-agent': 'Mozilla/5.0' }, get: () => '', ip: '203.0.113.2' };
+  const [removed] = await Promise.all([
+    agent.delete(`/api/create/${id}`).set(origin),
+    ...Array.from({ length: 5 }, () => recordClickFromRequest({ shortUrlId: id, req }))
+  ]);
+  assert.equal(removed.status, 200, removed.text);
+  assert.equal(await Click.countDocuments({ short_url_id: id }), 0);
+  assert.equal((await ShortUrl.findById(id)).click, 0);
+});
+
+test('retirement rolls back link and counter when click deletion fails', async () => {
+  const agent = await register('retirement-rollback@example.com');
+  const created = await agent.post('/api/create/custom').set(origin).send({
+    full_url: 'https://example.com/rollback', custom_url: 'privacy-rollback'
+  });
+  const id = created.body.data.id;
+  const user = await User.findOne({ email: 'retirement-rollback@example.com' }).lean();
+  const { softDeleteLinkService } = await import('../src/services/shortUrl.services.js');
+  const original = Click.deleteMany;
+  Click.deleteMany = () => { throw new Error('simulated deletion failure'); };
+  try {
+    await assert.rejects(softDeleteLinkService({ userId: user._id, id }), /simulated deletion failure/);
+  } finally {
+    Click.deleteMany = original;
+  }
+  const link = await ShortUrl.findById(id).lean();
+  assert.equal(link.retiredAt, null);
+  assert.equal(link.user.toString(), user._id.toString());
+  assert.equal((await User.findById(user._id)).activeLinkCount, 1);
 });

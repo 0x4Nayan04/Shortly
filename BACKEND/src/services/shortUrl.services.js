@@ -13,6 +13,7 @@ import {
   aggregateOverviewForUser,
   updateByIdAndUser
 } from '../dao/shortUrl.dao.js';
+import { deleteClicksForLinks } from '../dao/click.dao.js';
 import { AppError, NotFoundError } from '../utils/errorHandler.js';
 import { normalizeSlug } from '../utils/normalizeSlug.js';
 import { normalizeUrl } from '../utils/normalizeUrl.js';
@@ -279,7 +280,10 @@ export async function softDeleteLinkService({ userId, id }) {
 
   const removed = await runWithTransaction(async (session) => {
     const retired = await retireByIdAndUser(id, userId, session);
-    if (retired) await releaseActiveLinkSlots(userId, 1, session);
+    if (retired) {
+      await deleteClicksForLinks([id], session);
+      await releaseActiveLinkSlots(userId, 1, session);
+    }
     return retired;
   });
   if (!removed) {
@@ -290,22 +294,15 @@ export async function softDeleteLinkService({ userId, id }) {
 }
 
 export async function softDeleteLinksService({ userId, ids }) {
-  const owned = await findOwnedActiveByIds(ids, userId);
-  const ownedIds = owned.map((u) => u._id.toString());
-
-  if (ownedIds.length === 0) {
-    return {
-      deletedCount: 0,
-      deletedIds: [],
-      skippedIds: ids.map((id) => ({ id, reason: 'not_found' }))
-    };
-  }
-
-  const deletedCount = await runWithTransaction(async (session) => {
-    const count = await retireManyByIdsAndUser(ownedIds, userId, session);
+  const { owned, deletedCount } = await runWithTransaction(async (session) => {
+    const links = await findOwnedActiveByIds(ids, userId, session);
+    const linkIds = links.map((link) => link._id);
+    const count = await retireManyByIdsAndUser(linkIds, userId, session);
+    await deleteClicksForLinks(linkIds, session);
     await releaseActiveLinkSlots(userId, count, session);
-    return count;
+    return { owned: links, deletedCount: count };
   });
+  const ownedIds = owned.map((link) => link._id.toString());
 
   const skippedIds = ids
     .filter((id) => !ownedIds.includes(id))

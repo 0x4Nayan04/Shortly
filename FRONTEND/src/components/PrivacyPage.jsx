@@ -28,7 +28,7 @@ import AppNavbar from './app/AppNavbar';
 import LandingFooter from './landing/LandingFooter';
 import { ROUTES } from '../constants/routes';
 
-const PRIVACY_LAST_UPDATED = 'July 2026';
+const PRIVACY_LAST_UPDATED = 'November 2026';
 
 const redirectFields = [
   { title: 'Timestamp', detail: 'When the redirect occurred.' },
@@ -47,7 +47,7 @@ const redirectFields = [
 ];
 
 const privacyExclusions = [
-  'Stored full IP addresses',
+  'Visitor IP addresses in click analytics',
   'Fingerprints or cross-site identifiers',
   'Cookies for tracking visitors across sites',
   'Exact location data (city, GPS)',
@@ -61,10 +61,9 @@ const privacyHighlights = [
     description: 'We store the least data needed to show useful insights.'
   },
   {
-    label: 'No raw IP storage',
-    value: 'Derived, then discarded',
-    description:
-      'IP addresses are used only at request time to resolve country, then discarded.'
+    label: 'Click analytics',
+    value: 'No visitor IP field',
+    description: 'Country is derived from the request IP.'
   },
   {
     label: 'Retention window',
@@ -78,7 +77,7 @@ const subprocessors = [
   {
     name: 'MongoDB Atlas',
     purpose: 'Database hosting',
-    data: 'Accounts, links, click events'
+    data: 'Accounts, links, click events, and temporary rate-limit keys'
   },
   {
     name: 'Resend',
@@ -113,13 +112,13 @@ const policySections = [
         id: 'raw-events',
         icon: Clock,
         summary: 'Raw click events auto-delete after 30 days.',
-        bullets: ['MongoDB TTL index on the timestamp field.']
+        bullets: ['MongoDB TTL cleanup is asynchronous, so removal may occur after 30 days.']
       },
       {
         id: 'aggregated',
         icon: Database,
         summary: 'Aggregated stats computed on demand from raw data.',
-        bullets: ['Not stored permanently.']
+        bullets: ['The lifetime click counter remains on each active link until deletion.']
       },
       {
         id: 'accounts',
@@ -143,7 +142,7 @@ const policySections = [
         icon: Trash2,
         summary: 'Delete a short URL immediately.',
         bullets: [
-          'Clears destination, owner, management token, and click counter.',
+          'Deletes associated click events and clears the destination, owner, management token, and click counter.',
           'Non-identifying slug tombstone remains to prevent reuse.'
         ],
         accent: 'destructive'
@@ -178,7 +177,7 @@ const policySections = [
         summary: 'Account data powers sign-in and link management.',
         bullets: [
           'Redirect analytics help link owners understand traffic.',
-          'No raw IP storage. Short retention window.'
+          'Click events contain no visitor IP field and expire after 30 days.'
         ]
       },
       {
@@ -206,8 +205,8 @@ const policySections = [
         icon: Lock,
         summary: 'Private and loopback destinations blocked on save.',
         bullets: [
-          'IP used only at request time to derive country.',
-          'Never stored.'
+          'Rate-limit keys can contain raw IP addresses in MongoDB until TTL cleanup; redirect limits also use temporary in-memory IP keys.',
+          'Hosting providers may retain request metadata and operational logs under their own retention policies.'
         ]
       },
       {
@@ -375,8 +374,9 @@ const PrivacyPage = () => {
                   </div>
 
                   <div className="mt-4 border-t border-border bg-[var(--color-blue-tint)] px-4 py-3 text-sm text-muted-strong">
-                    We do not store raw IP addresses. We use the IP only at
-                    request time to derive a country and discard it immediately.
+                    Click analytics do not store visitor IP addresses. Request IPs
+                    are also used for abuse prevention and may be retained temporarily
+                    in rate-limit keys or hosting logs.
                   </div>
                 </div>
 
@@ -389,7 +389,7 @@ const PrivacyPage = () => {
                       />
                     </div>
                     <h2 className="text-lg font-semibold text-ink">
-                      What we don&apos;t collect
+                      What click analytics exclude
                     </h2>
                   </div>
                   <ul className="flex flex-col gap-2">

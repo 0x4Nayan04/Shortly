@@ -147,12 +147,13 @@ export function AuthProvider({ children }) {
 
     if (!confirmed) return;
 
-    const loggedOut = await logoutUser()
-      .then(() => true)
-      .catch(() => false);
-    if (loggedOut) {
-      showToast.success('You have been signed out.');
+    try {
+      await logoutUser();
+    } catch {
+      showToast.error('Could not sign out. Please try again.');
+      return;
     }
+    showToast.success('You have been signed out.');
     // Publish the signed-out session and route together so the protected-route
     // guard cannot replace the intended destination with the login page.
     flushSync(() => {

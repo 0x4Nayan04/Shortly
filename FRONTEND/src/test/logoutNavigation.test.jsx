@@ -1,9 +1,12 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { createMemoryRouter, Outlet, RouterProvider } from 'react-router-dom';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthProvider, useAuthSession } from '../contexts/AuthContext';
 import ProtectedLayout from '../layouts/ProtectedLayout';
 import GuestOnlyLayout from '../layouts/GuestOnlyLayout';
+import { logoutUser } from '../api/user.api';
+import { showToast } from '../utils/showToast';
+import { setAuthSessionUser } from '../contexts/authSessionStore';
 
 vi.mock('../api/user.api', () => ({
   getCurrentUser: vi.fn().mockResolvedValue({ user: { _id: 'user-1' } }),
@@ -14,7 +17,7 @@ vi.mock('../hooks/useUrlStats', () => ({
 }));
 vi.mock('../hooks/dashboardQueries', () => ({ prefetchDashboardQueries: vi.fn() }));
 vi.mock('../utils/claimAnonymousLinks', () => ({ claimStoredAnonymousLinks: vi.fn() }));
-vi.mock('../utils/showToast', () => ({ showToast: { success: vi.fn() } }));
+vi.mock('../utils/showToast', () => ({ showToast: { success: vi.fn(), error: vi.fn() } }));
 vi.mock('../components/UxEnhancements', () => ({
   ConfirmDialog: () => null,
   useConfirmDialog: () => ({ confirm: () => Promise.resolve(true) })
@@ -26,6 +29,10 @@ function Dashboard() {
 }
 
 describe('explicit logout navigation', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it('finishes on the landing page without a login redirect and replaces dashboard history', async () => {
     const router = createMemoryRouter([{
       element: <AuthProvider><Outlet /></AuthProvider>,
@@ -48,5 +55,22 @@ describe('explicit logout navigation', () => {
     expect(visited).not.toContain('/login');
     expect(router.state.historyAction).toBe('REPLACE');
     unsubscribe();
+  });
+
+  it('keeps the authenticated page and offers retry when logout fails', async () => {
+    setAuthSessionUser({ _id: 'user-1' });
+    logoutUser.mockRejectedValueOnce(new Error('network error'));
+    const router = createMemoryRouter([{
+      element: <AuthProvider><Outlet /></AuthProvider>,
+      children: [{ element: <ProtectedLayout />, children: [
+        { path: '/dashboard', element: <Dashboard /> }
+      ] }]
+    }], { initialEntries: ['/dashboard'] });
+    render(<RouterProvider router={router} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Sign out' }));
+    await waitFor(() => expect(showToast.error).toHaveBeenCalledWith('Could not sign out. Please try again.'));
+    expect(router.state.location.pathname).toBe('/dashboard');
+    expect(screen.getByRole('button', { name: 'Sign out' })).toBeInTheDocument();
+    expect(showToast.success).not.toHaveBeenCalled();
   });
 });

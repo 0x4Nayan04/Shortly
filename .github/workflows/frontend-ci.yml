@@ -4,11 +4,13 @@ on:
   pull_request:
     paths:
       - 'FRONTEND/**'
+      - 'BACKEND/**'
       - '.github/workflows/frontend-ci.yml'
   push:
     branches: [main]
     paths:
       - 'FRONTEND/**'
+      - 'BACKEND/**'
       - '.github/workflows/frontend-ci.yml'
 
 permissions:
@@ -28,7 +30,15 @@ jobs:
           cache: npm
           cache-dependency-path: FRONTEND/package-lock.json
       - run: npm ci
+      - run: npm run lint
+      - run: npm run css:check
       - run: npm test
+      - run: npm run build
+        env:
+          VITE_APP_URL: https://api.example.com
+          VITE_PUBLIC_SHORT_URL: https://short.example.com
+          SHORT_LINK_PROXY_ORIGIN: https://api.example.com
+      - run: npm audit --audit-level=high
 
   e2e:
     runs-on: ubuntu-latest

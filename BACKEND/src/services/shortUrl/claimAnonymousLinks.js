@@ -3,6 +3,7 @@ import {
   findAnonymousByIdAndToken,
   retireAnonymousByToken
 } from '../../dao/shortUrl.dao.js';
+import { deleteClicksForLinks } from '../../dao/click.dao.js';
 import { hashEmailToken } from '../../utils/hashToken.js';
 import {
   reserveActiveLinkSlot,
@@ -57,7 +58,10 @@ export async function claimAnonymousLinksService({ userId, claims }) {
       }
     } catch (error) {
       if (error.code !== 11000 || !error.keyPattern?.canonical_url) throw error;
-      await retireAnonymousByToken(doc._id, tokenHash);
+      await runWithTransaction(async (session) => {
+        const result = await retireAnonymousByToken(doc._id, tokenHash, session);
+        if (result.modifiedCount) await deleteClicksForLinks([doc._id], session);
+      });
       invalidateRedirectCache(doc.short_url);
       skipped.push({
         id,

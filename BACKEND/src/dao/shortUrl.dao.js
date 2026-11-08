@@ -221,9 +221,10 @@ export const retireByIdAndUser = async (id, userId, session = null) => {
   return result.modifiedCount > 0;
 };
 
-export const findOwnedActiveByIds = async (ids, userId) =>
+export const findOwnedActiveByIds = async (ids, userId, session = null) =>
   short_urlModel
     .find({ _id: { $in: ids }, user: userId, ...ACTIVE_LINK_FILTER })
+    .session(session)
     .select('_id short_url')
     .lean();
 
@@ -288,10 +289,11 @@ export const claimAnonymousLinkByRecoveryToken = async (
     )
     .lean();
 
-export const retireAnonymousByToken = async (id, manage_token) =>
+export const retireAnonymousByToken = async (id, manage_token, session) =>
   short_urlModel.updateOne(
     { _id: id, user: null, manage_token, ...ACTIVE_LINK_FILTER },
-    tombstoneUpdate()
+    tombstoneUpdate(),
+    { session }
   );
 
 export const retireById = async (id, session = null) =>
