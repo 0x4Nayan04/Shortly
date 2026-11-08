@@ -19,7 +19,7 @@ const DOMAIN_FILES = [
   'mobile.css'
 ];
 
-/** Required CSS custom properties in the repository's token source of truth. */
+
 const DESIGN_VARIABLE_CHECKS = [
   '--color-primary',
   '--color-accent',

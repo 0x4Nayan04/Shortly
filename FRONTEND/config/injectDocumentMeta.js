@@ -1,7 +1,7 @@
-/**
- * Inject route-specific document metadata into a built index.html shell.
- * Used for crawler-facing SEO pages generated at build time.
- */
+
+
+
+
 
 function escapeHtml(value) {
   return value
@@ -38,7 +38,7 @@ function upsertLink(html, rel, href) {
   return html.replace('</head>', `    ${tag}\n  </head>`);
 }
 
-/** @param {string} html @param {ReturnType<import('./documentMeta.js').getDocumentMetaForPath>} meta */
+
 export function injectDocumentMeta(html, meta) {
   let next = html.replace(
     /<title>[^<]*<\/title>/i,

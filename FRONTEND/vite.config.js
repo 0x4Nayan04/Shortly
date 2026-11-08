@@ -8,7 +8,7 @@ const BACKEND_ORIGIN =
   process.env.VITE_BACKEND_DEV_URL || 'http://127.0.0.1:3001';
 const BACKEND_HOST = new URL(BACKEND_ORIGIN).host;
 
-/** Defer built CSS so critical inline hero styles can paint LCP first. */
+
 function deferStylesheetPlugin() {
   return {
     name: 'defer-stylesheet',
@@ -24,7 +24,7 @@ function deferStylesheetPlugin() {
   };
 }
 
-/** Dev: proxy /ZcrzivY → backend so short links work on the same port as the SPA (5173). */
+
 function shortUrlProxyPlugin() {
   return {
     name: 'short-url-proxy',
@@ -101,16 +101,16 @@ export default defineConfig(({ mode }) => {
       exclude: ['**/node_modules/**', '**/e2e/**']
     },
     server: {
-      host: true, // 0.0.0.0 — required for Windows browser → WSL (mirrored or not)
+      host: true,
       port: 5173,
       strictPort: true,
-      // Same-origin API in dev — no CORS, cookies work on localhost:5173
+
       proxy: {
         '/api': {
           target: BACKEND_ORIGIN,
           changeOrigin: true,
-          // Remote API CORS only allows the prod frontend origin; rewrite when
-          // proxying so localhost/127.0.0.1 can hit Railway during local verify.
+
+
           configure: (proxy) => {
             proxy.on('proxyReq', (proxyReq) => {
               if (/^(localhost|127\.0\.0\.1|\[::1\])$/i.test(new URL(BACKEND_ORIGIN).hostname)) {
@@ -127,7 +127,7 @@ export default defineConfig(({ mode }) => {
                 proxyReq.setHeader('Origin', origin);
                 proxyReq.setHeader('Referer', `${origin}/`);
               } catch {
-                /* keep browser Origin */
+                return;
               }
             });
           }

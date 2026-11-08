@@ -1,14 +1,14 @@
-/**
- * Smoke test: public host should proxy slug redirects to the backend (302).
- *
- * Usage:
- *   PUBLIC_SHORT_HOST=https://shortly.example.com \
- *   SHORT_LINK_PROXY_ORIGIN=https://api.example.com \
- *   node scripts/smoke-short-link-routing.js [slug]
- *
- * Requires an active slug on the backend. When slug is omitted, only routing
- * config and backend reachability are checked.
- */
+
+
+
+
+
+
+
+
+
+
+
 
 import { buildVercelRewrites, isShortLinkPath } from '../config/shortLinkRouting.js';
 

@@ -11,10 +11,10 @@ export const SHORTLY_OG_IMAGE = '/og-image.png';
 export const SHORTLY_OG_IMAGE_WIDTH = 1200;
 export const SHORTLY_OG_IMAGE_HEIGHT = 630;
 
-/** Production canonical origin; set VITE_PUBLIC_SHORT_URL at build time. */
+
 export const SHORTLY_SITE_URL = '';
 
-/** Routes that receive crawler-specific HTML shells and static SEO metadata. */
+
 export const SEO_PUBLIC_PATHS = [ROUTES.HOME, ROUTES.PRIVACY];
 
 const ROUTE_META_DESCRIPTIONS = {
@@ -33,7 +33,7 @@ const ROUTE_META_DESCRIPTIONS = {
     'Request a password reset link for your Shortly account.'
 };
 
-/** @param {string} pageTitle e.g. "Dashboard" */
+
 const formatPageTitle = (pageTitle) => `${pageTitle} · ${SHORTLY_SITE_NAME}`;
 
 const ROUTE_PAGE_TITLES = {
@@ -46,14 +46,14 @@ const ROUTE_PAGE_TITLES = {
   [ROUTES.FORGOT_PASSWORD]: formatPageTitle('Reset password')
 };
 
-/** @param {string} pathname */
+
 export function normalizePublicPath(pathname) {
   if (!pathname || pathname === '/') return ROUTES.HOME;
   const trimmed = pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
   return trimmed || ROUTES.HOME;
 }
 
-/** @param {string} pathname */
+
 export function getDocumentTitleForPath(pathname) {
   const normalized = normalizePublicPath(pathname);
   if (normalized.startsWith(`${ROUTES.RESET_PASSWORD}/`)) {
@@ -65,7 +65,7 @@ export function getDocumentTitleForPath(pathname) {
   return ROUTE_PAGE_TITLES[normalized] ?? formatPageTitle('Page not found');
 }
 
-/** @param {string} pathname */
+
 export function getMetaDescriptionForPath(pathname) {
   const normalized = normalizePublicPath(pathname);
   if (normalized.startsWith(`${ROUTES.RESET_PASSWORD}/`)) {
@@ -80,10 +80,10 @@ export function getMetaDescriptionForPath(pathname) {
   );
 }
 
-/**
- * @param {string} pathname
- * @param {string} [siteOrigin]
- */
+
+
+
+
 export function getDocumentMetaForPath(pathname, siteOrigin = SHORTLY_SITE_URL) {
   const normalized = normalizePublicPath(pathname);
   const origin = siteOrigin.replace(/\/$/, '');
@@ -101,7 +101,7 @@ export function getDocumentMetaForPath(pathname, siteOrigin = SHORTLY_SITE_URL) 
   };
 }
 
-/** @param {string} pathname */
+
 export function getSeoShellPath(pathname) {
   const normalized = normalizePublicPath(pathname);
   if (!SEO_PUBLIC_PATHS.includes(normalized)) return null;

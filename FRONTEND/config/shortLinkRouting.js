@@ -1,4 +1,4 @@
-/** SPA routes — must not be proxied to the backend redirect handler. */
+
 export const SPA_SLUGS = new Set([
   'login',
   'register',
@@ -12,10 +12,10 @@ export const SPA_SLUGS = new Set([
   'verify-email'
 ]);
 
-/** path-to-regexp segment used in Vercel rewrites for short-link slugs. */
+
 export const SLUG_PATH_PATTERN = '[a-zA-Z0-9_-]{3,20}';
 
-/** SPA fallback — exclude `/assets/**` so missing chunks 404 instead of index.html. */
+
 export const SPA_FALLBACK_SOURCE = '/((?!assets/).*)';
 
 const SLUG_REGEX = new RegExp(`^${SLUG_PATH_PATTERN}$`);

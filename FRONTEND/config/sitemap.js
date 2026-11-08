@@ -1,6 +1,6 @@
 import { SEO_PUBLIC_PATHS } from './documentMeta.js';
 
-/** Crawler-facing pages only — keep in sync with SEO_PUBLIC_PATHS. */
+
 export const SITEMAP_PUBLIC_PATHS = SEO_PUBLIC_PATHS;
 
 const SITEMAP_ENTRY_META = {
@@ -8,10 +8,10 @@ const SITEMAP_ENTRY_META = {
   '/privacy': { changefreq: 'monthly', priority: '0.6' }
 };
 
-/**
- * @param {string} siteOrigin
- * @param {string[]} [paths]
- */
+
+
+
+
 export function buildSitemapXml(siteOrigin, paths = SITEMAP_PUBLIC_PATHS) {
   const origin = siteOrigin.replace(/\/$/, '');
   if (!origin) {
@@ -43,7 +43,7 @@ export function buildSitemapXml(siteOrigin, paths = SITEMAP_PUBLIC_PATHS) {
   ].join('\n');
 }
 
-/** @param {string} siteOrigin */
+
 export function buildRobotsTxt(siteOrigin) {
   const origin = siteOrigin.replace(/\/$/, '');
   if (!origin) {

@@ -57,7 +57,7 @@ function assertSingleDeferredGoogleFontsStylesheet(html, pathname) {
   }
 }
 
-/** Home keeps `#landing-lcp-shell`; other SEO paths hide it. */
+
 function applyLandingLcpShellVisibility(html, pathname) {
   if (!html.includes('id="landing-lcp-shell"')) {
     throw new Error(
