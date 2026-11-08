@@ -1,5 +1,5 @@
 @layer utilities {
-  /* Nav privacy indicator — compact badge next to user menu */
+
   .nav-privacy-trigger {
     display: none;
     align-items: center;
@@ -31,7 +31,7 @@
     white-space: nowrap;
   }
 
-  /* Logged-in app nav — catalog account chip (trigger + panel menu) */
+
   .nav-user-trigger {
     display: inline-flex;
     align-items: center;

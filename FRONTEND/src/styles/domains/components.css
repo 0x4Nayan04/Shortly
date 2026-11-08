@@ -63,32 +63,32 @@
     background-color: var(--color-error-tint);
   }
 
-  /* ── Mobile Responsive Fixes ── */
+
   @media (max-width: 767px) {
-    /* 3. Feature preview cards — hide blue panels on mobile */
+
     .catalog-scrolly-step-mobile-visual {
       display: none;
     }
 
-    /* 4. Preview card text padding — ensure text doesn't touch edges */
+
     .catalog-scrolly-step-mobile-visual .catalog-visual-body {
       padding-inline: 1rem;
     }
 
-    /* 5. FAQ filter buttons — wrap on narrow viewports */
+
     .faq-filters {
       flex-wrap: wrap;
     }
 
-    /* 6. Footer — mobile rules live with .landing-footer-* above */
 
-    /* 7. Feature row tap targets — 44px min for mobile touch */
+
+
     .catalog-scrolly-step-inner {
       min-height: 44px;
     }
   }
 
-  /* Short link result — compact success card after URL generation */
+
   .short-link-result {
     display: flex;
     flex-direction: column;

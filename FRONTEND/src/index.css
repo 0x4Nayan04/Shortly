@@ -1,12 +1,12 @@
 @import './styles/shortly-design-tokens.css';
 @import 'tailwindcss';
 
-/* Reset and base styles */
+
 * {
   box-sizing: border-box;
 }
 
-/* Only clip horizontal overflow on body — overflow-x on html breaks position:sticky section bars */
+
 body {
   overflow-x: hidden;
 }
@@ -39,7 +39,7 @@ select {
   color: var(--color-ink);
 }
 
-/* Catalog row labels should never render an underline or pseudo underline. */
+
 .catalog-list .catalog-row-label,
 .catalog-list .catalog-row-label::before,
 .catalog-list .catalog-row-label::after,
@@ -59,11 +59,11 @@ select {
   display: none !important;
 }
 
-/* ============================================
-   ACCESSIBILITY STYLES
-   ============================================ */
 
-/* Screen reader only - visually hidden but accessible */
+
+
+
+
 .sr-only {
   position: absolute;
   width: 1px;
@@ -76,7 +76,7 @@ select {
   border: 0;
 }
 
-/* Make sr-only visible on focus (for skip links) */
+
 .sr-only:focus,
 .sr-only:active {
   position: static;
@@ -89,16 +89,16 @@ select {
   white-space: normal;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   Design-system focus policy — flat material, no rounded browser blue rings.
-   Applies app-wide (landing + catalog routes).
-   ═══════════════════════════════════════════════════════════════════════════ */
+
+
+
+
 
 :focus:not(:focus-visible) {
   outline: none;
 }
 
-/* ── sm-input: flat border tint on focus ── */
+
 .sm-input:focus,
 .sm-input:focus-visible {
   outline: none;
@@ -114,7 +114,7 @@ select {
   box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.1);
 }
 
-/* ── hero-cli-input: parent compound/bar owns focus ── */
+
 .hero-cli-input:focus,
 .hero-cli-input:focus-visible {
   outline: none;
@@ -123,7 +123,7 @@ select {
   border-color: transparent;
 }
 
-/* ── Checkboxes / radios: subtle flat ring ── */
+
 input[type='checkbox']:focus-visible,
 input[type='radio']:focus-visible {
   outline: none;
@@ -131,7 +131,7 @@ input[type='radio']:focus-visible {
   box-shadow: var(--shadow-focus, rgba(5, 98, 239, 0.1) 0px 0px 0px 4px);
 }
 
-/* ── Design-system controls: flat shadow focus ── */
+
 :where(
   .sm-btn,
   .hero-cli-submit,
@@ -152,7 +152,7 @@ input[type='radio']:focus-visible {
   box-shadow: var(--shadow-focus, rgba(5, 98, 239, 0.1) 0px 0px 0px 4px);
 }
 
-/* ── Native controls not yet on design-system classes ── */
+
 input:not(.sm-input):not(.hero-cli-input):not([type='checkbox']):not(
     [type='radio']
   ):focus-visible,
@@ -164,7 +164,7 @@ select:not(.sm-input):not(.dashboard-toolbar-compound__select):focus-visible {
   box-shadow: var(--shadow-focus, rgba(5, 98, 239, 0.1) 0px 0px 0px 4px);
 }
 
-/* ── Generic buttons/links without design-system classes ── */
+
 button:not(
     .sm-btn,
     .hero-cli-submit,
@@ -193,7 +193,7 @@ a:not(
   box-shadow: var(--shadow-focus, rgba(5, 98, 239, 0.1) 0px 0px 0px 4px);
 }
 
-/* Reduce motion for users who prefer it */
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -205,14 +205,14 @@ a:not(
   }
 }
 
-/* Ensure text doesn't get too small on zoom */
+
 @media screen and (max-width: 320px) {
   html {
     font-size: 100%;
   }
 }
 
-/* Custom scrollbar */
+
 ::-webkit-scrollbar {
   width: 6px;
 }
@@ -238,7 +238,7 @@ a:not(
   display: none;
 }
 
-/* Animation utilities */
+
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -269,7 +269,7 @@ a:not(
   animation: slideDown 0.2s ease-out;
 }
 
-/* Slide up animation for banners */
+
 @keyframes slideUp {
   from {
     opacity: 0;
@@ -285,7 +285,7 @@ a:not(
   animation: slideUp 0.3s ease-out;
 }
 
-/* Scale in animation for modals/dialogs */
+
 @keyframes scaleIn {
   from {
     opacity: 0;
@@ -301,7 +301,7 @@ a:not(
   animation: scaleIn 0.2s ease-out;
 }
 
-/* Shimmer animation for skeleton loaders */
+
 @keyframes shimmer {
   0% {
     background-position: 200% 0;
@@ -322,19 +322,19 @@ a:not(
   background-size: 200% 100%;
 }
 
-/* Smooth content transitions */
+
 .transition-content {
   transition:
     opacity 0.3s ease,
     transform 0.3s ease;
 }
 
-/* Toast animation overrides */
+
 [data-sonner-toaster] [data-visible='true'] {
   animation: slideDown 0.3s ease-out;
 }
 
-/* Loading spinner */
+
 @keyframes spin {
   from {
     transform: rotate(0deg);
@@ -348,7 +348,7 @@ a:not(
   animation: spin 1s linear infinite;
 }
 
-/* Pulse animation for loading dots */
+
 @keyframes pulse {
   0%,
   100% {
@@ -365,7 +365,7 @@ a:not(
   animation: pulse 1.4s ease-in-out infinite;
 }
 
-/* Bounce animation for attention */
+
 @keyframes bounce {
   0%,
   100% {
@@ -380,7 +380,7 @@ a:not(
   animation: bounce 2s ease-in-out infinite;
 }
 
-/* Overscroll behavior for dropdowns/modals */
+
 .overscroll-contain {
   overscroll-behavior: contain;
 }

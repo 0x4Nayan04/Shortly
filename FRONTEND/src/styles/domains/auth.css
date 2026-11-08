@@ -93,7 +93,7 @@
     width: 11rem;
     margin-top: 0.5rem;
   }
-  /* Auth route suspense — skeleton preview (structure over spinner) */
+
   .auth-page-loader {
     display: flex;
     flex-direction: column;

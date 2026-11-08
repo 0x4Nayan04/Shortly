@@ -50,7 +50,7 @@
     color: var(--color-muted);
   }
 
-  /* ── Hero CLI bar (screenshots/button-default-md-*) ── */
+
   .hero-form-compound {
     border: 1px dashed rgba(11, 16, 21, 0.16);
     background-color: var(--color-surface-muted);
@@ -92,7 +92,7 @@
   .hero-form-compound .hero-cli-bar:focus-within {
     box-shadow: none;
   }
-  /* Expanded custom alias — inset panel (landing compound) + unified field */
+
   .hero-form-compound .hero-alias-panel {
     border-top: 1px solid var(--color-border);
     background-color: var(--color-surface);
@@ -133,7 +133,7 @@
     box-shadow: 0 0 0 4px
       color-mix(in srgb, var(--color-error) 14%, transparent);
   }
-  /* Standalone alias compound (dashboard) — single outer shell, no double border */
+
   .hero-form-compound > .hero-alias-field {
     border: 0;
     background: transparent;
@@ -345,7 +345,7 @@
     color: color-mix(in srgb, var(--color-error) 78%, var(--color-ink));
   }
 
-  /* ── Announcement chip ── */
+
   .hero-chip {
     display: inline-flex;
     align-items: center;
@@ -403,7 +403,7 @@
     }
   }
 
-  /* ── Catalog layout: sticky scrollytelling showcase ── */
+
   .catalog-intro {
     border-bottom: 1px solid var(--color-border);
   }
@@ -573,7 +573,7 @@
     }
   }
 
-  /* Product catalog — compact list + blue panel (supermemory split) */
+
   .landing-catalog-split {
     display: grid;
     grid-template-columns: 1fr;
@@ -692,7 +692,7 @@
     );
   }
 
-  /* ── Blue feature panel ── */
+
   .catalog-visual {
     position: relative;
     container-type: inline-size;
@@ -1072,7 +1072,7 @@
     }
   }
 
-  /* ── Static catalog showcase (desktop only) ── */
+
   .landing-catalog-static {
     position: relative;
   }
@@ -1238,7 +1238,7 @@
     opacity: 0.6;
   }
 
-  /* ── FAQ (supermemory reference) ── */
+
   .faq-eyebrow {
     font-family: var(--font-mono);
     font-size: 11px;
@@ -1421,7 +1421,7 @@
     }
   }
 
-  /* Hero dot grid — side fade like supermemory reference */
+
   .hero-dot-grid-wrap {
     position: relative;
     isolation: isolate;
